@@ -37,7 +37,7 @@ function preloadTerrainV2() {
         TERRAIN_V2.revision++;
         console.warn('Terrain v2 image missing:', type, variant + 1);
       };
-      img.src = `assets/terrain/v2/${type.toLowerCase()}-${variant + 1}.png`;
+      img.src = `assets/terrain/v2/${type.toLowerCase()}-${variant + 1}.jpg`;
     }
   }
 }

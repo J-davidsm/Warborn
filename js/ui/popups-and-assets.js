@@ -288,7 +288,12 @@ function preloadTerrainArt() {
   TERRAIN_ART_MAP.trees.forEach((url, index) => load(assetName(url, `tree_${index}`), url));
 }
 
-try{ preloadTerrainArt(); } catch(e){ console.warn('Terrain art preload failed', e); }
+// Load legacy artwork only when this build is used without the blended renderer.
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof drawBlendedTerrainBoard !== 'function') {
+    try { preloadTerrainArt(); } catch (e) { console.warn('Terrain art preload failed', e); }
+  }
+});
 
 // Map of owner -> flag emoji for visual ownership marker
 const SETTLEMENT_FLAGS = {

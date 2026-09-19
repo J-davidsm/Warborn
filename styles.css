@@ -29,7 +29,7 @@ html, body {
 }
 
 #mainMenu {
-  background: url("assets/menu.png") center center / cover no-repeat;
+  background: url("assets/menu.jpg") center center / cover no-repeat;
 }
 
 #endScreen {
@@ -44,11 +44,11 @@ html, body {
 }
 
 #endScreen.victory {
-  background: url("assets/victory.png") center center / cover no-repeat;
+  background: url("assets/victory.jpg") center center / cover no-repeat;
 }
 
 #endScreen.defeat {
-  background: url("assets/defeat.png") center center / cover no-repeat;
+  background: url("assets/defeat.jpg") center center / cover no-repeat;
 }
 
 #mainMenu.hidden {
@@ -144,7 +144,7 @@ html, body {
   inset: 0;
   z-index: 52000;
   display: none;
-  background: url("assets/menu.png") center center / cover no-repeat;
+  background: url("assets/menu.jpg") center center / cover no-repeat;
   overflow: hidden;
 }
 

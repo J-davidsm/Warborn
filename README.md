@@ -2,12 +2,14 @@
 
 A browser-based fantasy strategy game. No installation or server is needed to play.
 
+**[Play Warborn](https://j-davidsm.github.io/Warborn/)**
+
 ## Play
 
 - Choose **Play** for a quick battle against the AI.
 - Click a unit, then a reachable tile to move or an enemy to attack. Choose **End Turn** when finished.
 - Choose **Local 2-Player** in the game mode selector for a shared-screen match.
-- For a larger battle, choose **Campaign**, **Generate Scenario**, then **Start Campaign**.
+- Choose **Campaign → Start Campaign** to play the built-in campaign. For a generated battle, choose **Generate Scenario**, then **Test Scenario** on the new scenario card.
 - Use the map zoom controls and arrow keys to navigate. The editor lets you build custom maps.
 - Saves are stored in this browser. Use the in-game export controls to keep a portable copy.
 
