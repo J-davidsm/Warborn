@@ -3,6 +3,7 @@
 
 // Send a minimal game state snapshot to the parent/hub for persistence/broadcast.
 function postGameState(actionId = null, retryCount = 0){
+  if (typeof OnlineMatch !== "undefined" && OnlineMatch.playing) return OnlineMatch.publish(actionId);
   const maxRetries = 3;
   const retryDelay = 1000 * Math.pow(2, retryCount); // Exponential backoff
   
@@ -85,6 +86,7 @@ function postGameState(actionId = null, retryCount = 0){
 
 // Consolidated message handler for all multiplayer communication
 window.addEventListener('message', (ev) => {
+  if (typeof OnlineMatch !== 'undefined' && OnlineMatch.active) return;
   const msg = ev.data || {};
   if (!msg || !msg.type) return;
 

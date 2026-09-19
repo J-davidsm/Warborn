@@ -29,7 +29,31 @@ Open http://localhost:8000. There are no build dependencies.
 
 In the repository's **Settings → Pages**, select **Deploy from a branch**, **main**, and **/(root)**, then save. The root `index.html` and `.nojekyll` make this repository directly deployable, including at a project subpath.
 
-AI, campaign, map editor, and shared-screen multiplayer run entirely in the browser. Internet multiplayer is not offered by this static distribution because the original relay needs a separately hosted server.
+AI, campaigns, the map editor, and local play run entirely in the browser. Online rooms use the bundled PeerJS 1.5.5 library and the free PeerJS Cloud signaling service to establish a browser-to-browser WebRTC data channel.
+
+## Online multiplayer
+
+1. Choose **Multiplayer**, enter your display name, and **Create room**.
+2. Share the 8-character room code or **Copy invite link**. Your friend opens the game, enters their name and code, and chooses **Join room**.
+3. Both names appear in the room. Both players choose **Ready**; the host chooses **Generate & start**.
+4. Each new match uses a fresh seed and a 20×16 hex map. Terrain and settlements are mirrored by a 180-degree rotation; armies and resources are identical, capitals are connected, and the first player is randomized.
+5. **Return to lobby** ends the current match for both players. Ready up again for a newly generated map.
+
+Keep both game tabs open. Rooms have two seats and are joined by invitation, not through a public room directory. Closing the host tab ends the room; reloads do not resume a match. Disconnects pause input, and a new match requires both players to ready up again. Editor and saved-map loading are unavailable during online matches.
+
+The host coordinates numbered state revisions and turn ownership. Complete unit stats, research, resources, settlements, and victory results synchronize. This is casual multiplayer between trusted players, not a server-validated competitive anti-cheat system.
+
+Some restrictive networks cannot establish direct WebRTC connections without a separately configured TURN relay. PeerJS Cloud availability is an external dependency. No private server credentials are included in this repository. See [PeerJS connection requirements](https://peerjs.com/client/faq).
+
+## Tests
+
+```sh
+node tests/fair-map.cjs
+node tests/online-lobby.cjs
+node tests/terrain.cjs
+```
+
+Tests cover 250 map seeds, geometry and resource symmetry, capital reachability, readiness, state/research synchronization, turn locking, stale revisions, disconnects, and fresh rematches. PeerJS's MIT license is included in `vendor/peerjs-LICENSE`.
 
 ## Artwork
 

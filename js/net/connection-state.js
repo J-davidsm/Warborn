@@ -3,6 +3,7 @@
 
 // Heartbeat system to detect disconnections
 function startHeartbeat() {
+  if (typeof OnlineMatch !== "undefined" && OnlineMatch.active) return;
   // Only start heartbeat for human opponents
   if (opponentType === 'AI') {
     console.log('Skipping heartbeat - playing against AI');

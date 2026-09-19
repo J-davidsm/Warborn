@@ -310,6 +310,7 @@ function moraleCheck(u){
 
 // ---------- Turn ----------
 function endTurn() {
+  if (typeof OnlineMatch !== "undefined" && !OnlineMatch.canAct()) return;
   console.log('endTurn called. currentTeam before switch:', currentTeam, 'opponentType:', opponentType);
   
   // Update communication lockouts (reduce remaining turns)

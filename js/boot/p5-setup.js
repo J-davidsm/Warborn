@@ -310,6 +310,7 @@ function setup(){
 
 // Handle messages from parent
 window.addEventListener('message',(ev)=>{
+  if (typeof OnlineMatch !== 'undefined' && OnlineMatch.active) return;
   const msg = ev.data||{};
   if(msg.type==='setRole'){
     // role: 'P1' or 'P2', opponent: 'AI'|'HUMAN'

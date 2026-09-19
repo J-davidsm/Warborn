@@ -38,6 +38,7 @@ const ACTION_DEBOUNCE_MS = 150; // Minimum time between actions
 const SAME_TILE_DEBOUNCE_MS = 300; // Extra protection for same tile clicks
 
 function isMenuBlockingGameInput() {
+  if (typeof OnlineMatch !== "undefined" && OnlineMatch.blocksMapInput()) return true;
   const mainMenu = document.getElementById('mainMenu');
   const endScreen = document.getElementById('endScreen');
   return Date.now() < gameInputBlockedUntil ||
@@ -126,6 +127,7 @@ function mouseClicked(){
 }
 // (editor click handler with placement exists earlier in the file)
 function handleGridClick(c,r){
+  if (typeof OnlineMatch !== "undefined" && !OnlineMatch.canAct()) return;
   console.log('DEBUG: handleGridClick called - pos:', c, r, 'currentTeam:', currentTeam, 'opponentType:', opponentType, 'gameMode:', gameMode);
   
   if(gameOver) {

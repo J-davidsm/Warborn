@@ -674,3 +674,14 @@ footer {
 }
 
 .web-menu-help { color: #d3d8df; max-width: 34rem; margin: 24px auto 0; text-align: center; font: 15px/1.6 system-ui, sans-serif; text-shadow: 0 2px 5px #000; }
+
+[hidden] { display: none !important; }
+.lobby-overlay { position: fixed; inset: 0; z-index: 30000; background: rgba(6,12,20,.94); overflow: auto; padding: 32px 16px; box-sizing: border-box; }
+.lobby-card { box-sizing: border-box; max-width: 620px; margin: auto; padding: 28px; background: #17232d; color: #e9eee9; border: 1px solid #627572; border-radius: 18px; box-shadow: 0 24px 90px #0008; font: 15px/1.5 system-ui,sans-serif; }
+.lobby-card h2 { font-size: 30px; margin: 4px 0 10px; }.lobby-kicker { color: #efcc7b; letter-spacing: .14em; font-size: 12px; }
+.lobby-card label { display: block; margin-top: 12px; }.lobby-card input { padding: 10px; background: #0c1720; color: white; border: 1px solid #617474; border-radius: 8px; max-width: 100%; box-sizing: border-box; }
+.lobby-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0; }.lobby-actions button { padding: 10px 16px; }.lobby-card button:disabled { opacity: .4; cursor: default; }
+.lobby-code { margin-top: 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }.lobby-code strong { font: bold 23px monospace; color: #f4d589; }
+#lobbyPlayers { padding: 0; list-style: none; }#lobbyPlayers li { padding: 12px; margin: 8px 0; border: 1px solid #3f5454; border-radius: 8px; }#lobbyStatus { color: #a8d9d3; min-height: 24px; }.lobby-note { color: #a9b5be; font-size: 12px; }
+#onlineMatchBar { position: fixed; left: 12px; bottom: 12px; z-index: 20000; background: #132630ed; color: #f6dda2; padding: 12px; border-radius: 9px; max-width: calc(100vw - 48px); font: 13px system-ui,sans-serif; }#onlineMatchBar button { margin-left: 12px; }
+.online-match #editorModeBtn,.online-match #restartBtn,.online-match #levelNameInput,.online-match #gameModeSelect,.online-match #aiPlayerControls,.online-match #learningAIControls,.online-match #onlineMultiplayerControls,.online-match #campaignControls,.online-match #mapDiplomacyButton,.online-match #diplomacySection,.online-match #convertTeamsBtn { display: none !important; }

@@ -260,6 +260,7 @@ function getWinner(){
   return null; // No winner yet - multiple teams still alive
 }
 function checkEndGame(){
+  if (typeof OnlineMatch !== "undefined" && OnlineMatch.playing) { OnlineMatch.finish(); return; }
   if (gameOver && endScreenShown) return;
   
   const result = evaluateVictoryCondition();

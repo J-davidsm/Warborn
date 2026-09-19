@@ -31,3 +31,10 @@ const bridges=[
  angleTest('isolated bridge stable fallback',true,[],0)
 ];
 console.log(JSON.stringify({assetReferences:sources.length,variants:6,adjacentPairs:'no repeats on 50x50',bridges},null,2));
+
+const generated=require('../js/net/fair-map.js').generate('crossing');
+const crossingAngles=[];
+generated.terrain.forEach((t,i)=>{if(t==='BRIDGE')crossingAngles.push(ctx.terrainV2BridgeAngle(i%20,Math.floor(i/20),20,16,true,generated.terrain)*180/Math.PI);});
+assert.equal(new Set(crossingAngles).size,1);
+assert(crossingAngles.every(angle=>Math.abs(Math.sin(angle*Math.PI/180))<.27),'generated bridges cross the north-south river');
+console.log('Connected generated bridges share an across-river orientation.');

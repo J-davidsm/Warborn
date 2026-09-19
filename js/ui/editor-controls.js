@@ -23,7 +23,7 @@ function initializeResourcesForActiveTeams() {
 }
 
 function calculateTurnOrder() {
-  turnOrder = getActiveTeams();
+  turnOrder = typeof OnlineMatch !== 'undefined' && OnlineMatch.playing ? [...OnlineMatch.turnOrder] : getActiveTeams();
   // Ensure currentTeam is in the turn order
   if (!turnOrder.includes(currentTeam)) {
     currentTeam = turnOrder[0]; // Reset to first team if current team is invalid

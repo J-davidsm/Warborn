@@ -104,6 +104,33 @@ function terrainV2BridgeAngle(col, row, cols, rows, hex, values, parity = 0) {
   const position = (c, r) => hex
     ? {x: 1.5 * c, y: Math.sqrt(3) * (r + 0.5 * ((c - parity) & 1))}
     : {x: 2 * c, y: 2 * r};
+  // Treat a connected bridge crossing as one structure when finding the
+  // channel direction, so adjoining bridge tiles do not point different ways.
+  const group = [[col, row]], seen = new Set([row * cols + col]);
+  for (let i = 0; i < group.length && i < 100; i++) {
+    const [c, r] = group[i];
+    const dirs = !hex ? [[1,0],[-1,0],[0,1],[0,-1]] : ((c-parity)&1)
+      ? [[1,1],[1,0],[0,-1],[-1,0],[-1,1],[0,1]]
+      : [[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[0,1]];
+    for (const [dc,dr] of dirs) {
+      const x=c+dc,y=r+dr,k=y*cols+x;
+      if(x<0||x>=cols||y<0||y>=rows||seen.has(k)||terrainV2Type(values[k])!=='BRIDGE')continue;
+      seen.add(k);group.push([x,y]);
+    }
+  }
+  if (group.length > 1) {
+    const points=group.map(([c,r])=>position(c,r));
+    const cx=points.reduce((sum,p)=>sum+p.x,0)/points.length,cy=points.reduce((sum,p)=>sum+p.y,0)/points.length;
+    let xx=0,xy=0,yy=0;
+    const left=Math.max(0,Math.min(...group.map(p=>p[0]))-3),right=Math.min(cols-1,Math.max(...group.map(p=>p[0]))+3);
+    const top=Math.max(0,Math.min(...group.map(p=>p[1]))-3),bottom=Math.min(rows-1,Math.max(...group.map(p=>p[1]))+3);
+    for(let r=top;r<=bottom;r++)for(let c=left;c<=right;c++){
+      if(terrainV2Type(values[r*cols+c])!=='WATER')continue;
+      const p=position(c,r),dx=p.x-cx,dy=p.y-cy,w=1/Math.max(1,dx*dx+dy*dy);
+      xx+=dx*dx*w;xy+=dx*dy*w;yy+=dy*dy*w;
+    }
+    if(xx+yy>0)return Math.round((0.5*Math.atan2(2*xy,xx-yy)+Math.PI/2)/(Math.PI/12))*Math.PI/12;
+  }
   const center = position(col, row);
   let xx = 0, xy = 0, yy = 0, total = 0;
   for (let r = Math.max(0, row - 2); r <= Math.min(rows - 1, row + 2); r++) {
