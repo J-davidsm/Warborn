@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Warborn — Turn-Based Strategy</title>
+  <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/p5.min.js"></script>
+</head>
+<body>
+  <div id="mainMenu">
+    <div id="mainMenuShade"></div>
+    <div id="mainMenuContent">
+      <h1 id="warbornTitle">WARBORN</h1>
+      <div id="mainMenuActions">
+        <button id="menuPlayBtn" type="button">Play</button>
+        <button id="menuCampaignBtn" type="button">Campaign</button>
+      </div>
+      <p class="web-menu-help">Select a unit, choose where to move, then End Turn.<br>For larger battles, open Campaign and Generate Scenario.</p>
+    </div>
+  </div>
+
+  <div id="campaignPage" aria-live="polite">
+    <div id="campaignPageShade"></div>
+    <div id="campaignPageContent">
+      <div id="campaignPageHeader">
+        <div>
+          <div class="campaign-kicker">Campaign Builder</div>
+          <h2>Forge Your Warpath</h2>
+        </div>
+        <button id="campaignBackBtn" type="button">Back To Menu</button>
+      </div>
+      <div id="campaignPageToolbar">
+        <label class="campaign-name-label" for="campaignNameInput">Campaign Title</label>
+        <input id="campaignNameInput" type="text" value="Default Campaign" />
+        <button type="button" onclick="createNewCampaign()">New</button>
+        <button type="button" onclick="addScenario()">Add Scenario</button>
+        <label class="campaign-name-label" for="scenarioGeneratorDifficulty">Difficulty</label>
+        <select id="scenarioGeneratorDifficulty">
+          <option value="Easy">Easy</option>
+          <option value="Standard" selected>Standard</option>
+          <option value="Hard">Hard</option>
+          <option value="Brutal">Brutal</option>
+        </select>
+        <label class="campaign-name-label" for="scenarioGeneratorAI">AIs</label>
+        <select id="scenarioGeneratorAI">
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+        <input id="scenarioGeneratorCols" type="number" min="8" max="50" value="16" title="Map columns" />
+        <input id="scenarioGeneratorRows" type="number" min="8" max="50" value="16" title="Map rows" />
+        <button type="button" onclick="generateScenarioFromControls()">Generate Scenario</button>
+        <button type="button" onclick="saveCampaign()">Save</button>
+        <button type="button" onclick="loadCampaign()">Load</button>
+        <button type="button" onclick="importCampaign()">Import</button>
+        <button type="button" onclick="exportCampaign()">Export</button>
+        <button type="button" class="campaign-start-btn" onclick="startCampaign()">Start Campaign</button>
+      </div>
+      <div id="campaignPageSummary"></div>
+      <div id="scenariosList"></div>
+    </div>
+  </div>
+
+  <div id="campaignEditorModal"></div>
+  <div id="advancedScenarioModal">
+    <div id="advancedScenarioPanel">
+      <div id="advancedScenarioHeader">
+        <h3 id="advancedScenarioTitle">Advanced Editor</h3>
+        <button type="button" onclick="closeAdvancedScenarioEditor()">Close</button>
+      </div>
+      <div id="advancedScenarioContent"></div>
+    </div>
+  </div>
+
+  <div id="endScreen" aria-live="polite">
+    <div id="endScreenShade"></div>
+    <div id="endScreenContent">
+      <h2 id="endScreenTitle">Victory</h2>
+      <p id="endScreenExplanation"></p>
+      <div id="endScreenActions">
+        <button id="continueCampaignBtn" type="button">Continue Campaign</button>
+        <button id="replayScenarioBtn" type="button">Replay Scenario</button>
+        <button id="backToMenuBtn" type="button">Back To Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Black background layer to prevent UI elements from appearing anywhere on screen -->
+  <div id="gameBackground" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 1000; pointer-events: none;"></div>
+  
+  <div id="container">
+    <div id="game">
+      <!-- Diplomacy Button Overlay -->
+      <div id="mapDiplomacyButton" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5000; display: none;">
+        <button onclick="openDiplomacyNegotiation()" style="padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.3); position: relative;">
+          🤝 Diplomacy
+          <div id="notificationBubble" style="position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: bold; display: none; align-items: center; justify-content: center;">0</div>
+        </button>
+      </div>
+    </div>
+    
+    <div id="panel">
+      <div id="waitingBanner" style="display:none;background:#122; padding:8px;border-radius:6px;margin-bottom:8px;color:#9fd;">Waiting for other player to join...</div>
+      <div id="connectionStatus" style="display:none;font-size:11px;padding:4px 8px;border-radius:4px;margin-bottom:6px;text-align:center;background:rgba(0,255,0,0.1);">Connected</div>
+      <h1>Warborn</h1>
+      
+      <!-- Game Mode Selection -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <div class="info">Game Mode:</div>
+        <select id="gameModeSelect" style="padding:4px 8px;border-radius:6px;background:#2a3440;color:#ccc;border:1px solid #444;">
+          <option value="vs-ai">vs AI</option>
+          <option value="local-2p">Local 2-Player</option>
+          
+          <option value="learning-ai">Learning AI Observer</option>
+          <option value="campaign">Campaign Mode</option>
+        </select>
+      </div>
+      
+      <!-- Campaign Controls -->
+      <div id="campaignControls" style="display:none !important;margin-bottom:8px;padding:8px;background:rgba(255,165,0,0.1);border-radius:6px;visibility:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <label style="color:#ffb347;font-weight:600;font-size:12px;">📜 Campaign:</label>
+          <button id="editCampaignBtn" class="small" onclick="openCampaignEditor()">Edit Campaign</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div class="info" style="font-size:11px;">Scenario:</div>
+          <span id="currentScenarioDisplay" style="font-weight:bold;color:#ffb347;">1 / 3</span>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button id="prevScenarioBtn" class="small" onclick="changeScenario(-1)" style="font-size:10px;padding:4px 6px;">◀ Prev</button>
+          <span id="scenarioNameDisplay" style="flex:1;text-align:center;font-size:11px;color:#ccc;">Tutorial: First Steps</span>
+          <button id="nextScenarioBtn" class="small" onclick="changeScenario(1)" style="font-size:10px;padding:4px 6px;">Next ▶</button>
+        </div>
+      </div>
+      
+      <!-- AI Player Count Controls -->
+      <div id="aiPlayerControls" style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <div class="info">AI Players:</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="decreaseAIBtn" class="small" onclick="updateAICount(-1)" style="width:24px;height:24px;padding:0;font-size:14px;">-</button>
+          <span id="aiCountDisplay" style="min-width:20px;text-align:center;font-weight:bold;">1</span>
+          <button id="increaseAIBtn" class="small" onclick="updateAICount(1)" style="width:24px;height:24px;padding:0;font-size:14px;">+</button>
+          <span style="font-size:11px;color:#888;">(1-4)</span>
+        </div>
+      </div>
+
+      <!-- Online Multiplayer Controls -->
+      <div id="onlineMultiplayerControls" style="display:none;margin-bottom:8px;padding:8px;background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.22);border-radius:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+          <label style="color:#4ecdc4;font-weight:600;font-size:12px;">Online Relay</label>
+          <span id="onlineRelayStatus" style="font-size:11px;color:#888;">Offline</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input id="relayUrlInput" value="ws://127.0.0.1:8787" title="Relay URL" style="flex:1;min-width:150px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:#121922;color:#e6eef6;font-size:11px;" />
+          <input id="onlineRoomIdInput" placeholder="Room code" title="Room code" style="width:100px;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:#121922;color:#e6eef6;font-size:11px;text-transform:uppercase;" />
+          <button id="hostOnlineGameBtn" class="small" type="button">Host</button>
+          <button id="joinOnlineGameBtn" class="small" type="button">Join</button>
+          <button id="leaveOnlineGameBtn" class="small" type="button">Leave</button>
+        </div>
+        <div id="onlineRoomCode" style="font-size:11px;color:#d7c287;margin-top:6px;">No room yet</div>
+      </div>
+      
+      <!-- Learning AI Controls -->
+      <div id="learningAIControls" style="display:none;margin-bottom:8px;padding:8px;background:rgba(100,150,255,0.1);border-radius:6px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+          <label style="color:#6bb6ff;font-weight:600;font-size:12px;">🧠 Learning AI:</label>
+          <button id="enableLearningBtn" class="small" onclick="toggleLearningAI()">Enable Learning</button>
+          <span id="learningStatus" style="font-size:11px;color:#888;">Disabled</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+          <button class="small" onclick="saveLearningAIData()" style="font-size:10px;padding:2px 6px;">💾 Save</button>
+          <button class="small" onclick="loadLearningAIData(); updateLearningStats();" style="font-size:10px;padding:2px 6px;">📁 Load</button>
+          <button class="small" onclick="restoreFromBackup()" style="font-size:10px;padding:2px 6px;">🔄 Backup</button>
+          <button class="small" onclick="exportLearningAIData()" style="font-size:10px;padding:2px 6px;">📤 Export</button>
+          <button class="small" onclick="importLearningAIData()" style="font-size:10px;padding:2px 6px;">📥 Import</button>
+          <button class="small" onclick="clearLearningAIData()" style="font-size:10px;padding:2px 6px;background:#ff6b6b;">🗑️ Clear</button>
+        </div>
+        <div style="font-size:10px;color:#999;">The AI automatically observes human gameplay and learns strategies. AI vs AI games are not recorded.</div>
+        <div id="learningStats" style="font-size:10px;color:#6bb6ff;margin-top:4px;">Games recorded: 0 | Patterns learned: 0</div>
+        <div id="learningActivity" style="font-size:10px;color:#4ecdc4;margin-top:2px;display:none;">🧠 AI is applying learned patterns...</div>
+      </div>
+      
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="info">Turn: <span id="turnLabel">PLAYER</span></div>
+        <div class="info">Resources: <span id="resourceLabel">P:0 • AI:0</span></div>
+        <div id="learningIndicator" class="info" style="color:#6bb6ff;font-size:11px;display:none;">🧠 Learning</div>
+      </div>
+      
+      <div id="selectedInfo" class="unit-card">
+        <div>
+          <div id="selName">No unit selected</div>
+          <div class="info" id="selDetails">Click a friendly unit to select it.</div>
+        </div>
+        <div style="width:86px">
+          <div class="hp-bar" style="margin-bottom:6px;"><div id="selHP" class="bar-fill" style="width:0%"></div></div>
+          <div style="font-size:11px;color:var(--muted);text-align:right" id="selNums">HP —</div>
+        </div>
+      </div>
+      
+      <div class="row" style="flex-wrap:wrap;gap:8px;">
+        <button id="editorModeBtn" class="small">Editor Mode</button>
+        <button id="endTurnBtn" class="btn">End Turn</button>
+        <button id="restartBtn" class="small">Restart</button>
+        <button id="convertTeamsBtn" class="small" style="display:none;">Convert AI→P2</button>
+        <button id="saveLevelBtn" class="small" style="display:none;">Quick Save</button>
+        <button id="loadLevelBtn" class="small" style="display:none;">Load</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="levelNameInput" placeholder="Level name" style="padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit;min-width:120px;" />
+          <button id="saveNamedLevelBtn" class="small" style="display:none;">Save Named</button>
+        </div>
+      </div>
+      
+      <div id="zoomControls" class="row" style="gap:8px;margin-top:8px;">
+        <button id="zoomInBtn" class="small" title="Zoom In (+)">🔍+</button>
+        <button id="zoomOutBtn" class="small" title="Zoom Out (-)">🔍-</button>
+        <button id="zoomResetBtn" class="small" title="Reset Zoom (Z)">⌂</button>
+        <div class="info" style="font-size:10px;">📍 Scroll over the map to zoom • Drag the map to pan • Z resets<br>🏘️ Shift+Click owned settlement to upgrade</div>
+      </div>
+      
+      <div id="gameControls" style="margin-top:8px;">
+        <div style="font-weight:700;margin-bottom:6px;">Controls</div>
+        <div class="info">Click a friendly unit → tiles highlight → click a tile to move or an enemy to attack.</div>
+      </div>
+      
+      <div id="savedLevelsPanel" style="margin-top:10px; display:none;">
+        <!-- Saved Levels Section -->
+        <div class="collapsible-header" onclick="toggleCollapsible('savedLevels')">
+          <div style="font-weight:700;">Saved Levels</div>
+          <div class="collapsible-arrow" id="savedLevelsArrow">▼</div>
+        </div>
+        <div class="collapsible-content" id="savedLevelsContent" style="max-height: 200px;">
+          <div id="savedLevelsList" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow:auto;margin-top:6px;"></div>
+        </div>
+      </div>
+
+      <div id="editorControls" style="margin-top:8px; display:none;">
+        <div style="font-weight:700;margin-bottom:6px;">Editor Controls</div>
+        
+        <!-- Map Size Section -->
+        <div class="collapsible-header" onclick="toggleCollapsible('mapSize')">
+          <div class="info">Map Size</div>
+          <div class="collapsible-arrow" id="mapSizeArrow">▼</div>
+        </div>
+        <div class="collapsible-content" id="mapSizeContent" style="max-height: 200px;">
+          <div class="row" style="margin:8px 0;">
+            <button id="decSizeBtn" class="small">-</button>
+            <div id="mapSizeLabel" style="flex:1;text-align:center;">16 x 16</div>
+            <button id="incSizeBtn" class="small">+</button>
+          </div>
+        </div>
+        
+        <!-- Settlements Section -->
+        <div class="collapsible-header" onclick="toggleCollapsible('settlements')">
+          <div class="info">Settlements</div>
+          <div class="collapsible-arrow" id="settlementsArrow">▼</div>
+        </div>
+        <div class="collapsible-content" id="settlementsContent" style="max-height: 200px;">
+          <div class="settlement-palette" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
+            <button id="hamletBtn" class="small">Hamlet 🏡</button>
+            <button id="villageBtn" class="small">Village 🏘️</button>
+            <button id="cityBtn" class="small">City 🏰</button>
+            <button id="portBtn" class="small">Port ⚓</button>
+            <button id="clearSettlementBtn" class="small">Clear</button>
+          </div>
+        </div>
+
+        <!-- Victory Conditions Section -->
+        <div class="collapsible-header" onclick="toggleCollapsible('victory')" style="margin-top:16px;">
+          <div class="info">Victory Conditions</div>
+          <div class="collapsible-arrow" id="victoryArrow">▼</div>
+        </div>
+        <div class="collapsible-content" id="victoryContent" style="max-height: 520px;">
+          <div id="victoryConditionEditor">
+            <label class="editor-label" for="victoryConditionType">End Condition</label>
+            <select id="victoryConditionType" class="editor-select">
+              <option value="ANNIHILATE_ALL">Annihilate all enemies and take settlements</option>
+              <option value="ANNIHILATE_TEAM">Annihilate one color and take settlements</option>
+              <option value="HOLD_TILE">Hold a settlement or square</option>
+              <option value="SURVIVE_TURNS">Survive until a turn number</option>
+              <option value="KILL_UNIT_LIMIT">Kill a specified enemy unit in time</option>
+            </select>
+
+            <div id="victoryTargetTeamRow" class="victory-config-row">
+              <label class="editor-label" for="victoryTargetTeam">Target Color</label>
+              <select id="victoryTargetTeam" class="editor-select"></select>
+            </div>
+
+            <div id="victoryHoldRow" class="victory-config-row">
+              <label class="editor-label">Tile To Hold</label>
+              <div class="compact-input-row">
+                <input id="victoryHoldCol" class="editor-input" type="number" min="0" value="0" />
+                <input id="victoryHoldRowInput" class="editor-input" type="number" min="0" value="0" />
+                <input id="victoryHoldTurns" class="editor-input" type="number" min="1" value="3" />
+              </div>
+              <div class="editor-hint">Column, row, and number of consecutive turns.</div>
+            </div>
+
+            <div id="victorySurviveRow" class="victory-config-row">
+              <label class="editor-label" for="victorySurviveTurns">Turns To Survive</label>
+              <input id="victorySurviveTurns" class="editor-input" type="number" min="1" value="10" />
+            </div>
+
+            <div id="victoryKillUnitRow" class="victory-config-row">
+              <label class="editor-label" for="victoryTargetUnit">Enemy Unit To Kill</label>
+              <select id="victoryTargetUnit" class="editor-select"></select>
+              <label class="editor-label" for="victoryKillTurns">Turn Limit</label>
+              <input id="victoryKillTurns" class="editor-input" type="number" min="1" value="10" />
+            </div>
+          </div>
+        </div>
+        
+        <!-- Terrain Section -->
+        <div class="collapsible-header" onclick="toggleCollapsible('terrain')" style="margin-top:16px;">
+          <div class="info">Terrain</div>
+          <div class="collapsible-arrow" id="terrainArrow">▼</div>
+        </div>
+        <div class="collapsible-content" id="terrainContent" style="max-height: 200px;">
+          <div class="terrain-palette" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
+            <button id="woodsBtn" class="small">Woods 🌲</button>
+            <button id="mountainBtn" class="small">Mountain ⛰️</button>
+            <button id="swampBtn" class="small">Swamp 🐸</button>
+            <button id="desertBtn" class="small">Desert 🏜️</button>
+            <button id="waterBtn" class="small">Water 🌊</button>
+            <button id="fountainBtn" class="small">Fountain ⛲</button>
+            <button id="farmBtn" class="small">Farm 🌾</button>
+            <button id="bridgeBtn" class="small">Bridge 🌉</button>
+            <button id="clearTerrainBtn" class="small">Clear</button>
+          </div>
+        </div>
+        
+        <!-- Units Section -->
+        <div class="collapsible-header" onclick="toggleCollapsible('units')" style="margin-top:16px;">
+          <div class="info">Units to Place</div>
+          <div class="collapsible-arrow" id="unitsArrow">▼</div>
+        </div>
+        <div class="collapsible-content" id="unitsContent" style="max-height: 400px;">
+          <div style="display:flex;align-items:center;gap:12px;margin:8px 0;">
+            <div style="font-size:12px;color:var(--muted)">Team:</div>
+            <select id="teamSelect" style="padding:4px 8px;border-radius:6px;">
+              <option value="PLAYER">Player</option>
+              <option value="PLAYER2">Player 2</option>
+              <option value="AI">AI</option>
+            </select>
+          </div>
+          <div class="unit-palette" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;">
+            <button id="soldierBtn" class="small">⚔️ Soldier</button>
+            <button id="archerBtn" class="small">🏹 Archer</button>
+            <button id="knightBtn" class="small">🛡️ Knight</button>
+            <button id="catapultBtn" class="small">☄️ Catapult</button>
+            <button id="spearmanBtn" class="small">🔱 Spearman</button>
+            <button id="swordsmanBtn" class="small">🗡️ Swordsman</button>
+            <button id="assassinBtn" class="small">🥷 Assassin</button>
+            <button id="dragonBtn" class="small">🐉 Dragon</button>
+            <button id="clericBtn" class="small">⛪ Cleric</button>
+            <button id="stockadeBtn" class="small">🚧 Stockade</button>
+            <button id="castleBtn" class="small">🏰 Castle</button>
+            <button id="heavyFortressBtn" class="small">🏗️ Heavy Fortress</button>
+          </div>
+          <div id="placingLabel" class="info" style="margin-top:8px;">Selected: None</div>
+        </div>
+      </div>
+      
+      <!-- Diplomacy Section (Available during gameplay) -->
+      <div id="diplomacySection" style="margin-top:8px;">
+        <div class="collapsible-header" onclick="toggleCollapsible('diplomacy')">
+          <div class="info">Diplomacy</div>
+          <div class="collapsible-arrow" id="diplomacyArrow">▼</div>
+        </div>
+        <div class="collapsible-content collapsed" id="diplomacyContent" style="max-height: 300px; overflow-y: auto;">
+          <div id="diplomacyPanel" style="padding: 8px; font-size: 12px;">
+            <div style="color: var(--muted); margin-bottom: 8px;">Diplomatic Relations</div>
+            <div id="startingDiplomacyEditor" style="display:none;"></div>
+            <div id="trustMatrix"></div>
+            <div style="color: var(--muted); margin: 12px 0 8px 0;">Reputation</div>
+            <div id="reputationList"></div>
+            <div style="color: var(--muted); margin: 12px 0 8px 0;">Active Treaties</div>
+            <div id="treatyList"></div>
+          </div>
+        </div>
+      </div>
+      
+      <footer class="center">Built with p5.js • Demo AI • <span style="color:var(--muted)">Have fun!</span></footer>
+    </div>
+  </div>
+
+  <!-- Modals will be included here -->
+  <!-- All the diplomacy, campaign editor and other modal content would continue here but keeping it brief for file size -->
+
+  <script src="js/core/state-and-grid.js"></script>
+  <script src="js/audio/soundManager.js"></script>
+  <script src="js/net/connection-state.js"></script>
+  <script src="js/net/websocket-client.js"></script>
+  <script src="js/systems/economy-research.js"></script>
+  <script src="js/systems/diplomacy-data.js"></script>
+  <script src="js/ui/popups-and-assets.js"></script>
+  <script src="js/core/level-state.js"></script>
+  <script src="js/core/game-setup.js"></script>
+  <script src="js/systems/campaign.js"></script>
+  <script src="js/systems/settlements.js"></script>
+  <script src="js/boot/p5-setup.js"></script>
+  <script src="js/systems/save-editor-teams.js"></script>
+  <script src="js/systems/learning-ai.js"></script>
+  <script src="js/systems/diplomacy.js"></script>
+  <script src="js/ui/editor-controls.js"></script>
+  <script src="js/rendering/renderer.js"></script>
+  <script src="js/rendering/terrain-blend.js"></script>
+  <script src="js/input/mouse-actions.js"></script>
+  <script src="js/systems/mechanics.js"></script>
+  <script src="js/data/units-and-build.js"></script>
+  <script src="js/input/global-events.js"></script>
+  <script src="js/systems/combat-turns.js"></script>
+  <script src="js/systems/ai-turn.js"></script>
+  <script src="js/ui/endgame-and-ui.js"></script>
+  <script src="js/net/multiplayer-sync.js"></script>
+</body>
+</html>
