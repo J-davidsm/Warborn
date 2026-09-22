@@ -68,7 +68,7 @@ const OnlineMatch = (() => {
     conn.on('error',()=>{if(connection===conn)failure('Connection interrupted. Leave and create a new room.');});
   }
   function snapshot() {
-    return copy({theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
+    return copy({effects:ActionEffects.snapshot(),theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
       research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
   }
   function valid(s) {
@@ -79,6 +79,7 @@ const OnlineMatch = (() => {
   function apply(s) {
     if(!valid(s))return false;
     applying=true;currentTheme=s.theme;
+    ActionEffects.receive(s.effects);
     COLS=s.cols;ROWS=s.rows;mapSize={cols:COLS,rows:ROWS};useHexGrid=true;
     units=copy(s.units);terrain=copy(s.terrain);settlements=copy(s.settlements);resources=copy(s.resources);startingResources=copy(s.startingResources);
     currentTeam=s.currentTeam;turnNumber=s.turnNumber;currentTurnIndex=s.currentTurnIndex;turnOrder=copy(s.turnOrder);
@@ -96,6 +97,7 @@ const OnlineMatch = (() => {
     clampPanToMap();
   }
   function configure() {
+    ActionEffects.reset();
     opponentType='HUMAN';gameMode='online-2p';myRole=host?'P1':'P2';gameId=code;isConnectedToHub=true;
     stopHeartbeat();window.hexPlayers={P1:{connected:true},P2:{connected:true}};modalManuallyClosed=true;campaignMode.active=false;isEditorMode=false;LEARNING_AI.enabled=false;
     $('mainMenu').classList.add('hidden');$('campaignPage').classList.remove('visible');$('onlineLobby').hidden=true;

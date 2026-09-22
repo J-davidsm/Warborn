@@ -2,6 +2,7 @@
 // Section: js/core/game-setup.js
 
 function setupGame(){
+  ActionEffects.reset();
   units=[];
   
   // Initialize turn tracking

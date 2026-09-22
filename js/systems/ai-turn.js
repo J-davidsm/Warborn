@@ -377,6 +377,7 @@ async function aiTakeTurn(aiTeam = 'AI') {
           
           if (bestEvacSpot) {
             console.log(`AI STRATEGIC EVACUATION: ${u.name} leaving ${currentSettlement.type} at [${u.col},${u.row}] → [${bestEvacSpot.col},${bestEvacSpot.row}] (score: ${bestEvacScore}) - Settlement freed for building, ${immediateThreats} immediate threats`);
+            ActionEffects.move(u,bestEvacSpot.col,bestEvacSpot.row);
             u.col = bestEvacSpot.col;
             u.row = bestEvacSpot.row;
             checkSettlementCaptureAfterMove(u, u.col, u.row); // Claim new position if it's a settlement
@@ -397,6 +398,7 @@ async function aiTakeTurn(aiTeam = 'AI') {
       const retreatSpot = findSafeRetreatPosition(u, enemies, friendlyUnits);
       if (retreatSpot && manhattan(u.col, u.row, retreatSpot.col, retreatSpot.row) <= u.move) {
         console.log(`AI unit ${u.name} executing strategic retreat to [${retreatSpot.col}, ${retreatSpot.row}] (Safety score: ${retreatSpot.safetyScore})`);
+        ActionEffects.move(u,retreatSpot.col,retreatSpot.row);
         u.col = retreatSpot.col;
         u.row = retreatSpot.row;
         checkSettlementCaptureAfterMove(u, u.col, u.row);
@@ -430,6 +432,7 @@ async function aiTakeTurn(aiTeam = 'AI') {
         
         if (shouldClaim) {
           console.log(`AI unit ${u.name} claiming settlement at [${claimableSettlement.col}, ${claimableSettlement.row}] (was owned by: ${claimableSettlement.settlement.owner || 'neutral'})`);
+          ActionEffects.move(u,claimableSettlement.col,claimableSettlement.row);
           u.col = claimableSettlement.col;
           u.row = claimableSettlement.row;
           checkSettlementCaptureAfterMove(u, u.col, u.row);
@@ -482,6 +485,7 @@ async function aiTakeTurn(aiTeam = 'AI') {
             const effectiveMove = isWarTarget ? u.move + 1 : u.move;
             
             if (pursuitMove && manhattan(u.col, u.row, pursuitMove.col, pursuitMove.row) <= effectiveMove) {
+              ActionEffects.move(u,pursuitMove.col,pursuitMove.row);
               u.col = pursuitMove.col;
               u.row = pursuitMove.row;
               checkSettlementCaptureAfterMove(u, u.col, u.row);
@@ -499,6 +503,7 @@ async function aiTakeTurn(aiTeam = 'AI') {
               // Fallback: tactical move if aggressive pursuit fails
               const tacticalMove = findBestTerrainMove(u, enemies);
               if (tacticalMove && manhattan(u.col, u.row, tacticalMove.col, tacticalMove.row) <= u.move) {
+                ActionEffects.move(u,tacticalMove.col,tacticalMove.row);
                 u.col = tacticalMove.col;
                 u.row = tacticalMove.row;
                 checkSettlementCaptureAfterMove(u, u.col, u.row);
@@ -518,6 +523,7 @@ async function aiTakeTurn(aiTeam = 'AI') {
           // Weak units use defensive tactical moves
           const tacticalMove = findBestTerrainMove(u, enemies);
           if (tacticalMove && manhattan(u.col, u.row, tacticalMove.col, tacticalMove.row) <= u.move) {
+            ActionEffects.move(u,tacticalMove.col,tacticalMove.row);
             u.col = tacticalMove.col;
             u.row = tacticalMove.row;
             checkSettlementCaptureAfterMove(u, u.col, u.row);
@@ -539,6 +545,7 @@ async function aiTakeTurn(aiTeam = 'AI') {
           const formationMove = findFormationMove(u, friendlyUnits, aiStrategicAnalysis);
           
           if (formationMove && manhattan(u.col, u.row, formationMove.col, formationMove.row) <= u.move) {
+            ActionEffects.move(u,formationMove.col,formationMove.row);
             u.col = formationMove.col;
             u.row = formationMove.row;
             checkSettlementCaptureAfterMove(u, u.col, u.row);
@@ -555,6 +562,7 @@ async function aiTakeTurn(aiTeam = 'AI') {
             // Fourth priority: Aggressive advance toward nearest enemy
             const advanceMove = findBestAdvanceMove(u, enemies);
             if (advanceMove && manhattan(u.col, u.row, advanceMove.col, advanceMove.row) <= u.move) {
+              ActionEffects.move(u,advanceMove.col,advanceMove.row);
               u.col = advanceMove.col;
               u.row = advanceMove.row;
               checkSettlementCaptureAfterMove(u, u.col, u.row);

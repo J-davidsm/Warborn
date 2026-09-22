@@ -41,6 +41,10 @@ function manhattan(x1, y1, x2, y2) {
  * @returns {boolean} True if a valid path exists within movement range
  */
 function canMoveTo(unit, targetCol, targetRow) {
+  return !!findMovementPath(unit, targetCol, targetRow);
+}
+
+function findMovementPath(unit, targetCol, targetRow) {
   if (!unit || !Number.isInteger(targetCol) || !Number.isInteger(targetRow) ||
       targetCol < 0 || targetCol >= COLS || targetRow < 0 || targetRow >= ROWS) {
     return false;
@@ -93,6 +97,7 @@ function canMoveTo(unit, targetCol, targetRow) {
   // Use breadth-first search to find if there's a clear path
   const queue = [{col: startCol, row: startRow, steps: 0}];
   const visited = new Set();
+  const paths = new Map([[`${startCol},${startRow}`, [{col:startCol,row:startRow}]]]);
   visited.add(`${startCol},${startRow}`);
   
   while (queue.length > 0) {
@@ -100,7 +105,7 @@ function canMoveTo(unit, targetCol, targetRow) {
     
     // If we reached the target, path is clear
     if (col === targetCol && row === targetRow) {
-      return true;
+      return paths.get(`${col},${row}`);
     }
     
     // If we've used all movement, stop exploring this path
@@ -135,6 +140,7 @@ function canMoveTo(unit, targetCol, targetRow) {
       // Check terrain restrictions
       const terrainIdx = newRow * COLS + newCol;
       const terrainType = terrain[terrainIdx];
+      if (unit.isWaterUnit && terrainType !== 'WATER') continue;
       if (terrainType) {
         const terrainData = TERRAIN[terrainType];
         if (terrainData) {
@@ -159,6 +165,7 @@ function canMoveTo(unit, targetCol, targetRow) {
       }
       
       visited.add(key);
+      paths.set(key, [...paths.get(`${col},${row}`), {col:newCol,row:newRow}]);
       queue.push({col: newCol, row: newRow, steps: steps + moveCost});
     }
   }

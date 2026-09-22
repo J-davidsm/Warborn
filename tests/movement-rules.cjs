@@ -20,3 +20,16 @@ p=unit('player',0);const enemy=unit('enemy',1);ctx=game({terrain:['GRASS','GRASS
 assert.equal(ctx.canMoveTo(p,1,0),false,'an occupied enemy tile is an attack target, not a move target');
 assert.equal(ctx.canMoveTo(p,2,0),false,'units cannot pass through enemy units');
 console.log('Land/water restrictions, bridge crossings, and occupied-unit path blocking pass.');
+// A detour must animate along adjacent safe tiles, not straight across water.
+ctx=game({terrain:Array(9).fill(null),units:[p]});ctx.COLS=3;ctx.ROWS=3;p.col=0;p.row=1;p.move=4;ctx.terrain[4]='WATER';
+const route=ctx.findMovementPath(p,2,1);
+assert.equal(route.length,5);assert(route.every(t=>ctx.terrain[t.row*3+t.col]!=='WATER'));
+for(let i=1;i<route.length;i++)assert.equal(Math.abs(route[i].col-route[i-1].col)+Math.abs(route[i].row-route[i-1].row),1);
+ctx.window={};ctx.crypto=require('node:crypto').webcrypto;ctx.performance={now:()=>0};ctx.getTileCenterLocal=(col,row)=>({x:col,y:row});
+vm.runInContext(fs.readFileSync(require.resolve('../js/rendering/action-effects.js'),'utf8'),ctx);
+vm.runInContext('ActionEffects.move(units[0],2,1)',ctx);p.col=2;p.row=1;
+ctx.sampleTime=225;
+const sample=vm.runInContext('ActionEffects.position(units[0],p=>({x:p.col,y:p.row}),sampleTime)',ctx);
+assert.equal(sample.x,(route[1].col+route[2].col)/2);assert.equal(sample.y,(route[1].row+route[2].row)/2);
+ctx.sampleTime=1000;assert.equal(vm.runInContext('ActionEffects.position(units[0],p=>({x:p.col,y:p.row}),sampleTime).x',ctx),2);
+console.log('Movement animation follows the safe detour and finishes at the destination.');

@@ -129,11 +129,7 @@ function attackUnit(a, d) {
   // Create a floating damage popup for visual feedback when damage occurs
   if (dmg > 0) {
     try {
-      if (!window.damagePopups) window.damagePopups = [];
-      const popupCenter = getTileCenterLocal(d.col, d.row);
-      const px = popupCenter.x;
-      const py = popupCenter.y - 6;
-      window.damagePopups.push({ x: px, y: py, text: `-${dmg}`, alpha: 255, fade: 6, dy: 1.2, ttl: 40 });
+      ActionEffects.damage(d.col,d.row,dmg);
     } catch (e) { /* ignore popup errors */ }
   }
   // Assassin special: if attacker is Assassin and target is NOT an Assassin, target morale falls to 0 instantly
@@ -555,6 +551,7 @@ function autoFlee(team) {
     // If we found a valid move, mark it as taken and move the unit
       if (bestMove.col !== u.col || bestMove.row !== u.row) {
       chosenDests.add(`${bestMove.col},${bestMove.row}`);
+      ActionEffects.move(u,bestMove.col,bestMove.row);
       u.col = bestMove.col;
       u.row = bestMove.row;
       checkSettlementCaptureAfterMove(u, u.col, u.row);

@@ -8,7 +8,8 @@ function client(name){
  const ctx={console:{log(){},warn(){}},Peer,URL,URLSearchParams,crypto:require('node:crypto').webcrypto,location:{href:'https://game.test/',search:''},history:{replaceState(){}},navigator:{},document:{getElementById:elem,createElement:()=>({}),body:elem('body'),addEventListener:(n,f)=>handlers[n]=f,querySelector:()=>elem('canvas')},window:{addEventListener(){}},setTimeout:()=>0,clearTimeout(){},setInterval:f=>intervals.push(f),FairMap:require('../js/net/fair-map.js'),
  currentTeam:'PLAYER',COLS:20,ROWS:16,mapSize:{},useHexGrid:true,units:[],terrain:[],settlements:[],resources:{},startingResources:{},researchedUnits:{},diplomacy:{},currentVictoryCondition:{},gameOver:false,turnNumber:1,currentTurnIndex:0,turnOrder:['PLAYER','PLAYER2'],communicationLockouts:{},selectedUnit:null,buildMode:false,buildModeUnitId:null,gameInputBlockedUntil:0,opponentType:'AI',gameMode:'vs-ai',myRole:'P1',gameId:null,isConnectedToHub:false,modalManuallyClosed:false,campaignMode:{},isEditorMode:false,LEARNING_AI:{},pendingUpdates:new Map(),UNIT_TEMPLATES:Object.fromEntries(['Knight','Soldier','Archer','Spearman'].map(n=>[n,{}])),
  stopHeartbeat(){},hideEndScreen(){},switchGameMode(){},closeSpawnMenu(){},updateUI(){},getWinner:()=>null,showEndScreen(){},setupGame(){},calculateTurnOrder(){},normalizeVictoryCondition:x=>x,createDefaultWarDiplomacy:()=>({}),makeUnit:(name,team,col,row,{id})=>({id,name,team,col,row,hp:100,maxHp:100,dmg:20,experience:7,promotionLevel:2}),confirmOptimisticUpdate(id){ctx.pendingUpdates.delete(id);},rollbackOptimisticUpdate(){throw Error('unexpected rollback');}};
- vm.createContext(ctx);vm.runInContext(fs.readFileSync(require.resolve('../js/net/online-lobby.js'),'utf8'),ctx);handlers.DOMContentLoaded();
+ ctx.performance={now:()=>0};ctx.getTileCenterLocal=(col,row)=>({x:col*40,y:row*40});
+ vm.createContext(ctx);vm.runInContext(fs.readFileSync(require.resolve('../js/rendering/action-effects.js'),'utf8'),ctx);vm.runInContext(fs.readFileSync(require.resolve('../js/net/online-lobby.js'),'utf8'),ctx);handlers.DOMContentLoaded();
  return {ctx,els,el:elem,run:s=>vm.runInContext(s,ctx),intervals};
 }
 const h=client('Host'),g=client('Guest');h.el('menuOnlineBtn').onclick();h.el('lobbyCreate').onclick();tick();
@@ -20,12 +21,20 @@ const equal=()=>assert.equal(JSON.stringify(h.ctx.units),JSON.stringify(g.ctx.un
 assert.deepEqual(h.ctx.resources.PLAYER,{food:0,gold:0,materials:0});assert.deepEqual(h.ctx.resources.PLAYER2,{food:0,gold:0,materials:0});
 assert.match(h.el('onlineMatchStatus').textContent,/Highlands|Desert Expanse|Island Chain|Ancient Forest|Flooded Marsh|Open Frontier/);
 let current=h.ctx.currentTeam==='PLAYER'?h:g,other=current===h?g:h;
+function checkEffects(actor,observer,tag) {
+ actor.run(`ActionEffects.receive([{id:'move-${tag}',type:'move',unitId:'p1-0',path:[{col:2,row:7},{col:3,row:7},{col:3,row:8}]},{id:'damage-${tag}',type:'damage',col:4,row:4,amount:23}]);OnlineMatch.publish()`);tick();
+ assert.equal(observer.ctx.window.damagePopups.at(-1).text,'-23');
+ assert.equal(observer.run("ActionEffects.position({id:'p1-0',col:3,row:8},p=>({x:p.col,y:p.row}),75).x"),2.5);
+ const count=actor.ctx.window.damagePopups.length;actor.run('OnlineMatch.publish()');tick();assert.equal(actor.ctx.window.damagePopups.length,count);assert.equal(observer.ctx.window.damagePopups.length,count);
+}
+checkEffects(current,other,'first');
 assert.equal(other.run('OnlineMatch.canAct()'),false);current.ctx.units[0].experience=38;current.ctx.units[0].hp=47;current.run('OnlineMatch.publish()');tick();equal();assert.equal(other.ctx.units[0].experience,38);
 // Older host revisions cannot overwrite newer guest state.
 const hostConn=peers[1].conn.other;
 const startState=hostConn.sent.find(m=>m.type==='start').state;
 hostConn.send({protocol:1,type:'state',state:startState,revision:0});tick();equal(); // stale host state ignored
 current.ctx.currentTeam=current===h?'PLAYER2':'PLAYER';current.ctx.currentTurnIndex=current.ctx.turnOrder.indexOf(current.ctx.currentTeam);current.ctx.turnNumber=3;current.ctx.researchedUnits.PLAYER.add('Archer');current.run('OnlineMatch.publish()');tick();assert.equal(h.ctx.currentTeam,g.ctx.currentTeam);assert.equal(other.ctx.turnNumber,3);assert(other.ctx.researchedUnits.PLAYER.has('Archer'));
+checkEffects(other,current,'second');
 const terrain=JSON.stringify(h.ctx.terrain);h.el('onlineReturnLobby').onclick();tick();assert.equal(g.run('OnlineMatch.playing'),false);assert.equal(g.run('OnlineMatch.canAct()'),false);assert.equal(h.el('lobbyStart').disabled,true);
 h.el('lobbyReady').onclick();g.el('lobbyReady').onclick();tick();h.el('lobbyStart').onclick();tick();assert.notEqual(JSON.stringify(h.ctx.terrain),terrain);equal();
 peers[1].conn.close();tick();assert.equal(h.run('OnlineMatch.canAct()'),false);assert.equal(g.run('OnlineMatch.canAct()'),false);

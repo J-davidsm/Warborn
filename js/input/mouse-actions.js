@@ -189,6 +189,7 @@ function handleGridClick(c,r){
         toRow: r
       });
       
+      ActionEffects.move(selectedUnit,c,r);
       selectedUnit.col = c; selectedUnit.row = r; selectedUnit.hasMoved = true;
       try { SoundManager.playMove(selectedUnit); } catch (e) {}
       
@@ -402,6 +403,7 @@ function handleGridClick(c,r){
       });
       
       console.log('DEBUG: Moving unit from', selectedUnit.col, selectedUnit.row, 'to', c, r);
+      ActionEffects.move(selectedUnit,c,r);
       selectedUnit.col=c; selectedUnit.row=r; selectedUnit.hasMoved=true;
       try { SoundManager.playMove(selectedUnit); } catch (e) {}
       

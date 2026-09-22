@@ -752,6 +752,10 @@ function drawUnits(){
       x = screenX + TILE/2;
       y = screenY + TILE/2;
     }
+    const animated = ActionEffects.position(u, tile => useHexGrid
+      ? hexToPixel(tile.col-cameraX,tile.row-cameraY)
+      : {x:(tile.col-cameraX)*TILE+TILE/2,y:(tile.row-cameraY)*TILE+TILE/2});
+    x=animated.x;y=animated.y;
     // Adjust unit size based on grid type
     const unitScale = useHexGrid ? 0.8 : 1.0; // Make units 20% smaller in hex mode
     const teamColor = getTeamColor(u.team);
