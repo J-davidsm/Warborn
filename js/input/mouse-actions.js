@@ -177,7 +177,7 @@ function handleGridClick(c,r){
   console.log('DEBUG: Settlement interaction check - clicked:', !!clicked, 'settlement:', !!s, 'settlement owner:', s?.owner, 'currentTeam:', currentTeam);
   if(!clicked && s && s.owner === currentTeam){
     // If player has a unit selected that can move to this tile, prefer moving the unit
-    if(selectedUnit && !selectedUnit.hasMoved && manhattan(selectedUnit.col, selectedUnit.row, c, r) <= selectedUnit.move){  
+    if(selectedUnit && !selectedUnit.hasMoved && canMoveTo(selectedUnit, c, r)){
       recordAction(c, r); // Record this as a significant action
       
       // Create optimistic update for unit movement
@@ -385,8 +385,7 @@ function handleGridClick(c,r){
       console.log('Build mode active — movement disabled');
       return;
     }
-    //const canMoveResult = canMoveTo(selectedUnit, c, r);
-    const canMoveResult = true;
+    const canMoveResult = canMoveTo(selectedUnit, c, r);
     console.log('DEBUG: Movement validation - canMoveTo result:', canMoveResult);
     console.log('DEBUG: Settlement at target:', s ? `type: ${s.type}, owner: ${s.owner}` : 'none');
     if(!getUnitAt(c,r) && canMoveResult){

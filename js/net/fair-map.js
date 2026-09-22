@@ -29,7 +29,12 @@
       const [mc,mr]=mirror(c,r); pair(terrain,c,r,null);
       units.push({id:`p1-${i}`,name,team:'PLAYER',col:c,row:r},{id:`p2-${i}`,name,team:'PLAYER2',col:mc,row:mr});
     });
-    return {seed:String(seed),cols,rows,terrain,settlements,units,resources:{PLAYER:{food:30,gold:30,materials:15},PLAYER2:{food:30,gold:30,materials:15}},firstTeam:random()<.5?'PLAYER':'PLAYER2'};
+    // Online matches begin with no stockpiled resources. Players must earn
+    // income from the symmetric starting settlements before recruiting.
+    const zeroResources = { food: 0, gold: 0, materials: 0 };
+    return {seed:String(seed),cols,rows,terrain,settlements,units,
+      resources:{PLAYER:{...zeroResources},PLAYER2:{...zeroResources}},
+      firstTeam:random()<.5?'PLAYER':'PLAYER2'};
   }
   const api = {generate};
   if(typeof module!=='undefined') module.exports=api;

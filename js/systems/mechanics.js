@@ -41,6 +41,15 @@ function manhattan(x1, y1, x2, y2) {
  * @returns {boolean} True if a valid path exists within movement range
  */
 function canMoveTo(unit, targetCol, targetRow) {
+  if (!unit || !Number.isInteger(targetCol) || !Number.isInteger(targetRow) ||
+      targetCol < 0 || targetCol >= COLS || targetRow < 0 || targetRow >= ROWS) {
+    return false;
+  }
+  // A unit may attack an occupied enemy tile, but may never move onto it.
+  // Keeping this check at the pathfinder boundary prevents every caller from
+  // accidentally treating an enemy as an empty destination.
+  const targetUnit = getUnitAt(targetCol, targetRow);
+  if (targetUnit && targetUnit.id !== unit.id) return false;
   const startCol = unit.col;
   const startRow = unit.row;
   let maxMove = unit.move;
@@ -66,20 +75,12 @@ function canMoveTo(unit, targetCol, targetRow) {
     }
   }
   
-  // New water movement rules:
-  // - Units on water can move 2 spaces if staying on water
-  // - Units transitioning between land and water can only move 1 space
-  const startIsWater = startTerrain === 'WATER';
-  const targetIsWater = targetTerrain === 'WATER';
-  
-  if (startIsWater || targetIsWater) {
-    // If transitioning between land and water, limit to 1 space
-    if (startIsWater !== targetIsWater) {
-      maxMove = 1;
-    }
-    // If both start and target are water, allow normal movement (2+ spaces)
-    // If both start and target are land, allow normal movement
-  }
+  // Water is exclusively naval terrain. Land units can cross only a BRIDGE;
+  // they cannot step onto water or path through it on the way to land.
+  if ((startTerrain === 'WATER' || targetTerrain === 'WATER') && !unit.isWaterUnit) return false;
+  // Naval units are likewise restricted to water, so a converted/anchored
+  // vessel cannot use land tiles as shortcuts.
+  if (unit.isWaterUnit && (startTerrain !== 'WATER' || targetTerrain !== 'WATER')) return false;
   
   // Check if destination is within movement range
   const directDist = manhattan(startCol, startRow, targetCol, targetRow);
@@ -127,10 +128,9 @@ function canMoveTo(unit, targetCol, targetRow) {
       
       const unitAtPos = getUnitAt(newCol, newRow);
       
-      // Allow movement through friendly units but not enemy units
-      if (unitAtPos && unitAtPos.team !== unit.team) {
-        continue; // Blocked by enemy unit
-      }
+      // Units are physical blockers. A destination was checked above; this
+      // blocks routes that try to pass through either friendly or enemy units.
+      if (unitAtPos && unitAtPos.id !== unit.id) continue;
       
       // Check terrain restrictions
       const terrainIdx = newRow * COLS + newCol;
