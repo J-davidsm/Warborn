@@ -107,6 +107,7 @@ html, body {
 }
 
 #menuPlayBtn,
+#menuOnlineBtn,
 #menuCampaignBtn,
 #continueCampaignBtn,
 #replayScenarioBtn,
@@ -128,6 +129,7 @@ html, body {
 }
 
 #menuPlayBtn:hover,
+#menuOnlineBtn:hover,
 #menuCampaignBtn:hover,
 #continueCampaignBtn:hover,
 #replayScenarioBtn:hover,
@@ -676,7 +678,7 @@ footer {
 .web-menu-help { color: #d3d8df; max-width: 34rem; margin: 24px auto 0; text-align: center; font: 15px/1.6 system-ui, sans-serif; text-shadow: 0 2px 5px #000; }
 
 [hidden] { display: none !important; }
-.lobby-overlay { position: fixed; inset: 0; z-index: 30000; background: rgba(6,12,20,.94); overflow: auto; padding: 32px 16px; box-sizing: border-box; }
+.lobby-overlay { position: fixed; inset: 0; z-index: 51000; background: rgba(6,12,20,.94); overflow: auto; padding: 32px 16px; box-sizing: border-box; }
 .lobby-card { box-sizing: border-box; max-width: 620px; margin: auto; padding: 28px; background: #17232d; color: #e9eee9; border: 1px solid #627572; border-radius: 18px; box-shadow: 0 24px 90px #0008; font: 15px/1.5 system-ui,sans-serif; }
 .lobby-card h2 { font-size: 30px; margin: 4px 0 10px; }.lobby-kicker { color: #efcc7b; letter-spacing: .14em; font-size: 12px; }
 .lobby-card label { display: block; margin-top: 12px; }.lobby-card input { padding: 10px; background: #0c1720; color: white; border: 1px solid #617474; border-radius: 8px; max-width: 100%; box-sizing: border-box; }
