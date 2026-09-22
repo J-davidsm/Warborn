@@ -18,6 +18,7 @@ h.el('lobbyReady').onclick();tick();assert.equal(h.el('lobbyStart').disabled,tru
 h.el('lobbyStart').onclick();tick();assert.equal(g.run('OnlineMatch.playing'),true);
 const equal=()=>assert.equal(JSON.stringify(h.ctx.units),JSON.stringify(g.ctx.units));equal();assert.equal(g.ctx.units[0].promotionLevel,2);
 assert.deepEqual(h.ctx.resources.PLAYER,{food:0,gold:0,materials:0});assert.deepEqual(h.ctx.resources.PLAYER2,{food:0,gold:0,materials:0});
+assert.match(h.el('onlineMatchStatus').textContent,/Highlands|Desert Expanse|Island Chain|Ancient Forest|Flooded Marsh|Open Frontier/);
 let current=h.ctx.currentTeam==='PLAYER'?h:g,other=current===h?g:h;
 assert.equal(other.run('OnlineMatch.canAct()'),false);current.ctx.units[0].experience=38;current.ctx.units[0].hp=47;current.run('OnlineMatch.publish()');tick();equal();assert.equal(other.ctx.units[0].experience,38);
 // Older host revisions cannot overwrite newer guest state.

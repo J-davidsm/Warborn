@@ -3,7 +3,7 @@ const OnlineMatch = (() => {
   const $ = id => document.getElementById(id);
   const copy = x => JSON.parse(JSON.stringify(x));
   let peer=null, connection=null, host=false, active=false, playing=false, pending=false;
-  let code='', localName='', otherName='', ready=false, otherReady=false, revision=0, accepted=null, applying=false, timeout=null;
+  let code='', localName='', otherName='', ready=false, otherReady=false, revision=0, accepted=null, applying=false, timeout=null, currentTheme='';
   const team = () => host?'PLAYER':'PLAYER2';
   const connected = () => !!connection?.open && !!otherName;
   const status = text => { $('lobbyStatus').textContent=text; };
@@ -23,7 +23,7 @@ const OnlineMatch = (() => {
     $('lobbyCopy').disabled=!active||!code; $('lobbyLeave').textContent=active?'Leave room':'Back to menu';
     $('onlineMatchBar').hidden=!playing;
     $('endTurnBtn').disabled=playing && (!canAct() || gameOver);
-    $('onlineMatchStatus').textContent=`Room ${code} · ${localName} vs ${otherName} · ${currentTeam===team()?'Your turn':'Opponent’s turn'}${pending?' · Syncing…':''}`;
+    $('onlineMatchStatus').textContent=`Room ${code}${currentTheme?` · ${currentTheme}`:''} · ${localName} vs ${otherName} · ${currentTeam===team()?'Your turn':'Opponent’s turn'}${pending?' · Syncing…':''}`;
   }
   function roster() { send({type:'roster',hostName:localName,guestName:otherName,hostReady:ready,guestReady:otherReady}); render(); }
   function open() { $('onlineLobby').hidden=false; render(); }
@@ -68,17 +68,17 @@ const OnlineMatch = (() => {
     conn.on('error',()=>{if(connection===conn)failure('Connection interrupted. Leave and create a new room.');});
   }
   function snapshot() {
-    return copy({cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
+    return copy({theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
       research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
   }
   function valid(s) {
-    return s && s.cols===20&&s.rows===16&&Array.isArray(s.terrain)&&s.terrain.length===320&&Array.isArray(s.settlements)&&s.settlements.length===320&&
+    return s && FairMap.themes.some(theme=>theme.name===s.theme)&&s.cols===20&&s.rows===16&&Array.isArray(s.terrain)&&s.terrain.length===320&&Array.isArray(s.settlements)&&s.settlements.length===320&&
       Array.isArray(s.units)&&s.units.length<=640&&s.units.every(u=>u&&typeof u.id==='string'&&Object.hasOwn(UNIT_TEMPLATES,u.name)&&['PLAYER','PLAYER2'].includes(u.team)&&Number.isInteger(u.col)&&Number.isInteger(u.row)&&u.col>=0&&u.col<20&&u.row>=0&&u.row<16&&Number.isFinite(u.hp)&&Number.isFinite(u.dmg))&&
       ['PLAYER','PLAYER2'].includes(s.currentTeam)&&Number.isInteger(s.turnNumber)&&s.turnNumber>0&&s.resources&&['PLAYER','PLAYER2'].every(t=>s.resources[t]&&['food','gold','materials'].every(k=>Number.isFinite(s.resources[t][k])))&&s.research&&['PLAYER','PLAYER2'].every(t=>Array.isArray(s.research[t]))&&s.startingResources&&s.diplomacy&&s.victoryCondition&&typeof s.gameOver==='boolean'&&Array.isArray(s.turnOrder)&&s.turnOrder.length===2&&new Set(s.turnOrder).size===2&&s.turnOrder.every(t=>['PLAYER','PLAYER2'].includes(t))&&s.turnOrder[s.currentTurnIndex]===s.currentTeam&&s.settlements.every(t=>t===null||(['HAMLET','VILLAGE','CITY'].includes(t.type)&&[null,'PLAYER','PLAYER2'].includes(t.owner)));
   }
   function apply(s) {
     if(!valid(s))return false;
-    applying=true;
+    applying=true;currentTheme=s.theme;
     COLS=s.cols;ROWS=s.rows;mapSize={cols:COLS,rows:ROWS};useHexGrid=true;
     units=copy(s.units);terrain=copy(s.terrain);settlements=copy(s.settlements);resources=copy(s.resources);startingResources=copy(s.startingResources);
     currentTeam=s.currentTeam;turnNumber=s.turnNumber;currentTurnIndex=s.currentTurnIndex;turnOrder=copy(s.turnOrder);
@@ -104,14 +104,14 @@ const OnlineMatch = (() => {
   }
   function start() {
     if(!host||!connected()||!ready||!otherReady||playing)return;
-    const seed=crypto.randomUUID(), map=FairMap.generate(seed);
+    const seed=crypto.randomUUID(), map=FairMap.generate(seed);currentTheme=map.theme.name;
     configure();COLS=map.cols;ROWS=map.rows;mapSize={cols:COLS,rows:ROWS};useHexGrid=true;setupGame();stopHeartbeat();LEARNING_AI.enabled=false;
     terrain=map.terrain;settlements=map.settlements;units=map.units.map(u=>makeUnit(u.name,u.team,u.col,u.row,{id:u.id}));
     resources=map.resources;startingResources=copy(map.resources);researchedUnits={PLAYER:new Set(['Soldier']),PLAYER2:new Set(['Soldier'])};
     diplomacy=createDefaultWarDiplomacy(['PLAYER','PLAYER2']);currentTeam=map.firstTeam;turnOrder=[map.firstTeam,map.firstTeam==='PLAYER'?'PLAYER2':'PLAYER'];currentTurnIndex=0;turnNumber=1;
     currentVictoryCondition=normalizeVictoryCondition({type:'ANNIHILATE_ALL'});gameOver=false;communicationLockouts={};
     playing=true;revision=0;accepted=snapshot();pending=false;selectedUnit=null;updateUI();fitBoard();render();
-    send({type:'start',state:accepted,revision,seed});status(`Generated fair map ${seed.slice(0,8)}.`);
+    send({type:'start',state:accepted,revision,seed});status(`Generated ${currentTheme} map ${seed.slice(0,8)}.`);
   }
   function commit(s) {revision++;accepted=copy(s);send({type:'state',state:s,revision});render();}
   function publish(actionId) {
@@ -132,7 +132,7 @@ const OnlineMatch = (() => {
     }
     if(msg.type==='roster'&&!host&&!playing){otherName=String(msg.hostName).slice(0,24);otherReady=!!msg.hostReady;ready=!!msg.guestReady;render();return;}
     if(msg.type==='ready'&&host&&!playing){otherReady=!!msg.ready;roster();return;}
-    if(msg.type==='start'&&!host&&!playing&&ready&&otherReady&&valid(msg.state)) {configure();playing=true;revision=0;apply(msg.state);fitBoard();status(`Generated fair map ${String(msg.seed).slice(0,8)}.`);return;}
+    if(msg.type==='start'&&!host&&!playing&&ready&&otherReady&&valid(msg.state)) {configure();playing=true;revision=0;apply(msg.state);fitBoard();status(`Generated ${currentTheme} map ${String(msg.seed).slice(0,8)}.`);return;}
     if(msg.type==='proposal'&&host&&playing){
       if(msg.base!==revision||accepted.currentTeam!=='PLAYER2'||!valid(msg.state)||JSON.stringify(msg.state.terrain)!==JSON.stringify(accepted.terrain)||JSON.stringify(msg.state.turnOrder)!==JSON.stringify(accepted.turnOrder)){send({type:'state',state:accepted,revision});return;}
       apply(msg.state);commit(msg.state);return;
