@@ -146,7 +146,10 @@ const OnlineMatch = (() => {
   function returnLobby() {if(host){lobby();send({type:'lobby'});roster();}else {send({type:'lobbyRequest'});status('Waiting for the host to return to the lobby.');open();}}
   function finish() {
     if(!playing)return false;
-    const winner=getWinner();if(!winner)return true;
+    const fallen=currentVictoryCondition.crownFallenTeams||[];
+    const crownWinner=fallen.includes('PLAYER')?'PLAYER2':fallen.includes('PLAYER2')?'PLAYER':null;
+    const winner=crownWinner||getWinner();if(!winner)return true;
+    if(crownWinner){gameOver=true;showEndScreen({outcome:winner===team()?'victory':'defeat',explanation:winner===team()?'The opposing Crown has fallen.':'Your Crown has fallen. Your kingdom is defeated.'});return true;}
     gameOver=true;showEndScreen({outcome:winner===team()?'victory':'defeat',explanation:winner==='DRAW'?'Draw. Neither army remains.':`${winner===team()?'You win!':'Your opponent wins.'} All opposing units and settlements were conquered.`});return true;
   }
   const canAct = () => !visible() && (!active || (playing&&connected()&&!pending&&currentTeam===team()));

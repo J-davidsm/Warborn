@@ -1,8 +1,24 @@
 // Warborn source split from the original game.js.
 // Section: js/systems/combat-turns.js
 
+function hasCrownAura(unit) {
+  return units.some(c=>c!==unit&&c.name==='Crown'&&c.hp>0&&areFriendlyTeams(c.team,unit.team)&&manhattan(c.col,c.row,unit.col,unit.row)===1);
+}
+function applyCrownDeath(crown) {
+  if(crown.name!=='Crown'||crown.hp>0)return;
+  const fallen=currentVictoryCondition.crownFallenTeams ||= [];
+  if(fallen.includes(crown.team))return;
+  fallen.push(crown.team);
+  if(isAITeam(crown.team)){
+    for(const u of units)if(u.team===crown.team&&u.name!=='Dragon')u.morale=0;
+  }else{
+    gameOver=true;
+    checkEndGame();
+  }
+}
 function attackUnit(a, d) {
   if(!a||!d||areFriendlyTeams(a.team,d.team))return {blocked:true};
+  if(a.name==='Crown')return {blocked:true,reason:'The Crown cannot attack'};
   // Safety check: prevent units that have already acted from attacking
   if (a.hasActed && !(a.name === 'Knight' && !a.usedBonusAttack)) {
     console.log(`DEBUG: Attack blocked - ${a.name} has already acted this turn (hasActed: ${a.hasActed}, usedBonusAttack: ${a.usedBonusAttack})`);
@@ -27,6 +43,8 @@ function attackUnit(a, d) {
   
   // Start with base damage from unit stats
   let dmg = a.dmg;
+  if(hasCrownAura(a))dmg*=1.10;
+  if(a.name==='Assassin'&&d.name==='Crown')dmg*=2;
 
   // Calculate health percentage (0-1)
   const healthPct = a.hp / a.maxHp;
@@ -118,6 +136,7 @@ function attackUnit(a, d) {
   }
 
   // Store target's previous HP to check for kill
+  if(hasCrownAura(d))dmg=floor(dmg*0.75);
   const prevHP = d.hp;
 
   try{ console.debug('attackUnit - pre-damage', { attacker: { id: a.id, col: a.col, row: a.row, hp: a.hp }, defender: { id: d.id, col: d.col, row: d.row, hp: d.hp } }); } catch(e){}
@@ -165,6 +184,8 @@ function attackUnit(a, d) {
       if (hasAdjacentAllySpearman) counterDmg = floor(counterDmg * 0.7);
     }
   // Subtract counter damage from attacker
+  if(hasCrownAura(d))counterDmg=floor(counterDmg*1.10);
+  if(hasCrownAura(a))counterDmg=floor(counterDmg*0.75);
   a.hp -= counterDmg;
   if (a.hp < 0) a.hp = 0;
   // Attacker morale penalty from being hit (Dragons are immune)
@@ -207,6 +228,8 @@ function attackUnit(a, d) {
   // don't linger and inadvertently affect other units. After rebuilding the
   // array, restore the attacker's coordinates by locating it by id so we handle
   // cases where object identity changed.
+  applyCrownDeath(d);
+  applyCrownDeath(a);
   const beforeCount = units.length;
   const attackerId = a.id;
   try{ console.debug('attackUnit - about to rebuild units array. beforeCount=', beforeCount, 'attackerId=', attackerId); } catch(e){}

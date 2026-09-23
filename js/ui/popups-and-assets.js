@@ -171,6 +171,7 @@ const DEFAULT_IMAGE_MAP = {
   'Assassin': 'assets/assassin.png',
   'Dragon': 'assets/dragon.png',
   'Cleric': 'assets/cleric.png',
+  'Crown': 'assets/crown.png',
   'Stockade': 'assets/stockade.png',
   'Castle': 'assets/castle.png',
   'Heavy Fortress': 'assets/heavy_fortress.png'

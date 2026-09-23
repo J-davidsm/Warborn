@@ -65,14 +65,17 @@ function findMovementPath(unit, targetCol, targetRow) {
   const startTerrain = terrain[startTerrainIdx];
   const targetTerrainIdx = targetRow * COLS + targetCol;
   const targetTerrain = terrain[targetTerrainIdx];
+  const crown=unit.name==='Crown';
+  const grass=t=>!t||t==='GRASS';
+  if(crown)maxMove=2;
   
   // Mountain still restricts to 1 space
-  if (!flying && startTerrain === 'MOUNTAIN') {
+  if (!flying && !crown && startTerrain === 'MOUNTAIN') {
     maxMove = 1;
   }
   
   // Swamp movement rules: 1 step through swamp terrain, except Assassins get full range
-  if (!flying && startTerrain === 'SWAMP') {
+  if (!flying && !crown && startTerrain === 'SWAMP') {
     if (unit.name === 'Assassin') {
       // Assassins can move full range in swamps (no restriction)
       maxMove = unit.move;
@@ -99,11 +102,15 @@ function findMovementPath(unit, targetCol, targetRow) {
   // Use breadth-first search to find if there's a clear path
   const queue = [{col: startCol, row: startRow, steps: 0}];
   const visited = new Set();
+  const costs = new Map([[`${startCol},${startRow}`,0]]);
   const paths = new Map([[`${startCol},${startRow}`, [{col:startCol,row:startRow}]]]);
-  visited.add(`${startCol},${startRow}`);
   
   while (queue.length > 0) {
+    queue.sort((a,b)=>a.steps-b.steps);
     const {col, row, steps} = queue.shift();
+    const currentKey=`${col},${row}`;
+    if(visited.has(currentKey))continue;
+    visited.add(currentKey);
     
     // If we reached the target, path is clear
     if (col === targetCol && row === targetRow) {
@@ -166,7 +173,10 @@ function findMovementPath(unit, targetCol, targetRow) {
         moveCost = 1; // Each swamp tile costs 1 movement point for non-Assassins
       }
       
-      visited.add(key);
+      if(crown)moveCost=grass(startTerrain)&&grass(terrainType)?1:2;
+      const total=steps+moveCost;
+      if(total>maxMove||total>=(costs.get(key)??Infinity))continue;
+      costs.set(key,total);
       paths.set(key, [...paths.get(`${col},${row}`), {col:newCol,row:newRow}]);
       queue.push({col: newCol, row: newRow, steps: steps + moveCost});
     }

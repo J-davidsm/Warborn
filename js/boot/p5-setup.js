@@ -123,6 +123,7 @@ function setup(){
   select('#assassinBtn').mousePressed(() => setPlacingUnit('Assassin', selectedTeam));
   select('#dragonBtn').mousePressed(() => setPlacingUnit('Dragon', selectedTeam));
   select('#clericBtn').mousePressed(() => setPlacingUnit('Cleric', selectedTeam));
+  select('#crownBtn').mousePressed(() => setPlacingUnit('Crown', selectedTeam));
   select('#stockadeBtn').mousePressed(() => setPlacingUnit('Stockade', selectedTeam));
   select('#castleBtn').mousePressed(() => setPlacingUnit('Castle', selectedTeam));
   select('#heavyFortressBtn').mousePressed(() => setPlacingUnit('Heavy Fortress', selectedTeam));

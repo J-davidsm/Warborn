@@ -31,9 +31,9 @@ function makeUnit(name, team, col, row, opts={}) {
     // allow callers to set current HP via opts.hp; fall back to opts.maxHp or defaults
     hp: (typeof opts.hp !== 'undefined') ? opts.hp : (opts.maxHp ?? defaultStats.maxHp),
     maxHp: opts.maxHp ?? defaultStats.maxHp,
-    move: (template?.fortress || name==='Fortress') ? 0 : (opts.move ?? defaultStats.move),
-    atkRange: opts.atkRange ?? defaultStats.atkRange,
-    dmg: opts.dmg ?? defaultStats.dmg,
+    move: name==='Crown' ? 2 : (template?.fortress || name==='Fortress') ? 0 : (opts.move ?? defaultStats.move),
+    atkRange: name==='Crown' ? 0 : opts.atkRange ?? defaultStats.atkRange,
+    dmg: name==='Crown' ? 0 : opts.dmg ?? defaultStats.dmg,
     cost: opts.cost ?? defaultStats.cost ?? 1,
     // New units spawned during gameplay should be immobile (opts.justSpawned=true)
     // Units from saves/setup should be able to move (opts.justSpawned not set)

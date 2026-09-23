@@ -33,6 +33,7 @@ const UNIT_TEMPLATES = {
   // Support unit - no combat damage, but can heal other units, high mobility
   // Heals friendly units within range each turn
   Cleric: { hp: 60, move: 5, atkRange: 2, dmg: 0, cost: 5 },
+  Crown: { hp: 200, move: 2, atkRange: 0, dmg: 0, cost: 0, editorOnly: true },
   // === NAVAL UNITS ===
   // These can only move on water tiles and have special naval combat bonuses
   
@@ -117,8 +118,8 @@ function promoteUnit(unit) {
   // Apply stat bonuses
   unit.maxHp += promotion.bonuses.hp;
   unit.hp += promotion.bonuses.hp; // Also heal unit on promotion
-  unit.dmg += promotion.bonuses.dmg;
-  unit.move = isFortressUnit(unit) ? 0 : unit.move + promotion.bonuses.move;
+  unit.dmg = unit.name==='Crown' ? 0 : unit.dmg + promotion.bonuses.dmg;
+  unit.move = unit.name==='Crown' ? 2 : isFortressUnit(unit) ? 0 : unit.move + promotion.bonuses.move;
   
   const levelName = promotion.name ? ` ${promotion.name}` : '';
   console.log(`🌟 ${unit.name} promoted to${levelName}! New stats: ${unit.hp}/${unit.maxHp} HP, ${unit.dmg} DMG, ${unit.move} Move`);
@@ -185,7 +186,7 @@ function getCostEfficiency(unitName) {
 function allowedUnitsForSettlement(settlementType, team = null){
   // Only non-fortress units can be spawned from settlements.
   // HAMLET: cost <=3, VILLAGE: cost <=6, CITY: any non-fortress
-  let allowedUnits = Object.keys(UNIT_TEMPLATES).filter(n => !UNIT_TEMPLATES[n].fortress && !UNIT_TEMPLATES[n].isWaterUnit);
+  let allowedUnits = Object.keys(UNIT_TEMPLATES).filter(n => !UNIT_TEMPLATES[n].editorOnly && !UNIT_TEMPLATES[n].fortress && !UNIT_TEMPLATES[n].isWaterUnit);
   
   // Filter by settlement level
   if(settlementType === 'HAMLET') allowedUnits = allowedUnits.filter(n => getTotalCost(n) <= 4);
@@ -232,6 +233,7 @@ const UNIT_EMOJIS = {
   'Catapult': '🎯',
   'Dragon': '🐉',
   'Cleric': '⚕️',
+  'Crown': '👑',
   
   // Naval units
   'Sloop': '⛵',
@@ -820,6 +822,7 @@ function openBuildMenu(col, row){
 }
 
 function spawnUnitAt(name, team, col, row){
+  if(UNIT_TEMPLATES[name]?.editorOnly)return;
   // Prevent rapid-fire unit spawning
   if (!isActionAllowed(col, row)) {
     console.log('Spawn blocked - too soon after last action');

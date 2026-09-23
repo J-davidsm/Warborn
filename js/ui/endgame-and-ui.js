@@ -135,6 +135,7 @@ function playerControlsTile(col, row) {
 }
 
 function evaluateVictoryCondition() {
+  if(currentVictoryCondition.crownFallenTeams?.includes('PLAYER'))return {outcome:'defeat',explanation:'Your Crown has fallen. Your kingdom is defeated.'};
   const vc = normalizeVictoryCondition(currentVictoryCondition);
   const enemies = getActiveTeams().filter(team => team !== 'PLAYER');
   const playerAlive = teamHasLife('PLAYER');
@@ -404,6 +405,7 @@ function updateUI() {
     }
     
     selDetailsEl.html(`Team: ${getTeamDisplayName(selectedUnit.team)} • Move:${selectedUnit.move} • Range:${selectedUnit.atkRange} • Cost:${costDisplay}${xpDisplay}`);
+    if(selectedUnit.name==='Crown')selDetailsEl.html('👑 Crown • 2 grassland / 1 other terrain • Cannot attack or be bought • Adjacent friendly units: +25% defense, +10% attack • Assassin damage ×2 • Protect your Crown!');
     selHPEl.style('width',(selectedUnit.hp/selectedUnit.maxHp*100)+"%");
     selNumsEl.html(`HP ${selectedUnit.hp}/${selectedUnit.maxHp} • Morale ${selectedUnit.morale} (${moraleLabel(selectedUnit)})`);
 
