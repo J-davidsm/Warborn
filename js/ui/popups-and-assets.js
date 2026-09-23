@@ -178,6 +178,14 @@ const DEFAULT_IMAGE_MAP = {
 
 try{ preloadImages(DEFAULT_IMAGE_MAP); } catch(e){ console.warn('Image preload failed', e); }
 
+// Settlement tiers share the unit loader, but use their own namespaced keys.
+const SETTLEMENT_IMAGE_MAP = {
+  'settlement_HAMLET': 'assets/settlements/hamlet.png',
+  'settlement_VILLAGE': 'assets/settlements/town.png',
+  'settlement_CITY': 'assets/settlements/city.png'
+};
+try{ preloadImages(SETTLEMENT_IMAGE_MAP); } catch(e){ console.warn('Settlement preload failed', e); }
+
 const INDICATOR_IMAGES = {};
 const INDICATOR_IMAGE_STATUS = {};
 const INDICATOR_IMAGE_MAP = {

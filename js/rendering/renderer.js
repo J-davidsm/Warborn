@@ -138,7 +138,7 @@ function draw(){
   pop();
   // image load status indicator (small, top-right)
   push(); noStroke(); fill(255,200); textSize(12); textAlign(RIGHT, TOP);
-  const totalImgs = Object.keys(DEFAULT_IMAGE_MAP).length;
+  const totalImgs = Object.keys(DEFAULT_IMAGE_MAP).length + Object.keys(SETTLEMENT_IMAGE_MAP).length;
   const loadedImgs = Object.values(IMAGE_LOAD_STATUS).filter(s=>s==='loaded').length || 0;
   const errImgs = Object.values(IMAGE_LOAD_STATUS).filter(s=>s==='error').length || 0;
   text(`Sprites: ${loadedImgs}/${totalImgs}${errImgs? ' (err:'+errImgs+')':''}`, width - 12, 8);
@@ -467,12 +467,21 @@ function drawSettlementMarker(settlement, screenX, screenY) {
   noStroke();
   fill(255);
   const markerScale = useHexGrid ? HEX_SIZE * 1.4 : TILE;
-  textSize(markerScale * 0.5);
-  const emoji = SETTLEMENTS[settlement.type].emoji;
-  if (useHexGrid) {
-    text(emoji, screenX, screenY);
+  const centerX = useHexGrid ? screenX : screenX + TILE / 2;
+  const centerY = useHexGrid ? screenY : screenY + TILE / 2;
+  const imageKey = 'settlement_' + settlement.type;
+  const sprite = IMAGES[imageKey];
+  if (sprite && IMAGE_LOAD_STATUS[imageKey] === 'loaded') {
+    // Fit inside either grid, preserving the transparent artwork's proportions.
+    const size = markerScale * 0.94;
+    const ratio = Math.min(size / sprite.width, size / sprite.height);
+    const width = sprite.width * ratio;
+    const height = sprite.height * ratio;
+    drawingContext.drawImage(sprite, centerX - width / 2, centerY - height / 2, width, height);
   } else {
-    text(emoji, screenX + TILE/2, screenY + TILE/2);
+    // Ports and failed/pending downloads retain a readable marker.
+    textSize(markerScale * 0.5);
+    text(SETTLEMENTS[settlement.type].emoji, centerX, centerY);
   }
   const owner = settlement.owner;
   let flagColor = [0,0,0];
