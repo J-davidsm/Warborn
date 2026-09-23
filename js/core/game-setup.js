@@ -2,6 +2,7 @@
 // Section: js/core/game-setup.js
 
 function setupGame(){
+  activeAITurn=null;
   ActionEffects.reset();
   units=[];
   

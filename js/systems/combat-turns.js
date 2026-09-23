@@ -2,6 +2,7 @@
 // Section: js/systems/combat-turns.js
 
 function attackUnit(a, d) {
+  if(!a||!d||areFriendlyTeams(a.team,d.team))return {blocked:true};
   // Safety check: prevent units that have already acted from attacking
   if (a.hasActed && !(a.name === 'Knight' && !a.usedBonusAttack)) {
     console.log(`DEBUG: Attack blocked - ${a.name} has already acted this turn (hasActed: ${a.hasActed}, usedBonusAttack: ${a.usedBonusAttack})`);
@@ -259,7 +260,7 @@ function attackUnit(a, d) {
 
 // Healing function for Clerics, Boost unit by 50 morale and 20 health.
 function healUnit(healer, target) {
-  if (!healer || !target || healer.team !== target.team) return { didHeal: false };
+  if (!healer || !target || !areFriendlyTeams(healer.team,target.team)) return { didHeal: false };
   if (target.hp >= target.maxHp) return { didHeal: false };
   
   const healAmount = 20;
@@ -305,7 +306,11 @@ function moraleCheck(u){
 }
 
 // ---------- Turn ----------
-function endTurn() {
+let lastHumanEndTurn=0;
+function endTurn(expectedAITeam = null) {
+  if(gameOver || (isAITeam(currentTeam) && expectedAITeam!==currentTeam))return;
+  if(expectedAITeam && expectedAITeam!==currentTeam)return;
+  if(!expectedAITeam){if(Date.now()-lastHumanEndTurn<350)return;lastHumanEndTurn=Date.now();}
   if (typeof OnlineMatch !== "undefined" && !OnlineMatch.canAct()) return;
   console.log('endTurn called. currentTeam before switch:', currentTeam, 'opponentType:', opponentType);
   
@@ -445,14 +450,16 @@ function endTurn() {
     // Check if AI team is dead (no units and no settlements)
     if (isTeamDead(currentTeam)) {
       console.log(`${currentTeam} is dead (no units or settlements) - skipping turn and advancing to next team`);
-      setTimeout(() => endTurn(), 100); // Skip turn immediately
+      const skippedTeam=currentTeam, skippedTurn=turnNumber;
+      setTimeout(() => {if(currentTeam===skippedTeam&&turnNumber===skippedTurn)endTurn(skippedTeam);},100); // Skip turn immediately
       return;
     }
     
     if (opponentType === 'AI') {
       // Always run AI locally when the opponent is AI (embedded or standalone)
       console.log(`Scheduling aiTakeTurn for team ${currentTeam} (opponentType=AI)`);
-      setTimeout(() => aiTakeTurn(currentTeam), 300);
+      const scheduledTeam=currentTeam, scheduledTurn=turnNumber;
+      setTimeout(() => {if(currentTeam===scheduledTeam&&turnNumber===scheduledTurn)aiTakeTurn(scheduledTeam);},300);
       // Also inform parent that turn changed so the hub UI can sync
       try { window.parent.postMessage({ type: 'turnUpdate', current: currentTeam }, '*'); } catch (e) {}
     }
@@ -482,7 +489,7 @@ function endTurn() {
 function autoFlee(team) {
   // Get all fleeing units and sort them by distance to enemies (furthest first)
   let fleeing = units.filter(u => u.team === team && u.hp > 0 && u.morale <= 0 && !isFortressUnit(u));
-  const enemies = units.filter(e => e.team !== team && e.hp > 0);
+  const enemies = units.filter(e => e.hp > 0 && canAttack(e.team,team));
   
   console.log(`autoFlee called for team ${team}: ${fleeing.length} fleeing units, ${enemies.length} enemies`);
   if (fleeing.length > 0) {
@@ -551,6 +558,7 @@ function autoFlee(team) {
     // If we found a valid move, mark it as taken and move the unit
       if (bestMove.col !== u.col || bestMove.row !== u.row) {
       chosenDests.add(`${bestMove.col},${bestMove.row}`);
+      if(!canMoveTo(u,bestMove.col,bestMove.row))continue;
       ActionEffects.move(u,bestMove.col,bestMove.row);
       u.col = bestMove.col;
       u.row = bestMove.row;
@@ -638,7 +646,7 @@ function claimSettlementAt(col, row, owner){
     console.log('DEBUG: claimSettlementAt - no settlement at this location');
     return;
   }
-  if(s.owner !== owner){
+  if(s.owner !== owner && !areFriendlyTeams(s.owner,owner)){
     const previousOwner = s.owner;
     s.owner = owner;
     console.log('DEBUG: Settlement ownership changed from', previousOwner, 'to', owner);
@@ -700,7 +708,7 @@ function checkSettlementCaptureAfterMove(unit, newCol, newRow) {
   console.log(`DEBUG: Found settlement at destination: type=${settlement.type}, owner=${settlement.owner}`);
   
   // If unit's team doesn't own this settlement, capture it
-  if (settlement.owner !== unit.team) {
+  if (settlement.owner !== unit.team && !areFriendlyTeams(settlement.owner,unit.team)) {
     const previousOwner = settlement.owner;
     settlement.owner = unit.team;
     console.log(`SUCCESS: ${unit.team} ${unit.name} captured ${settlement.type} from ${previousOwner} at (${newCol},${newRow})`);
@@ -755,7 +763,7 @@ function captureSettlementsWithUnits(team) {
       const unitAtPosition = getUnitAt(col, row);
       if (unitAtPosition && unitAtPosition.team === team && unitAtPosition.hp > 0) {
         // Only capture if settlement isn't already owned by this team
-        if (settlement.owner !== team) {
+        if (settlement.owner !== team && !areFriendlyTeams(settlement.owner,team)) {
           const previousOwner = settlement.owner;
           settlement.owner = team;
           capturedCount++;

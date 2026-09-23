@@ -45,6 +45,8 @@ function canMoveTo(unit, targetCol, targetRow) {
 }
 
 function findMovementPath(unit, targetCol, targetRow) {
+  if(unit && (unit.fortress || ['Stockade','Castle','Heavy Fortress','Fortress'].includes(unit.name)))return false;
+  const flying=unit?.name==='Dragon';
   if (!unit || !Number.isInteger(targetCol) || !Number.isInteger(targetRow) ||
       targetCol < 0 || targetCol >= COLS || targetRow < 0 || targetRow >= ROWS) {
     return false;
@@ -65,12 +67,12 @@ function findMovementPath(unit, targetCol, targetRow) {
   const targetTerrain = terrain[targetTerrainIdx];
   
   // Mountain still restricts to 1 space
-  if (startTerrain === 'MOUNTAIN') {
+  if (!flying && startTerrain === 'MOUNTAIN') {
     maxMove = 1;
   }
   
   // Swamp movement rules: 1 step through swamp terrain, except Assassins get full range
-  if (startTerrain === 'SWAMP') {
+  if (!flying && startTerrain === 'SWAMP') {
     if (unit.name === 'Assassin') {
       // Assassins can move full range in swamps (no restriction)
       maxMove = unit.move;
@@ -81,10 +83,10 @@ function findMovementPath(unit, targetCol, targetRow) {
   
   // Water is exclusively naval terrain. Land units can cross only a BRIDGE;
   // they cannot step onto water or path through it on the way to land.
-  if ((startTerrain === 'WATER' || targetTerrain === 'WATER') && !unit.isWaterUnit) return false;
-  // Naval units are likewise restricted to water, so a converted/anchored
-  // vessel cannot use land tiles as shortcuts.
-  if (unit.isWaterUnit && (startTerrain !== 'WATER' || targetTerrain !== 'WATER')) return false;
+  if (!flying && targetTerrain === 'WATER' && !unit.isWaterUnit) return false;
+  // Ships stay on water. Anchored land units can embark and disembark.
+  const naval=['Sloop','Man-of-War','Battleship'].includes(unit.name);
+  if (!flying && naval && targetTerrain !== 'WATER') return false;
   
   // Check if destination is within movement range
   const directDist = manhattan(startCol, startRow, targetCol, targetRow);
@@ -140,10 +142,10 @@ function findMovementPath(unit, targetCol, targetRow) {
       // Check terrain restrictions
       const terrainIdx = newRow * COLS + newCol;
       const terrainType = terrain[terrainIdx];
-      if (unit.isWaterUnit && terrainType !== 'WATER') continue;
+      if (!flying && naval && terrainType !== 'WATER') continue;
       if (terrainType) {
         const terrainData = TERRAIN[terrainType];
-        if (terrainData) {
+        if (terrainData && !flying) {
           // Check if unit type is blocked by this terrain
           if (terrainData.blockedUnits && terrainData.blockedUnits.includes(unit.name)) {
             continue; // Unit cannot enter this terrain

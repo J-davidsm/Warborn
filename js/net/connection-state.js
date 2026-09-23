@@ -306,7 +306,7 @@ function validateUnit(unit) {
     if (typeof unit.cost === 'number') {
       if (unit.cost < 0) return false;
     } else if (typeof unit.cost === 'object') {
-      if (unit.cost.food < 0 || unit.cost.gold < 0 || unit.cost.materials < 0) return false;
+      if (unit.cost.gold < 0 || unit.cost.materials < 0) return false;
     } else {
       return false; // Cost must be number or object
     }

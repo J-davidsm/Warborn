@@ -208,7 +208,7 @@ function canAffordTreatyBreak(faction, treatyType) {
   
   // Handle both old and new resource systems
   if (typeof resources[faction] === 'object') {
-    // New three-resource system
+    // New two-resource system
     return hasResources(faction, cost);
   } else {
     // Old single resource system - treat as gold
@@ -245,7 +245,7 @@ function breakTreaty(treaty, breakingFaction, reason = 'Treaty violation') {
   
   // Handle both old and new resource systems
   if (typeof resources[breakingFaction] === 'object') {
-    // New three-resource system
+    // New two-resource system
     if (!spendResources(breakingFaction, cost)) return false;
     // Pay the other faction
     addResources(otherFaction, cost);
@@ -290,7 +290,7 @@ function createTradeProposal(proposer, target, tradeType, offer, request) {
     proposer: proposer,
     target: target,
     type: tradeType,
-    offer: offer, // What proposer is offering { resources: {food, gold, materials}, units: [] }
+    offer: offer, // What proposer is offering { resources: {gold, materials}, units: [] }
     request: request, // What proposer wants in return
     status: 'PENDING',
     turnCreated: turnNumber,
@@ -369,11 +369,9 @@ function evaluateTradeProposal(aiTeam, proposal) {
   if (!hasResources(aiTeam, proposal.request.resources)) return false;
   
   // Calculate trade value for AI
-  const offerValue = (proposal.offer.resources.food || 0) + 
-                    (proposal.offer.resources.gold || 0) * 1.2 + 
+  const offerValue = (proposal.offer.resources.gold || 0) * 1.2 +
                     (proposal.offer.resources.materials || 0) * 1.5;
-  const requestValue = (proposal.request.resources.food || 0) + 
-                      (proposal.request.resources.gold || 0) * 1.2 + 
+  const requestValue = (proposal.request.resources.gold || 0) * 1.2 +
                       (proposal.request.resources.materials || 0) * 1.5;
   
   // Trader personalities are more likely to accept fair trades
@@ -474,6 +472,7 @@ function declareWar(attacker, target) {
 }
 
 function canAttack(attacker, target) {
+  if(attacker===target || areFriendlyTeams(attacker,target))return false;
   // If diplomacy system is not initialized for these factions, allow legacy free combat.
   if (!isDiplomacyActive() || !diplomacy.warDeclarations || !diplomacy.trust[attacker] || diplomacy.trust[attacker][target] === undefined) {
     return true;
@@ -488,6 +487,10 @@ function canAttack(attacker, target) {
   
   if (!warDeclaration) return false;
   return turnNumber >= warDeclaration.canAttackTurn;
+}
+
+function areFriendlyTeams(a,b) {
+  return !!a && !!b && (a===b || (!isAtWar(a,b) && (hasTreaty(a,b,'DEFENSIVE_PACT') || hasTreaty(a,b,'NON_AGGRESSION'))));
 }
 
 function isAtWar(faction1, faction2) {
@@ -1217,7 +1220,6 @@ function openTradeProposalInterface() {
           <div>
             <h4 style="color: var(--accent); font-size: 12px; margin-bottom: 8px;">Your Resources:</h4>
             <div style="font-size: 11px; line-height: 1.4;">
-              🍖 Food: ${playerResources.food}<br>
               🪙 Gold: ${playerResources.gold}<br>
               ⚒️ Materials: ${playerResources.materials}
             </div>
@@ -1225,7 +1227,6 @@ function openTradeProposalInterface() {
           <div>
             <h4 style="color: var(--accent); font-size: 12px; margin-bottom: 8px;">${currentDiplomacyTarget} Resources:</h4>
             <div style="font-size: 11px; line-height: 1.4;">
-              🍖 Food: ${targetResources.food}<br>
               🪙 Gold: ${targetResources.gold}<br>
               ⚒️ Materials: ${targetResources.materials}
             </div>
@@ -1234,11 +1235,7 @@ function openTradeProposalInterface() {
         
         <div style="border: 1px solid var(--muted); border-radius: 4px; padding: 15px; margin: 15px 0;">
           <h4 style="color: var(--accent); font-size: 12px; margin-bottom: 10px;">What will you offer?</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-            <div>
-              <label style="font-size: 10px;">Food:</label>
-              <input type="number" id="offerFood" min="0" max="${playerResources.food}" value="0" style="width: 100%; padding: 6px; margin-top: 2px; background: white; color: black; border: 2px solid #ccc; border-radius: 4px; font-size: 12px; cursor: text;" onfocus="this.style.borderColor='#f39c12'" onblur="this.style.borderColor='#ccc'">
-            </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div>
               <label style="font-size: 10px;">Gold:</label>
               <input type="number" id="offerGold" min="0" max="${playerResources.gold}" value="0" style="width: 100%; padding: 6px; margin-top: 2px; background: white; color: black; border: 2px solid #ccc; border-radius: 4px; font-size: 12px; cursor: text;" onfocus="this.style.borderColor='#f39c12'" onblur="this.style.borderColor='#ccc'">
@@ -1252,11 +1249,7 @@ function openTradeProposalInterface() {
         
         <div style="border: 1px solid var(--muted); border-radius: 4px; padding: 15px; margin: 15px 0;">
           <h4 style="color: var(--accent); font-size: 12px; margin-bottom: 10px;">What do you want in return?</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-            <div>
-              <label style="font-size: 10px;">Food:</label>
-              <input type="number" id="requestFood" min="0" max="${targetResources.food}" value="0" style="width: 100%; padding: 6px; margin-top: 2px; background: white; color: black; border: 2px solid #ccc; border-radius: 4px; font-size: 12px; cursor: text;" onfocus="this.style.borderColor='#f39c12'" onblur="this.style.borderColor='#ccc'">
-            </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div>
               <label style="font-size: 10px;">Gold:</label>
               <input type="number" id="requestGold" min="0" max="${targetResources.gold}" value="0" style="width: 100%; padding: 6px; margin-top: 2px; background: white; color: black; border: 2px solid #ccc; border-radius: 4px; font-size: 12px; cursor: text;" onfocus="this.style.borderColor='#f39c12'" onblur="this.style.borderColor='#ccc'">
@@ -1280,7 +1273,7 @@ function openTradeProposalInterface() {
   
   // Ensure input fields are focusable after modal creation
   setTimeout(() => {
-    const inputs = ['offerFood', 'offerGold', 'offerMaterials', 'requestFood', 'requestGold', 'requestMaterials'];
+    const inputs = ['offerGold', 'offerMaterials', 'requestGold', 'requestMaterials'];
     inputs.forEach(id => {
       const input = document.getElementById(id);
       if (input) {
@@ -1308,34 +1301,32 @@ function closeTradeProposalModal() {
 }
 
 function submitTradeProposal() {
-  const offerFood = parseInt(document.getElementById('offerFood').value) || 0;
   const offerGold = parseInt(document.getElementById('offerGold').value) || 0;
   const offerMaterials = parseInt(document.getElementById('offerMaterials').value) || 0;
   
-  const requestFood = parseInt(document.getElementById('requestFood').value) || 0;
   const requestGold = parseInt(document.getElementById('requestGold').value) || 0;
   const requestMaterials = parseInt(document.getElementById('requestMaterials').value) || 0;
   
   // Validation
-  if (offerFood === 0 && offerGold === 0 && offerMaterials === 0) {
+  if (offerGold === 0 && offerMaterials === 0) {
     showPopup('Invalid Trade', 'You must offer something!', 'error');
     return;
   }
   
-  if (requestFood === 0 && requestGold === 0 && requestMaterials === 0) {
+  if (requestGold === 0 && requestMaterials === 0) {
     showPopup('Invalid Trade', 'You must request something!', 'error');
     return;
   }
   
   const playerResources = getResources('PLAYER');
-  if (offerFood > playerResources.food || offerGold > playerResources.gold || offerMaterials > playerResources.materials) {
+  if (offerGold > playerResources.gold || offerMaterials > playerResources.materials) {
     showPopup('Insufficient Resources', 'You cannot offer more resources than you have!', 'error');
     return;
   }
   
   // Create the trade proposal
-  const offer = { resources: { food: offerFood, gold: offerGold, materials: offerMaterials } };
-  const request = { resources: { food: requestFood, gold: requestGold, materials: requestMaterials } };
+  const offer = { resources: { gold: offerGold, materials: offerMaterials } };
+  const request = { resources: { gold: requestGold, materials: requestMaterials } };
   
   const proposal = createTradeProposal('PLAYER', currentDiplomacyTarget, 'RESOURCE_EXCHANGE', offer, request);
   

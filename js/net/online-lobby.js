@@ -22,7 +22,7 @@ const OnlineMatch = (() => {
     $('lobbyReturn').hidden=!playing;
     $('lobbyCopy').disabled=!active||!code; $('lobbyLeave').textContent=active?'Leave room':'Back to menu';
     $('onlineMatchBar').hidden=!playing;
-    $('endTurnBtn').disabled=playing && (!canAct() || gameOver);
+    $('endTurnBtn').disabled=gameOver || isAITeam(currentTeam) || (playing && !canAct());
     $('onlineMatchStatus').textContent=`Room ${code}${currentTheme?` · ${currentTheme}`:''} · ${localName} vs ${otherName} · ${currentTeam===team()?'Your turn':'Opponent’s turn'}${pending?' · Syncing…':''}`;
   }
   function roster() { send({type:'roster',hostName:localName,guestName:otherName,hostReady:ready,guestReady:otherReady}); render(); }
@@ -74,7 +74,7 @@ const OnlineMatch = (() => {
   function valid(s) {
     return s && FairMap.themes.some(theme=>theme.name===s.theme)&&s.cols===20&&s.rows===16&&Array.isArray(s.terrain)&&s.terrain.length===320&&Array.isArray(s.settlements)&&s.settlements.length===320&&
       Array.isArray(s.units)&&s.units.length<=640&&s.units.every(u=>u&&typeof u.id==='string'&&Object.hasOwn(UNIT_TEMPLATES,u.name)&&['PLAYER','PLAYER2'].includes(u.team)&&Number.isInteger(u.col)&&Number.isInteger(u.row)&&u.col>=0&&u.col<20&&u.row>=0&&u.row<16&&Number.isFinite(u.hp)&&Number.isFinite(u.dmg))&&
-      ['PLAYER','PLAYER2'].includes(s.currentTeam)&&Number.isInteger(s.turnNumber)&&s.turnNumber>0&&s.resources&&['PLAYER','PLAYER2'].every(t=>s.resources[t]&&['food','gold','materials'].every(k=>Number.isFinite(s.resources[t][k])))&&s.research&&['PLAYER','PLAYER2'].every(t=>Array.isArray(s.research[t]))&&s.startingResources&&s.diplomacy&&s.victoryCondition&&typeof s.gameOver==='boolean'&&Array.isArray(s.turnOrder)&&s.turnOrder.length===2&&new Set(s.turnOrder).size===2&&s.turnOrder.every(t=>['PLAYER','PLAYER2'].includes(t))&&s.turnOrder[s.currentTurnIndex]===s.currentTeam&&s.settlements.every(t=>t===null||(['HAMLET','VILLAGE','CITY'].includes(t.type)&&[null,'PLAYER','PLAYER2'].includes(t.owner)));
+      ['PLAYER','PLAYER2'].includes(s.currentTeam)&&Number.isInteger(s.turnNumber)&&s.turnNumber>0&&s.resources&&['PLAYER','PLAYER2'].every(t=>s.resources[t]&&['gold','materials'].every(k=>Number.isFinite(s.resources[t][k])))&&s.research&&['PLAYER','PLAYER2'].every(t=>Array.isArray(s.research[t]))&&s.startingResources&&s.diplomacy&&s.victoryCondition&&typeof s.gameOver==='boolean'&&Array.isArray(s.turnOrder)&&s.turnOrder.length===2&&new Set(s.turnOrder).size===2&&s.turnOrder.every(t=>['PLAYER','PLAYER2'].includes(t))&&s.turnOrder[s.currentTurnIndex]===s.currentTeam&&s.settlements.every(t=>t===null||(['HAMLET','VILLAGE','CITY'].includes(t.type)&&[null,'PLAYER','PLAYER2'].includes(t.owner)));
   }
   function apply(s) {
     if(!valid(s))return false;

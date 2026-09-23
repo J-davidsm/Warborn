@@ -7,10 +7,10 @@ function initializeResourcesForActiveTeams() {
   // Initialize resources for all active teams
   activeTeams.forEach(team => {
     if (!(team in resources)) {
-      resources[team] = { food: 0, gold: 0, materials: 0 };
+      resources[team] = { gold: 0, materials: 0 };
     }
     if (!(team in startingResources)) {
-      startingResources[team] = { food: 10, gold: 10, materials: 0 }; // Default starting resources
+      startingResources[team] = { gold: 10, materials: 0 }; // Default starting resources
     }
   });
   

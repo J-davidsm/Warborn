@@ -191,7 +191,7 @@ const TREATY_TYPES = {
 const TRADE_PROPOSAL_TYPES = {
   RESOURCE_EXCHANGE: {
     name: 'Resource Exchange',
-    description: 'Trade resources (Food, Gold, Materials) with another faction'
+    description: 'Trade resources (Gold, Materials) with another faction'
   },
   UNIT_TRADE: {
     name: 'Unit Trade',
@@ -219,9 +219,9 @@ let skipNextClick = false; // Flag to prevent menu-opening clicks from immediate
 
 // Starting resources for each team in editor mode - will be dynamically expanded for multi-AI
 let startingResources = { 
-  PLAYER: { food: 10, gold: 10, materials: 0 }, 
-  AI: { food: 10, gold: 10, materials: 0 }, 
-  PLAYER2: { food: 10, gold: 10, materials: 0 } 
+  PLAYER: { gold: 10, materials: 0 },
+  AI: { gold: 10, materials: 0 },
+  PLAYER2: { gold: 10, materials: 0 }
 };
 
 // Event deduplication system to prevent multiple input methods from triggering the same action
@@ -269,7 +269,7 @@ try{
 }catch(e){ /* ignore when file:// or other issues */ }
 
 // This static distribution supports local play; a relay requires its own server.
-if (gameMode === 'online-2p' || opponentType === 'HUMAN') {
+if (gameMode !== 'vs-ai' || opponentType !== 'AI') {
   gameMode = 'vs-ai';
   opponentType = 'AI';
 }

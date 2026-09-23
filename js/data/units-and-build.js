@@ -118,7 +118,7 @@ function promoteUnit(unit) {
   unit.maxHp += promotion.bonuses.hp;
   unit.hp += promotion.bonuses.hp; // Also heal unit on promotion
   unit.dmg += promotion.bonuses.dmg;
-  unit.move += promotion.bonuses.move;
+  unit.move = isFortressUnit(unit) ? 0 : unit.move + promotion.bonuses.move;
   
   const levelName = promotion.name ? ` ${promotion.name}` : '';
   console.log(`🌟 ${unit.name} promoted to${levelName}! New stats: ${unit.hp}/${unit.maxHp} HP, ${unit.dmg} DMG, ${unit.move} Move`);
@@ -170,7 +170,7 @@ function getTotalCost(unitName) {
   if (!template) return 0;
   const cost = template.cost;
   if (typeof cost === 'number') return cost; // Backward compatibility
-  return (cost.food || 0) + (cost.gold || 0) + (cost.materials || 0);
+  return (cost.gold || 0) + (cost.materials || 0);
 }
 
 // Helper function to calculate cost efficiency for AI decision making
@@ -718,7 +718,6 @@ function openBuildMenu(col, row){
     let costDisplay;
     if (typeof t.cost === 'object') {
       const parts = [];
-      if (t.cost.food > 0) parts.push(`${t.cost.food}F`);
       if (t.cost.gold > 0) parts.push(`${t.cost.gold}G`);
       if (t.cost.materials > 0) parts.push(`${t.cost.materials}M`);
       costDisplay = parts.join('/') || '0';
@@ -772,7 +771,6 @@ function openBuildMenu(col, row){
         let costDisplay;
         if (typeof t.cost === 'object') {
           const parts = [];
-          if (t.cost.food > 0) parts.push(`${t.cost.food}F`);
           if (t.cost.gold > 0) parts.push(`${t.cost.gold}G`);
           if (t.cost.materials > 0) parts.push(`${t.cost.materials}M`);
           costDisplay = parts.join('/') || '0';

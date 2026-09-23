@@ -12,7 +12,7 @@ let p=unit('player',0),ctx=game({terrain:['GRASS','WATER','GRASS'],units:[p]});
 assert.equal(ctx.canMoveTo(p,2,0),false,'land units cannot cross water');
 ctx=game({terrain:['GRASS','BRIDGE','GRASS'],units:[p]});
 assert.equal(ctx.canMoveTo(p,2,0),true,'land units can cross a bridge');
-let ship=unit('ship',0,true);ctx=game({terrain:['WATER','WATER','WATER'],units:[ship]});
+let ship=unit('ship',0,true);ship.name='Sloop';ctx=game({terrain:['WATER','WATER','WATER'],units:[ship]});
 assert.equal(ctx.canMoveTo(ship,2,0),true,'water units can navigate water');
 ctx=game({terrain:['WATER','WATER','GRASS'],units:[ship]});
 assert.equal(ctx.canMoveTo(ship,2,0),false,'water units cannot use land shortcuts');

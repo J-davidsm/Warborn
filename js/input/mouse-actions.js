@@ -296,7 +296,7 @@ function handleGridClick(c,r){
   // attack (Clerics cannot attack, units in swamps cannot attack except Assassins)
   const attackerTerrainIdx = selectedUnit.row * COLS + selectedUnit.col;
   const attackerTerrain = terrain[attackerTerrainIdx];
-  const canAttackFromTerrain = !(attackerTerrain === 'SWAMP' && TERRAIN.SWAMP.noAttack && selectedUnit.name !== 'Assassin');
+  const canAttackFromTerrain = !(attackerTerrain === 'SWAMP' && TERRAIN.SWAMP.noAttack && selectedUnit.name !== 'Assassin' && selectedUnit.name !== 'Dragon');
   
   if(selectedUnit.name !== 'Cleric' && clicked && clicked.team !== selectedUnit.team && dist<=selectedUnit.atkRange && !selectedUnit.hasActed && canAttackFromTerrain){
     

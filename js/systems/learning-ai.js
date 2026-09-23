@@ -325,11 +325,11 @@ function evaluateSequenceEffectiveness(sequence) {
   
   // Calculate resource gain
   const team = sequence[0].team;
-  const startResources = startState.resources[team] || {food: 0, gold: 0, materials: 0};
-  const endResources = endState.resources[team] || {food: 0, gold: 0, materials: 0};
+  const startResources = startState.resources[team] || {gold: 0, materials: 0};
+  const endResources = endState.resources[team] || {gold: 0, materials: 0};
   
-  const resourceGain = (endResources.food + endResources.gold + endResources.materials) - 
-                      (startResources.food + startResources.gold + startResources.materials);
+  const resourceGain = (endResources.gold + endResources.materials) -
+                      (startResources.gold + startResources.materials);
   
   // Calculate territory gain
   const startTerritory = startState.territoryControl[team] || 0;

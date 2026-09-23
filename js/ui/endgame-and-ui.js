@@ -338,6 +338,11 @@ function checkCampaignVictory() {
  * Handles: turn indicator, resource display, unit selection panel, health bars
  */
 function updateUI() {
+  const modeSummary=document.getElementById("modeSummary");
+  if(modeSummary)modeSummary.textContent=opponentType==="HUMAN"?"Online match":"vs AI";
+  for(const table of [resources,startingResources])for(const team of Object.keys(table))table[team]=getEffectiveCost(table[team]);
+  const endButton=document.getElementById('endTurnBtn');
+  if(endButton)endButton.disabled=gameOver||isAITeam(currentTeam)||(typeof OnlineMatch!=='undefined'&&!OnlineMatch.canAct());
   // Update turn indicator to show whose turn it is
   let turnDisplay = currentTeam;
   if (opponentType === 'LOCAL_2P') {
@@ -350,7 +355,7 @@ function updateUI() {
   if (resLabel) {
     const activeTeams = getActiveTeams();
     const resourceParts = activeTeams.map(team => {
-      const teamResources = resources[team] || { food: 0, gold: 0, materials: 0 };
+      const teamResources = resources[team] || { gold: 0, materials: 0 };
       const color = getTeamColorHex(team);
       const shortName = team === 'PLAYER' ? 'P' : team === 'PLAYER2' ? 'P2' : team;
       
@@ -368,7 +373,7 @@ function updateUI() {
         else dipIcon = '⚔️';
       }
       
-      return `<span style="color: ${color}; font-weight: bold">${shortName}:🍞${teamResources.food}•💰${teamResources.gold}•⚒️${teamResources.materials}${dipIcon}</span>`;
+      return `<span style="color: ${color}; font-weight: bold">${shortName}:💰${teamResources.gold}•⚒️${teamResources.materials}${dipIcon}</span>`;
     });
     
     resLabel.html(resourceParts.join(' • '));
@@ -393,7 +398,6 @@ function updateUI() {
       costDisplay = unitCost; // Single resource cost (gold)
     } else {
       const parts = [];
-      if (unitCost.food > 0) parts.push(`${unitCost.food}F`);
       if (unitCost.gold > 0) parts.push(`${unitCost.gold}G`);
       if (unitCost.materials > 0) parts.push(`${unitCost.materials}M`);
       costDisplay = parts.join('/') || '0';
@@ -439,7 +443,7 @@ function updateUI() {
       
       // Water upgrade widget: show when a friendly unit is selected
       let waterUpgradeWidget = document.getElementById('waterUpgradeWidget');
-      const shouldShowWaterWidget = selectedUnit && selectedUnit.team === currentTeam && selectedUnit.hp > 0;
+      const shouldShowWaterWidget = selectedUnit && !isFortressUnit(selectedUnit) && selectedUnit.name!=='Dragon' && selectedUnit.team === currentTeam && selectedUnit.hp > 0;
       if (shouldShowWaterWidget) {
         if (!waterUpgradeWidget) {
           waterUpgradeWidget = document.createElement('div'); waterUpgradeWidget.id = 'waterUpgradeWidget';

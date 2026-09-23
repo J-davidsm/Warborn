@@ -575,7 +575,7 @@ function canUnitAttackFromCurrentPosition(unit) {
   if (unit.hasActed || unit.name === 'Cleric' || !unit.atkRange || unit.atkRange <= 0) return false;
 
   const attackerTerrain = normalizeTerrainType(terrain[unit.row * COLS + unit.col]);
-  if (attackerTerrain === 'SWAMP' && TERRAIN.SWAMP && TERRAIN.SWAMP.noAttack && unit.name !== 'Assassin') {
+  if (attackerTerrain === 'SWAMP' && TERRAIN.SWAMP && TERRAIN.SWAMP.noAttack && unit.name !== 'Assassin' && unit.name !== 'Dragon') {
     return false;
   }
 
@@ -758,7 +758,8 @@ function drawUnits(){
     x=animated.x;y=animated.y;
     // Adjust unit size based on grid type
     const unitScale = useHexGrid ? 0.8 : 1.0; // Make units 20% smaller in hex mode
-    const teamColor = getTeamColor(u.team);
+    const teamColor = areFriendlyTeams('PLAYER',u.team) && u.team!=='PLAYER'
+      ? {fill:[62,160,120],stroke:[95,225,160]} : getTeamColor(u.team);
     const canAttackNow = canUnitAttackFromCurrentPosition(u);
     const blinkPulse = canAttackNow ? (0.5 + 0.5 * Math.sin(frameCount * 0.18)) : 0;
     const backingAlpha = canAttackNow ? 88 + blinkPulse * 116 : 92;
@@ -1005,12 +1006,12 @@ function drawHighlights(){
         // Check if unit can attack (swamp restriction)
         const attackerTerrainIdx = selectedUnit.row * COLS + selectedUnit.col;
         const attackerTerrain = terrain[attackerTerrainIdx];
-        const canAttackFromHere = !(attackerTerrain === 'SWAMP' && TERRAIN.SWAMP.noAttack && selectedUnit.name !== 'Assassin');
+        const canAttackFromHere = !(attackerTerrain === 'SWAMP' && TERRAIN.SWAMP.noAttack && selectedUnit.name !== 'Assassin' && selectedUnit.name !== 'Dragon');
         
         if (canAttackFromHere) {
           // Normal attack - highlight enemy units (red circles)
           stroke(255,60,60); strokeWeight(3); noFill();
-          for(const e of units.filter(u=>u.team!==selectedUnit.team&&u.hp>0)){
+          for(const e of units.filter(u=>u.hp>0&&canAttack(selectedUnit.team,u.team))){
             if(manhattan(selectedUnit.col,selectedUnit.row,e.col,e.row)<=selectedUnit.atkRange){
               // Only highlight units in viewport
               const viewport = getViewportSize();

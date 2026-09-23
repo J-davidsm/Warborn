@@ -109,19 +109,21 @@ function showPopup(title, message, type = 'info') {
  */
 const SETTLEMENTS = {
   /** Basic settlement - provides modest income and healing */
-  HAMLET: { 
+  HAMLET: {
+    upgradeTo:'VILLAGE', upgradeCost:{gold:8,materials:0},
     healPct: 0.03,     // Heals 3% of unit's max HP per turn
     emoji: '🏡',       // Display icon
     defense: 0.05,     // 5% damage reduction for occupying units
-    income: { food: 0, gold: 1, materials: 0 } // Resources generated per turn
+    income: { gold: 1, materials: 0 } // Resources generated per turn
   },
   
   /** Intermediate settlement - better bonuses than hamlet */
-  VILLAGE: { 
+  VILLAGE: {
+    upgradeTo:'CITY', upgradeCost:{gold:12,materials:0},
     healPct: 0.05,     // Heals 5% of unit's max HP per turn  
     emoji: '🏘️',       // Display icon
     defense: 0.10,     // 10% damage reduction for occupying units
-    income: { food: 0, gold: 2, materials: 0 } // Resources generated per turn
+    income: { gold: 2, materials: 0 } // Resources generated per turn
   },
   
   /** Advanced settlement - maximum bonuses and strategic value */
@@ -129,7 +131,7 @@ const SETTLEMENTS = {
     healPct: 0.07,     // Heals 7% of unit's max HP per turn
     emoji: '🏰',       // Display icon  
     defense: 0.15,     // 15% damage reduction for occupying units
-    income: { food: 0, gold: 3, materials: 2 } // Resources generated per turn
+    income: { gold: 3, materials: 2 } // Resources generated per turn
   },
   
   /** Naval settlement - can build ships, must be on coast */
@@ -137,7 +139,7 @@ const SETTLEMENTS = {
     healPct: 0.05,     // Heals 5% of unit's max HP per turn
     emoji: '⚓',        // Display icon  
     defense: 0.12,     // 12% damage reduction for occupying units
-    income: { food: 0, gold: 4, materials: 3 }, // Resources generated per turn
+    income: { gold: 4, materials: 3 }, // Resources generated per turn
     allowsNaval: true  // Can build naval units
   }
 };
@@ -345,7 +347,6 @@ const TERRAIN = {
   FARM: {
     emoji: '🌾',
     getDefense: () => 0.05, // Minimal defense
-    foodProduction: 10 // Produces 10 food per turn when controlled
   }
 };
 
@@ -365,7 +366,7 @@ let campaignMode = {
         victory: "Capture 3 settlements",
         difficulty: "Easy",
         startingUnits: {PLAYER: [{type: "Knight", col: 1, row: 2}], AI: [{type: "Archer", col: 6, row: 5}]},
-        startingResources: {PLAYER: {food: 15, gold: 20, materials: 0}, AI: {food: 10, gold: 15, materials: 0}},
+        startingResources: {PLAYER: {gold: 20, materials: 0}, AI: {gold: 15, materials: 0}},
         aiCount: 1,
         mapSize: {cols: 8, rows: 8}
       },
@@ -375,7 +376,7 @@ let campaignMode = {
         victory: "Eliminate all enemy forces",
         difficulty: "Medium",
         startingUnits: {PLAYER: [{type: "Knight", col: 1, row: 3}, {type: "Archer", col: 2, row: 2}], AI: [{type: "Knight", col: 6, row: 4}, {type: "Footman", col: 7, row: 5}]},
-        startingResources: {PLAYER: {food: 20, gold: 25, materials: 5}, AI: {food: 20, gold: 25, materials: 5}},
+        startingResources: {PLAYER: {gold: 25, materials: 5}, AI: {gold: 25, materials: 5}},
         aiCount: 1,
         mapSize: {cols: 10, rows: 8}
       },
@@ -385,7 +386,7 @@ let campaignMode = {
         victory: "Survive 15 turns and control the center",
         difficulty: "Hard",
         startingUnits: {PLAYER: [{type: "Knight", col: 2, row: 4}, {type: "Cleric", col: 1, row: 4}, {type: "Archer", col: 3, row: 3}], AI: [{type: "Knight", col: 7, row: 2}], AI2: [{type: "Footman", col: 8, row: 6}]},
-        startingResources: {PLAYER: {food: 30, gold: 40, materials: 15}, AI: {food: 25, gold: 30, materials: 10}, AI2: {food: 25, gold: 30, materials: 10}},
+        startingResources: {PLAYER: {gold: 40, materials: 15}, AI: {gold: 30, materials: 10}, AI2: {gold: 30, materials: 10}},
         aiCount: 2,
         mapSize: {cols: 12, rows: 10}
       }

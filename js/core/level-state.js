@@ -31,7 +31,7 @@ function makeUnit(name, team, col, row, opts={}) {
     // allow callers to set current HP via opts.hp; fall back to opts.maxHp or defaults
     hp: (typeof opts.hp !== 'undefined') ? opts.hp : (opts.maxHp ?? defaultStats.maxHp),
     maxHp: opts.maxHp ?? defaultStats.maxHp,
-    move: opts.move ?? defaultStats.move,
+    move: (template?.fortress || name==='Fortress') ? 0 : (opts.move ?? defaultStats.move),
     atkRange: opts.atkRange ?? defaultStats.atkRange,
     dmg: opts.dmg ?? defaultStats.dmg,
     cost: opts.cost ?? defaultStats.cost ?? 1,

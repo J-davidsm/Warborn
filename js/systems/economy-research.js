@@ -2,11 +2,11 @@
 // Section: js/systems/economy-research.js
 
 // Economy: resources per team
-// Three-resource economy: Food, Gold, Materials
+// two-resource economy: Gold, Materials
 let resources = { 
-  PLAYER: { food: 0, gold: 0, materials: 0 }, 
-  AI: { food: 0, gold: 0, materials: 0 }, 
-  PLAYER2: { food: 0, gold: 0, materials: 0 } 
+  PLAYER: { gold: 0, materials: 0 },
+  AI: { gold: 0, materials: 0 },
+  PLAYER2: { gold: 0, materials: 0 }
 };
 
 // Research system: tracks what units each team has researched
@@ -43,20 +43,18 @@ const RESEARCH_COSTS = {
 
 // Resource utility functions
 function getResources(team) {
-  return resources[team] || { food: 0, gold: 0, materials: 0 };
+  return resources[team] || { gold: 0, materials: 0 };
 }
 
 function hasResources(team, cost) {
   const teamRes = getResources(team);
-  return (teamRes.food >= (cost.food || 0)) && 
-         (teamRes.gold >= (cost.gold || 0)) && 
+  return (teamRes.gold >= (cost.gold || 0)) &&
          (teamRes.materials >= (cost.materials || 0));
 }
 
 function spendResources(team, cost) {
   if (!hasResources(team, cost)) return false;
   const teamRes = resources[team];
-  teamRes.food -= (cost.food || 0);
   teamRes.gold -= (cost.gold || 0);
   teamRes.materials -= (cost.materials || 0);
   return true;
@@ -64,9 +62,8 @@ function spendResources(team, cost) {
 
 function addResources(team, amount) {
   if (!resources[team]) {
-    resources[team] = { food: 0, gold: 0, materials: 0 };
+    resources[team] = { gold: 0, materials: 0 };
   }
-  resources[team].food += (amount.food || 0);
   resources[team].gold += (amount.gold || 0);
   resources[team].materials += (amount.materials || 0);
 }
@@ -75,14 +72,14 @@ function getResourceTotal(teamOrResources) {
   const value = typeof teamOrResources === 'string' ? getResources(teamOrResources) : teamOrResources;
   if (typeof value === 'number') return value;
   if (!value || typeof value !== 'object') return 0;
-  return (value.food || 0) + (value.gold || 0) + (value.materials || 0);
+  return (value.gold || 0) + (value.materials || 0);
 }
 
 function getResourceValue(teamOrResources) {
   const value = typeof teamOrResources === 'string' ? getResources(teamOrResources) : teamOrResources;
   if (typeof value === 'number') return value;
   if (!value || typeof value !== 'object') return 0;
-  return (value.food || 0) + (value.gold || 0) * 1.4 + (value.materials || 0) * 1.8;
+  return (value.gold || 0) * 1.4 + (value.materials || 0) * 1.8;
 }
 
 function getGold(team) {
@@ -100,10 +97,9 @@ function canAfford(team, cost) {
     return resources[team].gold >= effectiveCost;
   }
   
-  // Handle three-resource cost (naval units and new system)
+  // Handle two-resource cost (naval units and new system)
   if (typeof effectiveCost === 'object') {
-    return (resources[team].food >= (effectiveCost.food || 0)) &&
-           (resources[team].gold >= (effectiveCost.gold || 0)) &&
+    return (resources[team].gold >= (effectiveCost.gold || 0)) &&
            (resources[team].materials >= (effectiveCost.materials || 0));
   }
   
@@ -112,7 +108,7 @@ function canAfford(team, cost) {
 
 function deductResources(team, cost) {
   if (!resources[team]) {
-    resources[team] = { food: 0, gold: 0, materials: 0 };
+    resources[team] = { gold: 0, materials: 0 };
   }
   
   const effectiveCost = getEffectiveCost(cost);
@@ -123,9 +119,8 @@ function deductResources(team, cost) {
     return;
   }
   
-  // Handle three-resource cost
+  // Handle two-resource cost
   if (typeof effectiveCost === 'object') {
-    resources[team].food -= (effectiveCost.food || 0);
     resources[team].gold -= (effectiveCost.gold || 0);
     resources[team].materials -= (effectiveCost.materials || 0);
   }
@@ -137,15 +132,7 @@ function hasFarmsOnMap() {
 }
 
 function getEffectiveCost(unitCost) {
-  // If no farms exist, remove food costs from units
-  if (!hasFarmsOnMap() && typeof unitCost === 'object' && unitCost.food) {
-    return {
-      food: 0,
-      gold: unitCost.gold || 0,
-      materials: unitCost.materials || 0
-    };
-  }
-  return unitCost;
+  return typeof unitCost==='object' ? {gold:unitCost.gold||0,materials:unitCost.materials||0} : unitCost;
 }
 
 function formatCost(cost) {
@@ -156,10 +143,9 @@ function formatCost(cost) {
     return `${effectiveCost}G`;
   }
   
-  // Handle three-resource cost
+  // Handle two-resource cost
   if (typeof effectiveCost === 'object') {
     const parts = [];
-    if (effectiveCost.food > 0) parts.push(`${effectiveCost.food}F`);
     if (effectiveCost.gold > 0) parts.push(`${effectiveCost.gold}G`);
     if (effectiveCost.materials > 0) parts.push(`${effectiveCost.materials}M`);
     return parts.join('/') || '0';

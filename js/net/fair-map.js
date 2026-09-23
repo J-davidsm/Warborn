@@ -71,7 +71,7 @@
 
     // Decorative resource terrain stays paired and never replaces a settlement.
     for(const [c,r,type] of [[4,mid-2,'FOUNTAIN'],[4,mid+2,'FARM']]) if(!settlements[r*cols+c]) pair(terrain,c,r,type);
-    const zeroResources={food:0,gold:0,materials:0};
+    const zeroResources={gold:0,materials:0};
     return {seed:String(seed),theme:{id:theme.id,name:theme.name},cols,rows,terrain,settlements,units,
       resources:{PLAYER:{...zeroResources},PLAYER2:{...zeroResources}},firstTeam:random()<.5?'PLAYER':'PLAYER2'};
   }

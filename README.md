@@ -36,7 +36,7 @@ AI, campaigns, the map editor, and local play run entirely in the browser. Onlin
 1. Choose **Multiplayer**, enter your display name, and **Create room**.
 2. Share the 8-character room code or **Copy invite link**. Your friend opens the game, enters their name and code, and chooses **Join room**.
 3. Both names appear in the room. Both players choose **Ready**; the host chooses **Generate & start**.
-4. Each new match uses a fresh seed and a 20×16 hex map. It selects a distinct setting—highlands, desert, islands, ancient forest, flooded marsh, or open frontier—and places 3–5 settlements. Terrain is mirrored by a 180-degree rotation; armies are identical, capitals are connected, neutral objectives are equally reachable, the first player is randomized, and both players begin with 0 food, 0 gold, and 0 materials.
+4. Each new match uses a fresh seed and a 20×16 hex map. It selects a distinct setting—highlands, desert, islands, ancient forest, flooded marsh, or open frontier—and places 3–5 settlements. Terrain is mirrored by a 180-degree rotation; armies are identical, capitals are connected, neutral objectives are equally reachable, the first player is randomized, and both players begin with 0 gold and 0 materials.
 5. **Return to lobby** ends the current match for both players. Ready up again for a newly generated map.
 
 Keep both game tabs open. Rooms have two seats and are joined by invitation, not through a public room directory. Closing the host tab ends the room; reloads do not resume a match. Disconnects pause input, and a new match requires both players to ready up again. Editor and saved-map loading are unavailable during online matches.
@@ -47,10 +47,13 @@ Some restrictive networks cannot establish direct WebRTC connections without a s
 
 ## Tests
 
+AI commanders defend threatened settlements, reinforce allies without abandoning their last garrison, protect mission targets, and use clerics. Recruitment balances counters, elite-unit research and saving, with at most three mobile units per owned settlement. Fortifications do not count toward that cap. Anchored land units can cross water and return to land; ships stay on water and dragons fly over every terrain. Fortresses remain immobile at every rank. The economy uses gold and materials only; old food values are ignored when loading saves.
+
 ```sh
 node tests/fair-map.cjs
 node tests/online-lobby.cjs
 node tests/movement-rules.cjs
+node tests/tactics.cjs
 node tests/terrain.cjs
 ```
 

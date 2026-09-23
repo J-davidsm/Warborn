@@ -46,8 +46,8 @@ function normalizeCampaignData() {
     }
     if (!scenario.startingResources) {
       scenario.startingResources = {
-        PLAYER: { food: 20, gold: 25, materials: 5 },
-        AI: { food: 20, gold: 25, materials: 5 }
+        PLAYER: { gold: 25, materials: 5 },
+        AI: { gold: 25, materials: 5 }
       };
     }
   });
@@ -243,8 +243,8 @@ function addScenario() {
       AI: [{type: "Knight", col: 6, row: 5}]
     },
     startingResources: {
-      PLAYER: {food: 20, gold: 25, materials: 5}, 
-      AI: {food: 20, gold: 25, materials: 5}
+      PLAYER: {gold: 25, materials: 5},
+      AI: {gold: 25, materials: 5}
     },
     aiCount: 1,
     mapSize: {cols: 10, rows: 8}
@@ -315,8 +315,8 @@ function getScenarioDifficultyProfile(difficulty) {
       playerBonus: ['Archer', 'Soldier', 'Cleric'],
       aiUnits: ['Soldier', 'Soldier', 'Archer'],
       aiReinforcements: ['Soldier', 'Spearman', 'Archer'],
-      playerResources: { food: 30, gold: 36, materials: 10 },
-      aiResources: { food: 14, gold: 16, materials: 3 },
+      playerResources: { gold: 36, materials: 10 },
+      aiResources: { gold: 16, materials: 3 },
       playerSettlement: 'CITY',
       aiSettlement: 'VILLAGE',
       neutralSettlements: 4,
@@ -331,8 +331,8 @@ function getScenarioDifficultyProfile(difficulty) {
       playerBonus: ['Soldier', 'Archer'],
       aiUnits: ['Knight', 'Archer', 'Spearman', 'Soldier'],
       aiReinforcements: ['Swordsman', 'Soldier', 'Archer', 'Spearman'],
-      playerResources: { food: 24, gold: 28, materials: 7 },
-      aiResources: { food: 22, gold: 26, materials: 6 },
+      playerResources: { gold: 28, materials: 7 },
+      aiResources: { gold: 26, materials: 6 },
       playerSettlement: 'VILLAGE',
       aiSettlement: 'VILLAGE',
       neutralSettlements: 5,
@@ -347,8 +347,8 @@ function getScenarioDifficultyProfile(difficulty) {
       playerBonus: ['Soldier'],
       aiUnits: ['Knight', 'Swordsman', 'Archer', 'Spearman', 'Soldier'],
       aiReinforcements: ['Catapult', 'Swordsman', 'Knight', 'Assassin'],
-      playerResources: { food: 20, gold: 22, materials: 5 },
-      aiResources: { food: 28, gold: 34, materials: 9 },
+      playerResources: { gold: 22, materials: 5 },
+      aiResources: { gold: 34, materials: 9 },
       playerSettlement: 'HAMLET',
       aiSettlement: 'CITY',
       neutralSettlements: 4,
@@ -363,8 +363,8 @@ function getScenarioDifficultyProfile(difficulty) {
       playerBonus: ['Soldier'],
       aiUnits: ['Knight', 'Swordsman', 'Catapult', 'Spearman', 'Archer'],
       aiReinforcements: ['Dragon', 'Heavy Fortress', 'Catapult', 'Assassin', 'Cleric'],
-      playerResources: { food: 16, gold: 18, materials: 4 },
-      aiResources: { food: 36, gold: 44, materials: 13 },
+      playerResources: { gold: 18, materials: 4 },
+      aiResources: { gold: 44, materials: 13 },
       playerSettlement: 'HAMLET',
       aiSettlement: 'CITY',
       neutralSettlements: 3,
@@ -568,7 +568,6 @@ function createGeneratedStartingResources(teams, profile, aiCount) {
   teams.forEach(team => {
     if (team === 'PLAYER') {
       resourcesByTeam[team] = {
-        food: profile.playerResources.food + Math.max(0, aiCount - 1) * 4,
         gold: profile.playerResources.gold + Math.max(0, aiCount - 1) * 5,
         materials: profile.playerResources.materials + Math.max(0, aiCount - 1) * 2
       };
@@ -973,8 +972,8 @@ function createNewCampaign() {
           AI: [{type: "Archer", col: 7, row: 5}]
         },
         startingResources: {
-          PLAYER: {food: 20, gold: 30, materials: 5},
-          AI: {food: 15, gold: 20, materials: 0}
+          PLAYER: {gold: 30, materials: 5},
+          AI: {gold: 20, materials: 0}
         },
         aiCount: 1,
         mapSize: {cols: 10, rows: 8}
@@ -1232,6 +1231,7 @@ function loadScenarioForEditing(scenarioIndex) {
 }
 
 function upgradeSelectedUnitToWater() {
+  if(isAITeam(currentTeam)||isFortressUnit(selectedUnit)||selectedUnit?.name==='Dragon')return;
   if (!selectedUnit || selectedUnit.team !== currentTeam) {
     console.log('No valid unit selected for water upgrade');
     return;

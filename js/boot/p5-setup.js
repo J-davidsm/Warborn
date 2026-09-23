@@ -79,13 +79,7 @@ function setup(){
     updateUI();
   });
   
-  // Initialize game mode dropdown
-  const gameModeSelect = select('#gameModeSelect');
-  gameModeSelect.value(gameMode);
-  gameModeSelect.changed(() => {
-    const newMode = gameModeSelect.value();
-    switchGameMode(newMode);
-  });
+  select('#gameModeSelect').value(gameMode);
   
   // Initialize UI controls based on current game mode
   switchGameMode(gameMode);
@@ -143,13 +137,12 @@ function setup(){
       const btn = select(sel);
       if(btn){
         const unitCost = makeUnit(name,'PLAYER',0,0).cost || 1;
-        // Format cost display - handle both single cost and three-resource cost
+        // Format cost display - handle both single cost and two-resource cost
         let costDisplay;
         if (typeof unitCost === 'number') {
           costDisplay = unitCost; // Single resource cost
         } else {
           const parts = [];
-          if (unitCost.food > 0) parts.push(`${unitCost.food}F`);
           if (unitCost.gold > 0) parts.push(`${unitCost.gold}G`);
           if (unitCost.materials > 0) parts.push(`${unitCost.materials}M`);
           costDisplay = parts.join('/') || '0';
