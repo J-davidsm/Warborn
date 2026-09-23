@@ -58,14 +58,6 @@ function setup(){
     }
   });
   
-  // Zoom control button handlers
-  select('#zoomInBtn').mousePressed(() => setZoom(targetZoom * 1.2));
-  select('#zoomOutBtn').mousePressed(() => setZoom(targetZoom * 0.8));
-  select('#zoomResetBtn').mousePressed(() => {
-    setZoom(1.0);
-    targetPanX = 0;
-    targetPanY = 0;
-  });
   
   // Add convert teams button for debugging
   select('#convertTeamsBtn').mousePressed(() => {

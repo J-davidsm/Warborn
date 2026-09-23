@@ -350,6 +350,11 @@ function updateUI() {
     turnDisplay = currentTeam === 'PLAYER' ? 'Player 1' : 'Player 2';
   }
   turnLabelEl.html(turnDisplay);
+  const bannerTeam = getLocalPlayableTeam();
+  const ownResources = resources[bannerTeam] || {gold:0,materials:0};
+  const goldBanner = select('#bannerGold'), materialsBanner = select('#bannerMaterials');
+  if(goldBanner)goldBanner.html(String(ownResources.gold));
+  if(materialsBanner)materialsBanner.html(String(ownResources.materials));
   
   // Update resource counters for all teams (if element exists)
   const resLabel = select('#resourceLabel');
@@ -496,15 +501,6 @@ function updateUI() {
     aiCountDisplay.html(currentAIPlayers.toString());
   }
   
-  // Update learning indicator
-  const learningIndicator = select('#learningIndicator');
-  if (learningIndicator) {
-    if (shouldLearnFromCurrentGame() && LEARNING_AI.enabled) {
-      learningIndicator.style('display', 'block');
-    } else {
-      learningIndicator.style('display', 'none');
-    }
-  }
 }
 
 function processDiplomaticTurnEnd() {

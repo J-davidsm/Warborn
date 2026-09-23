@@ -436,6 +436,27 @@ html, body {
   z-index: 2050;
 }
 
+#resourceBanner {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 2060;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  max-width: calc(100vw - 32px);
+  padding: 12px 16px;
+  border: 1px solid #d5b564;
+  border-radius: 8px;
+  background: rgba(15, 21, 33, .95);
+  box-shadow: 0 3px 12px #0006;
+  color: #f6edd7;
+  font-size: 13px;
+  pointer-events: none;
+}
+#resourceBanner strong { flex-basis: 100%; color: #f1ce77; }
+#resourceBanner b { margin-left: 5px; font-variant-numeric: tabular-nums; }
+
 /* Ensure UI panel layers above the canvas so buttons stay clickable */
 #panel { 
   z-index: 2100; 

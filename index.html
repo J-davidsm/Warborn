@@ -5,7 +5,7 @@
   <title>Warborn — Turn-Based Strategy</title>
   <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=mp3">
+  <link rel="stylesheet" href="styles.css?v=resource-banner1">
   <script src="vendor/p5.min.js"></script>
 </head>
 <body>
@@ -109,6 +109,11 @@
   
   <div id="container">
     <div id="game">
+      <div id="resourceBanner" role="status" aria-label="Your resources">
+        <strong>Your resources</strong>
+        <span>Gold <b id="bannerGold">0</b></span>
+        <span>Materials <b id="bannerMaterials">0</b></span>
+      </div>
       <!-- Diplomacy Button Overlay -->
       <div id="mapDiplomacyButton" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5000; display: none;">
         <button onclick="openDiplomacyNegotiation()" style="padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.3); position: relative;">
@@ -196,7 +201,6 @@
       <div style="display:flex;align-items:center;gap:12px;">
         <div class="info">Turn: <span id="turnLabel">PLAYER</span></div>
         <div class="info">Resources: <span id="resourceLabel">P:0 • AI:0</span></div>
-        <div id="learningIndicator" class="info" style="color:#6bb6ff;font-size:11px;display:none;">🧠 Learning</div>
       </div>
       
       <div id="selectedInfo" class="unit-card">
@@ -223,12 +227,6 @@
         </div>
       </div>
       
-      <div id="zoomControls" class="row" style="gap:8px;margin-top:8px;">
-        <button id="zoomInBtn" class="small" title="Zoom In (+)">🔍+</button>
-        <button id="zoomOutBtn" class="small" title="Zoom Out (-)">🔍-</button>
-        <button id="zoomResetBtn" class="small" title="Reset Zoom (Z)">⌂</button>
-        <div class="info" style="font-size:10px;">📍 Scroll over the map to zoom • Drag the map to pan • Z resets<br>🏘️ Shift+Click owned settlement to upgrade</div>
-      </div>
       
       <div id="gameControls" style="margin-top:8px;">
         <div style="font-weight:700;margin-bottom:6px;">Controls</div>
@@ -411,7 +409,7 @@
   <script src="js/core/game-setup.js?v=tactics1"></script>
   <script src="js/systems/campaign.js?v=tactics1"></script>
   <script src="js/systems/settlements.js?v=tactics1"></script>
-  <script src="js/boot/p5-setup.js?v=crown1"></script>
+  <script src="js/boot/p5-setup.js?v=resource-banner1"></script>
   <script src="js/systems/save-editor-teams.js?v=tactics1"></script>
   <script src="js/systems/learning-ai.js?v=tactics1"></script>
   <script src="js/systems/diplomacy.js?v=tactics1"></script>
@@ -425,7 +423,7 @@
   <script src="js/input/global-events.js?v=tactics1"></script>
   <script src="js/systems/combat-turns.js?v=crown1"></script>
   <script src="js/systems/ai-turn.js?v=crown1"></script>
-  <script src="js/ui/endgame-and-ui.js?v=crown1"></script>
+  <script src="js/ui/endgame-and-ui.js?v=resource-banner1"></script>
   <script src="js/net/multiplayer-sync.js?v=tactics1"></script>
   <script src="vendor/peerjs-1.5.5.min.js"></script>
   <script src="js/net/fair-map.js?v=tactics1"></script>
