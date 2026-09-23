@@ -62,7 +62,7 @@ function aiMoveOptions(u) {
 }
 function aiObjectives(u) {
   const protectedUnit=aiProtectedUnit(u.team);
-  const captureWeight=aiExpansionMode(u.team)?320:45;
+  const captureWeight=aiExpansionMode(u.team)?320:240;
   const objectives=[];
   for(const s of aiAssets(u.team))if(aiThreat(s,u.team)>0)objectives.push({...s,weight:120});
   // Respond to attacks on allies, with our own garrisons protected by aiMayLeave.
@@ -81,13 +81,15 @@ function aiChoosePosition(u) {
   const enemies=units.filter(e=>e.hp>0&&aiHostile(u.team,e.team));
   const patients=units.filter(a=>a!==u&&a.hp>0&&areFriendlyTeams(a.team,u.team)&&a.hp<a.maxHp);
   const objectives=aiObjectives(u), vip=aiProtectedUnit(u.team)===u;
-  const expansion=aiExpansionMode(u.team)&&!vip&&u.name!=='Cleric';
+  // Combat units press every hostile faction, even while ahead economically.
+  // Clerics and mission targets retain their protective positioning.
+  const aggressive=!vip&&u.name!=='Cleric';
   const captures=objectives.filter(o=>o.capture);
   let best={col:u.col,row:u.row},bestScore=-Infinity;
   for(const tile of aiMoveOptions(u)){
     const threat=aiThreat(tile,u.team),s=settlements[tile.row*COLS+tile.col];
-    let score=-threat*(vip?8:u.name==='Cleric'?4:expansion?0.35:u.hp<u.maxHp*.45?3:1.1);
-    if(threat>=u.hp)score-=vip?1000:expansion?60:150;
+    let score=-threat*(vip?8:u.name==='Cleric'?4:0.35);
+    if(threat>=u.hp)score-=vip?1000:aggressive?60:150;
     if(s&&s.owner===u.team)score+=u.hp<u.maxHp?25:5;
     const allies=units.filter(a=>a!==u&&a.hp>0&&a.team===u.team&&aiDistance(a,tile)<=2);
     score+=Math.min(12,allies.length*3);
@@ -97,11 +99,12 @@ function aiChoosePosition(u) {
     }else if(!vip){
       for(const objective of objectives)score+=objective.weight/(1+aiDistance(tile,objective));
       // Keep advancing toward a settlement even before it is within one move.
-      if(expansion&&captures.length)score-=35*Math.min(...captures.map(o=>aiDistance(tile,o)));
-      if(enemies.length)score-=Math.min(...enemies.map(e=>aiDistance(tile,e)))*2;
+      if(captures.length)score-=35*Math.min(...captures.map(o=>aiDistance(tile,o)));
+      // Close to attack range instead of waiting for enemies to approach.
+      if(enemies.length)score-=24*Math.min(...enemies.map(e=>Math.max(0,aiDistance(tile,e)-u.atkRange)));
       if(!u.hasActed&&aiCanFire(u,tile)){
         const targets=enemies.filter(e=>aiDistance(tile,e)<=u.atkRange);
-        if(targets.length)score+=Math.max(...targets.map(e=>aiAttackValue(u,e)));
+        if(targets.length)score+=1.8*Math.max(...targets.map(e=>aiAttackValue(u,e)));
       }
     }else{
       for(const home of aiAssets(u.team))score+=20/(1+aiDistance(tile,home));

@@ -54,7 +54,23 @@ assert.equal(ctx.aiGarrisonReplacement(replacement),null,'replacement honors arm
 ctx.units=[unit('Soldier','AI',2,1)];ctx.settlements[12]={owner:'AI2',type:'HAMLET'};ctx.settlements[34]={owner:'PLAYER',type:'CITY'};
 const chosen=ctx.aiChoosePosition(ctx.units[0]);
 assert.equal(chosen.col,5);assert.equal(chosen.row,1,'expansion unit prioritizes capturing reachable enemy settlement');
-console.log('Income-based expansion and immediate, affordable, capped garrison replacements pass.');
+// Aggression applies equally to human and AI enemies, including when richer.
+run('hasTreaty=()=>false;');
+for(const enemyTeam of ['PLAYER','AI2']){
+  ctx.settlements.fill(null);ctx.settlements[28]={owner:'AI',type:'CITY'};
+  const attacker=unit('Soldier','AI',0,1),target=unit('Soldier',enemyTeam,4,1);
+  ctx.units=[attacker,target];
+  assert.equal(ctx.aiExpansionMode('AI'),false,'attacker earns more than player');
+  const attackPosition=ctx.aiChoosePosition(attacker);
+  assert(ctx.aiDistance(attackPosition,target)<=attacker.atkRange,'AI actively closes to attack '+enemyTeam+' while richer');
+  ctx.settlements[12]={owner:enemyTeam,type:'HAMLET'};
+  assert(ctx.aiObjectives(attacker).some(o=>o.capture&&o.col===5&&o.row===1&&o.weight>=240),'enemy towns stay high priority while richer');
+}
+run("hasTreaty=(a,b)=>a!==b&&[a,b].includes('AI')&&[a,b].includes('PLAYER');");
+ctx.settlements[12]={owner:'PLAYER',type:'HAMLET'};
+assert(!ctx.aiObjectives(ctx.units[0]).some(o=>o.capture&&o.col===5&&o.row===1),'aggression still excludes allied settlements');
+assert(!ctx.aiHostile('AI','PLAYER'),'allied players are not hostile');
+console.log('Aggression against human and AI enemies, alliance protection, and immediate capped garrison replacements pass.');
 ctx.settlements.fill(null);ctx.units=[];
 ctx.currentTeam='AI';ctx.endTurn();ctx.endTurn();assert.equal(ctx.currentTeam,'AI');
 console.log('Alliance capture protection, defense and support, clerics, VIP protection, recruitment caps, elite spending, anchoring, flight, fortresses, food removal and turn guards pass.');
