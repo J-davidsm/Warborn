@@ -77,10 +77,18 @@ function aiObjectives(u) {
   if(protectedUnit&&protectedUnit!==u)objectives.push({...protectedUnit,weight:aiThreat(protectedUnit,u.team)>0?150:55});
   return objectives;
 }
+function aiRecoveryClerics(u) {
+  if(u.name==='Cleric'||isFortressUnit(u))return [];
+  if(u.hp<u.maxHp*0.5)u.aiRecovering=true;
+  if(u.hp>=u.maxHp)u.aiRecovering=false;
+  return u.aiRecovering?units.filter(a=>a!==u&&a.hp>0&&a.name==='Cleric'&&areFriendlyTeams(a.team,u.team)):[];
+}
 function aiChoosePosition(u) {
   const enemies=units.filter(e=>e.hp>0&&aiHostile(u.team,e.team));
   const patients=units.filter(a=>a!==u&&a.hp>0&&areFriendlyTeams(a.team,u.team)&&a.hp<a.maxHp);
   const objectives=aiObjectives(u), vip=aiProtectedUnit(u.team)===u;
+  const healers=aiRecoveryClerics(u);
+  const escort=units.filter(a=>a!==u&&a.hp>0&&a.team===u.team&&a.name!=='Cleric'&&!isFortressUnit(a));
   // Combat units press every hostile faction, even while ahead economically.
   // Clerics and mission targets retain their protective positioning.
   const aggressive=!vip&&u.name!=='Cleric';
@@ -88,14 +96,24 @@ function aiChoosePosition(u) {
   let best={col:u.col,row:u.row},bestScore=-Infinity;
   for(const tile of aiMoveOptions(u)){
     const threat=aiThreat(tile,u.team),s=settlements[tile.row*COLS+tile.col];
-    let score=-threat*(vip?8:u.name==='Cleric'?4:0.35);
+    let score=-threat*(vip?8:u.name==='Cleric'?20:healers.length?5:0.35);
     if(threat>=u.hp)score-=vip?1000:aggressive?60:150;
     if(s&&s.owner===u.team)score+=u.hp<u.maxHp?25:5;
     const allies=units.filter(a=>a!==u&&a.hp>0&&a.team===u.team&&aiDistance(a,tile)<=2);
     score+=Math.min(12,allies.length*3);
     if(u.name==='Cleric'){
-      for(const a of patients)score+=Math.min(20,a.maxHp-a.hp)*(aiDistance(tile,a)<=u.atkRange?4:1/(1+aiDistance(tile,a)));
-      if(!patients.length&&allies.length===0)score-=10;
+      // Support the formation from behind; wounded units come back to us.
+      if(escort.length)score-=12*Math.min(...escort.map(a=>Math.max(0,aiDistance(tile,a)-u.atkRange)));
+      if(enemies.length&&escort.length){
+        const enemyDistance=p=>Math.min(...enemies.map(e=>aiDistance(p,e)));
+        const front=Math.min(...escort.map(enemyDistance));
+        score-=45*Math.max(0,front+1-enemyDistance(tile));
+      }
+      for(const a of patients)if(aiDistance(tile,a)<=u.atkRange)score+=Math.min(20,a.maxHp-a.hp)*2;
+    }else if(healers.length){
+      const distance=Math.min(...healers.map(a=>Math.max(0,aiDistance(tile,a)-a.atkRange)));
+      score-=80*distance;
+      if(distance===0)score+=100;
     }else if(!vip){
       for(const objective of objectives)score+=objective.weight/(1+aiDistance(tile,objective));
       // Keep advancing toward a settlement even before it is within one move.
@@ -211,7 +229,7 @@ async function aiTakeTurn(team='AI') {
       if(!valid())return;
       if(u.hp<=0||u.morale<=0)continue;
       aiHeal(u);aiAnchor(u);
-      if(u.name!=='Cleric'&&!u.hasActed&&aiCanFire(u,u)){
+      if(u.name!=='Cleric'&&!aiRecoveryClerics(u).length&&!u.hasActed&&aiCanFire(u,u)){
         const target=aiTargets(u)[0];if(target)attackUnit(u,target);
       }
       if(u.hp<=0)continue;
@@ -220,11 +238,15 @@ async function aiTakeTurn(team='AI') {
         aiMoveWithGarrison(u,tile);
       }
       aiHeal(u);
-      if(u.name!=='Cleric'&&!u.hasActed&&aiCanFire(u,u)){const target=aiTargets(u)[0];if(target)attackUnit(u,target);}
+      if(u.name!=='Cleric'&&!aiRecoveryClerics(u).length&&!u.hasActed&&aiCanFire(u,u)){const target=aiTargets(u)[0];if(target)attackUnit(u,target);}
       updateUI();checkEndGame();
       await new Promise(resolve=>setTimeout(resolve,180));
     }
-    if(valid()){aiRecruit(team);updateUI();checkEndGame();}
+    if(valid()){
+      // Catch units that retreated into range after their cleric's movement.
+      for(const healer of units.filter(u=>u.team===team&&u.hp>0&&u.morale>0))aiHeal(healer);
+      aiRecruit(team);updateUI();checkEndGame();
+    }
   }finally{
     if(valid()){activeAITurn=null;selectedUnit=null;endTurn(team);}
     else if(activeAITurn===token)activeAITurn=null;

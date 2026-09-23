@@ -135,9 +135,9 @@ function findMovementPath(unit, targetCol, targetRow) {
       
       const unitAtPos = getUnitAt(newCol, newRow);
       
-      // Units are physical blockers. A destination was checked above; this
-      // blocks routes that try to pass through either friendly or enemy units.
-      if (unitAtPos && unitAtPos.id !== unit.id) continue;
+      // Pass through our own formation, but never stop on an occupied tile.
+      // Other factions remain blockers, including diplomatic allies.
+      if (unitAtPos && unitAtPos.id !== unit.id && unitAtPos.team !== unit.team) continue;
       
       // Check terrain restrictions
       const terrainIdx = newRow * COLS + newCol;

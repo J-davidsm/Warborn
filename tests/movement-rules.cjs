@@ -19,6 +19,15 @@ assert.equal(ctx.canMoveTo(ship,2,0),false,'water units cannot use land shortcut
 p=unit('player',0);const enemy=unit('enemy',1);ctx=game({terrain:['GRASS','GRASS','GRASS'],units:[p,enemy]});
 assert.equal(ctx.canMoveTo(p,1,0),false,'an occupied enemy tile is an attack target, not a move target');
 assert.equal(ctx.canMoveTo(p,2,0),false,'units cannot pass through enemy units');
+for(const team of ['PLAYER','AI']){
+  p=unit('mover',0);p.team=team;
+  const friend=unit('friend',1);friend.team=team;
+  ctx=game({terrain:['GRASS','GRASS','GRASS'],units:[p,friend]});
+  assert.equal(ctx.canMoveTo(p,1,0),false,'cannot finish on own unit');
+  assert.equal(ctx.canMoveTo(p,2,0),true,'player and AI can pass through own units');
+  assert.equal(ctx.findMovementPath(p,2,0)[1].col,1,'animation path includes own occupied tile');
+  ctx.terrain[1]='WATER';assert.equal(ctx.canMoveTo(p,2,0),false,'own units do not bypass terrain restrictions');
+}
 console.log('Land/water restrictions, bridge crossings, and occupied-unit path blocking pass.');
 // A detour must animate along adjacent safe tiles, not straight across water.
 ctx=game({terrain:Array(9).fill(null),units:[p]});ctx.COLS=3;ctx.ROWS=3;p.col=0;p.row=1;p.move=4;ctx.terrain[4]='WATER';

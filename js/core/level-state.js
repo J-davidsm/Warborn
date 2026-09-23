@@ -39,6 +39,7 @@ function makeUnit(name, team, col, row, opts={}) {
     // Units from saves/setup should be able to move (opts.justSpawned not set)
     hasMoved: opts.justSpawned === true ? true : (opts.hasMoved ?? false),
     hasActed: opts.justSpawned === true ? true : (opts.hasActed ?? false),
+    aiRecovering: opts.aiRecovering === true,
     morale: (typeof opts.morale !== 'undefined') ? opts.morale : (name === 'Dragon' ? 150 : 100),
     isWaterUnit: opts.isWaterUnit ?? defaultStats.isWaterUnit ?? false,
     experience: opts.experience ?? 0,
@@ -107,6 +108,7 @@ function serializeUnits() {
     dmg: u.dmg,
     cost: u.cost || 1,
     morale: u.morale,
+    aiRecovering: u.aiRecovering === true,
     isWaterUnit: u.isWaterUnit || false,
     experience: u.experience || 0,
     promotionLevel: u.promotionLevel || 0
@@ -275,6 +277,7 @@ function applyLevelData(data) {
     dmg: u.dmg,
     cost: u.cost,
     morale: u.morale,
+    aiRecovering: u.aiRecovering === true,
     isWaterUnit: u.isWaterUnit || false,
     experience: u.experience || 0,
     promotionLevel: u.promotionLevel || 0
