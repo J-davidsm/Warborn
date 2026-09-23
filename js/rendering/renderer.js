@@ -472,8 +472,8 @@ function drawSettlementMarker(settlement, screenX, screenY) {
   const imageKey = 'settlement_' + settlement.type;
   const sprite = IMAGES[imageKey];
   if (sprite && IMAGE_LOAD_STATUS[imageKey] === 'loaded') {
-    // Fit inside either grid, preserving the transparent artwork's proportions.
-    const size = markerScale * 0.94;
+    // Oversized settlement art may overlap neighboring tiles in either grid.
+    const size = markerScale * 1.88;
     const ratio = Math.min(size / sprite.width, size / sprite.height);
     const width = sprite.width * ratio;
     const height = sprite.height * ratio;

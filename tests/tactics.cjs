@@ -6,7 +6,8 @@ const ctx={console:{log(){},warn(){},debug(){}},Math,Date,COLS:7,ROWS:5,terrain:
  isAITeam:t=>t.startsWith('AI'),clearTimeout(){},setTimeout:fn=>{ctx.wake=fn;},getHexNeighbors:()=>[],TERRAIN:{WATER:{waterOnly:true}},
 };
 vm.createContext(ctx);
-for(const file of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js','js/systems/mechanics.js','js/systems/diplomacy.js','js/systems/combat-turns.js','js/systems/ai-turn.js'])vm.runInContext(fs.readFileSync(file,'utf8'),ctx);
+vm.runInContext(fs.readFileSync('js/ui/popups-and-assets.js','utf8').match(/const SETTLEMENTS = \{[\s\S]*?\n\};/)[0],ctx);
+for(const file of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js','js/systems/mechanics.js','js/systems/diplomacy.js','js/systems/combat-turns.js','js/systems/settlements.js','js/systems/ai-turn.js'])vm.runInContext(fs.readFileSync(file,'utf8'),ctx);
 const run=s=>vm.runInContext(s,ctx);
 // Use a defensive alliance with no active war; other teams remain hostile.
 run("hasTreaty=(a,b)=>a!==b&&[a,b].includes('AI')&&[a,b].includes('PLAYER');isDiplomacyActive=()=>false;addAIMessage=()=>{};");
@@ -21,7 +22,7 @@ ctx.claimSettlementAt(1,1,'AI');ctx.checkSettlementCaptureAfterMove(soldier,1,1)
 assert.equal(ctx.canAttack('AI','PLAYER'),false);
 ctx.settlements.fill(null);ctx.settlements[8]={owner:'AI',type:'CITY'};const enemy=unit('Knight','AI2',4,1);ctx.units=[soldier,enemy];
 assert.equal(ctx.aiMayLeave(soldier,{col:4,row:4}),false,'last defender cannot abandon threatened town');
-const guard=unit('Spearman','AI',1,2);ctx.units.push(guard);assert(ctx.aiMayLeave(soldier,{col:4,row:4}),'another defender can cover a reinforcement');
+const guard=unit('Spearman','AI',1,2);ctx.units.push(guard);assert.equal(ctx.aiMayLeave(soldier,{col:4,row:4}),false,'nearby units cannot replace a town garrison');
 const ally=unit('Soldier','PLAYER',4,3);ctx.units.push(ally);assert(ctx.aiObjectives(soldier).some(o=>o.col===ally.col&&o.row===ally.row&&o.weight>=85),'threatened ally attracts support');
 const cleric=unit('Cleric','AI',3,3);ctx.units.push(cleric);ally.hp=10;ctx.aiHeal(cleric);assert.equal(ally.hp,30);assert(cleric.hasActed,'cleric spends its action healing');
 ctx.currentVictoryCondition={type:'KILL_UNIT_LIMIT',targetUnitId:soldier.id};assert.equal(ctx.aiProtectedUnit('AI'),soldier);assert(ctx.aiObjectives(guard).some(o=>o.col===soldier.col&&o.row===soldier.row&&o.weight===150));
@@ -34,6 +35,27 @@ ctx.units.pop();ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Cleric'),
 ctx.units=[unit('Soldier','AI',1,0),unit('Cleric','AI',2,0)];run("resources.AI={gold:100,materials:100}");ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Dragon'),'AI researches and purchases high-tier units');
 ctx.settlements.fill(null);ctx.units=[];ctx.aiRecruit('AI');assert.equal(ctx.units.length,0,'no towns means no mobile recruitment');
 // End Turn from the UI must stop before any side effects during an AI turn.
+ctx.settlements[8]={owner:'AI',type:'HAMLET'};
+ctx.settlements[12]={owner:'PLAYER',type:'HAMLET'};
+assert(ctx.aiExpansionMode('AI'),'equal income triggers expansion');
+ctx.settlements[12].type='CITY';assert(ctx.aiExpansionMode('AI'),'lower income triggers expansion');
+ctx.settlements[8].type='CITY';ctx.settlements[12].type='HAMLET';assert.equal(ctx.aiExpansionMode('AI'),false,'higher income uses ordinary tactics');
+ctx.settlements[8].type='HAMLET';ctx.settlements[12]={owner:null,type:'CITY'};
+ctx.units=[unit('Soldier','AI',1,1)];run('resources.AI={gold:0,materials:0}');
+assert.equal(ctx.aiMayLeave(ctx.units[0],{col:2,row:1}),false,'safe towns also retain their garrison');
+run('resources.AI={gold:2,materials:0}');
+assert(ctx.aiMoveWithGarrison(ctx.units[0],{col:2,row:1}),'funded defender can leave');
+const replacement=ctx.getUnitAt(1,1);
+assert(replacement&&replacement.team==='AI'&&replacement.dmg>0,'replacement is immediately on the town tile');
+assert(replacement.hasMoved&&replacement.hasActed,'replacement cannot act on its recruitment turn');
+assert.equal(run('resources.AI.gold'),0,'replacement cost deducted');
+ctx.units.push(unit('Soldier','AI',0,0));run('resources.AI={gold:100,materials:100}');
+assert.equal(ctx.aiGarrisonReplacement(replacement),null,'replacement honors army cap');
+ctx.units=[unit('Soldier','AI',2,1)];ctx.settlements[12]={owner:'AI2',type:'HAMLET'};ctx.settlements[34]={owner:'PLAYER',type:'CITY'};
+const chosen=ctx.aiChoosePosition(ctx.units[0]);
+assert.equal(chosen.col,5);assert.equal(chosen.row,1,'expansion unit prioritizes capturing reachable enemy settlement');
+console.log('Income-based expansion and immediate, affordable, capped garrison replacements pass.');
+ctx.settlements.fill(null);ctx.units=[];
 ctx.currentTeam='AI';ctx.endTurn();ctx.endTurn();assert.equal(ctx.currentTeam,'AI');
 console.log('Alliance capture protection, defense and support, clerics, VIP protection, recruitment caps, elite spending, anchoring, flight, fortresses, food removal and turn guards pass.');
 (async()=>{

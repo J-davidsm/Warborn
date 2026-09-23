@@ -6,6 +6,18 @@ function aiAssets(team) {
   return settlements.flatMap((s,i)=>s&&s.owner===team?[{...s,col:i%COLS,row:Math.floor(i/COLS)}]:[]);
 }
 function aiMobile(team) { return units.filter(u=>u.hp>0&&u.team===team&&!isFortressUnit(u)); }
+function aiExpansionMode(team) {
+  const value=t=>{const income=computeIncomeForTeam(t);return income.gold+income.materials;};
+  return value(team)<=value('PLAYER');
+}
+function aiGarrisonReplacement(u) {
+  const home=settlements[u.row*COLS+u.col];
+  if(!home||home.owner!==u.team||aiMobile(u.team).length>=aiAssets(u.team).length*3)return null;
+  // Only spend on a legal, already unlocked defender; never rely on future income.
+  return allowedUnitsForSettlement(home.type,u.team)
+    .filter(n=>UNIT_TEMPLATES[n].dmg>0&&canAfford(u.team,UNIT_TEMPLATES[n].cost))
+    .sort((a,b)=>UNIT_TEMPLATES[b].hp*UNIT_TEMPLATES[b].dmg-UNIT_TEMPLATES[a].hp*UNIT_TEMPLATES[a].dmg)[0]||null;
+}
 function aiThreat(tile,team) {
   return units.filter(e=>e.hp>0&&aiHostile(e.team,team)).reduce((sum,e)=>{
     const d=aiDistance(e,tile), reach=(isFortressUnit(e)?0:e.move)+e.atkRange;
@@ -20,6 +32,10 @@ function aiProtectedUnit(team) {
   return units.find(u=>u.hp>0&&u.team===team&&u.id===currentVictoryCondition.targetUnitId);
 }
 function aiMayLeave(u,tile) {
+  if(tile.col===u.col&&tile.row===u.row)return true;
+  const home=settlements[u.row*COLS+u.col];
+  // Occupied towns keep a defender on the actual tile, even when no enemy is nearby.
+  if(home?.owner===u.team)return !!aiGarrisonReplacement(u);
   if(aiProtectedUnit(u.team)===u)return true; // Losing this unit ends the mission.
   // Keep the last garrison in place while an enemy can reach its settlement.
   return aiAssets(u.team).every(s=>{
@@ -46,6 +62,7 @@ function aiMoveOptions(u) {
 }
 function aiObjectives(u) {
   const protectedUnit=aiProtectedUnit(u.team);
+  const captureWeight=aiExpansionMode(u.team)?320:45;
   const objectives=[];
   for(const s of aiAssets(u.team))if(aiThreat(s,u.team)>0)objectives.push({...s,weight:120});
   // Respond to attacks on allies, with our own garrisons protected by aiMayLeave.
@@ -55,7 +72,7 @@ function aiObjectives(u) {
     const s=settlements[i];if(!s)continue;const tile={col:i%COLS,row:Math.floor(i/COLS)};
     if(s.owner&&s.owner!==u.team&&areFriendlyTeams(s.owner,u.team)){
       if(aiThreat(tile,s.owner)>0)objectives.push({...tile,weight:90});
-    }else if(s.owner!==u.team&&(!s.owner||aiHostile(u.team,s.owner)))objectives.push({...tile,weight:45});
+    }else if(s.owner!==u.team&&(!s.owner||aiHostile(u.team,s.owner)))objectives.push({...tile,weight:captureWeight,capture:true});
   }
   if(protectedUnit&&protectedUnit!==u)objectives.push({...protectedUnit,weight:aiThreat(protectedUnit,u.team)>0?150:55});
   return objectives;
@@ -64,11 +81,13 @@ function aiChoosePosition(u) {
   const enemies=units.filter(e=>e.hp>0&&aiHostile(u.team,e.team));
   const patients=units.filter(a=>a!==u&&a.hp>0&&areFriendlyTeams(a.team,u.team)&&a.hp<a.maxHp);
   const objectives=aiObjectives(u), vip=aiProtectedUnit(u.team)===u;
+  const expansion=aiExpansionMode(u.team)&&!vip&&u.name!=='Cleric';
+  const captures=objectives.filter(o=>o.capture);
   let best={col:u.col,row:u.row},bestScore=-Infinity;
   for(const tile of aiMoveOptions(u)){
     const threat=aiThreat(tile,u.team),s=settlements[tile.row*COLS+tile.col];
-    let score=-threat*(vip?8:u.name==='Cleric'?4:u.hp<u.maxHp*.45?3:1.1);
-    if(threat>=u.hp)score-=vip?1000:150;
+    let score=-threat*(vip?8:u.name==='Cleric'?4:expansion?0.35:u.hp<u.maxHp*.45?3:1.1);
+    if(threat>=u.hp)score-=vip?1000:expansion?60:150;
     if(s&&s.owner===u.team)score+=u.hp<u.maxHp?25:5;
     const allies=units.filter(a=>a!==u&&a.hp>0&&a.team===u.team&&aiDistance(a,tile)<=2);
     score+=Math.min(12,allies.length*3);
@@ -77,6 +96,8 @@ function aiChoosePosition(u) {
       if(!patients.length&&allies.length===0)score-=10;
     }else if(!vip){
       for(const objective of objectives)score+=objective.weight/(1+aiDistance(tile,objective));
+      // Keep advancing toward a settlement even before it is within one move.
+      if(expansion&&captures.length)score-=35*Math.min(...captures.map(o=>aiDistance(tile,o)));
       if(enemies.length)score-=Math.min(...enemies.map(e=>aiDistance(tile,e)))*2;
       if(!u.hasActed&&aiCanFire(u,tile)){
         const targets=enemies.filter(e=>aiDistance(tile,e)<=u.atkRange);
@@ -89,6 +110,20 @@ function aiChoosePosition(u) {
     if(score>bestScore){bestScore=score;best=tile;}
   }
   return best;
+}
+function aiMoveWithGarrison(u,tile) {
+  if(u.hasMoved||!canMoveTo(u,tile.col,tile.row)||!aiMayLeave(u,tile))return false;
+  const col=u.col,row=u.row,home=settlements[row*COLS+col];
+  const replacement=home?.owner===u.team?aiGarrisonReplacement(u):null;
+  if(home?.owner===u.team&&!replacement)return false;
+  ActionEffects.move(u,tile.col,tile.row);u.col=tile.col;u.row=tile.row;u.hasMoved=true;
+  // No await between departure and replacement: the town is never left open for a turn.
+  if(replacement){
+    deductResources(u.team,UNIT_TEMPLATES[replacement].cost);
+    units.push(makeUnit(replacement,u.team,col,row,{justSpawned:true}));
+  }
+  checkSettlementCaptureAfterMove(u,u.col,u.row);
+  return true;
 }
 function aiHeal(u) {
   if(u.name!=='Cleric'||u.hasActed)return;
@@ -179,8 +214,7 @@ async function aiTakeTurn(team='AI') {
       if(u.hp<=0)continue;
       const tile=aiChoosePosition(u);
       if(!u.hasMoved&&(tile.col!==u.col||tile.row!==u.row)&&canMoveTo(u,tile.col,tile.row)){
-        ActionEffects.move(u,tile.col,tile.row);u.col=tile.col;u.row=tile.row;u.hasMoved=true;
-        checkSettlementCaptureAfterMove(u,u.col,u.row);
+        aiMoveWithGarrison(u,tile);
       }
       aiHeal(u);
       if(u.name!=='Cleric'&&!u.hasActed&&aiCanFire(u,u)){const target=aiTargets(u)[0];if(target)attackUnit(u,target);}
