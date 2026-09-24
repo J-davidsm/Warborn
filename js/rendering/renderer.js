@@ -564,6 +564,7 @@ function drawUnitStatusIndicators(unit, x, y, unitScale) {
 }
 
 function getLocalPlayableTeam() {
+  if(typeof OnlineMatch!=='undefined'&&OnlineMatch.active)return OnlineMatch.localTeam;
   if (opponentType === 'HUMAN') return myRole === 'P2' ? 'PLAYER2' : 'PLAYER';
   if (gameMode === 'local-2p' || opponentType === 'LOCAL_2P') return currentTeam;
   return 'PLAYER';
@@ -657,6 +658,12 @@ function drawGrid(){
       }
       
     const idx = r * COLS + c;
+    if(terrain[idx]==='VOID'){
+      push();fill(15,20,29);noStroke();
+      if(useHexGrid)drawHexagon(screenX,screenY,HEX_SIZE+1);
+      else rect(screenX,screenY,TILE,TILE);
+      pop();continue;
+    }
     
     // Save state before cell drawing
     push();
@@ -767,8 +774,7 @@ function drawUnits(){
     x=animated.x;y=animated.y;
     // Adjust unit size based on grid type
     const unitScale = useHexGrid ? 0.8 : 1.0; // Make units 20% smaller in hex mode
-    const teamColor = areFriendlyTeams('PLAYER',u.team) && u.team!=='PLAYER'
-      ? {fill:[62,160,120],stroke:[95,225,160]} : getTeamColor(u.team);
+    const teamColor = getTeamColor(u.team);
     const canAttackNow = canUnitAttackFromCurrentPosition(u);
     const blinkPulse = canAttackNow ? (0.5 + 0.5 * Math.sin(frameCount * 0.18)) : 0;
     const backingAlpha = canAttackNow ? 88 + blinkPulse * 116 : 92;

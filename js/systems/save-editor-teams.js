@@ -3,6 +3,7 @@
 
 // Map internal team codes to friendly display names using latest players info from parent
 function getTeamDisplayName(team) {
+  if(team==='PLAYER3'||team==='PLAYER4')return window.hexPlayers?.['P'+team.slice(6)]?.name||'Player '+team.slice(6);
   try {
     const players = window.hexPlayers || {};
     if (team === 'PLAYER') return (players.P1 && players.P1.name) ? players.P1.name : 'Player 1';
@@ -345,6 +346,7 @@ function wireEditorDrawerTab() {
 
 // ---------- Multi-AI Team Management ----------
 function getActiveTeams() {
+  if(typeof OnlineMatch!=='undefined'&&OnlineMatch.active&&opponentType==='HUMAN')return [...OnlineMatch.teams];
   const teams = ['PLAYER'];
   
   if (opponentType === 'HUMAN' || opponentType === 'LOCAL_2P') {

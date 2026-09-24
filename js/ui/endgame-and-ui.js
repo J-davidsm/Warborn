@@ -346,6 +346,7 @@ function updateUI() {
   if(endButton)endButton.disabled=gameOver||isAITeam(currentTeam)||(typeof OnlineMatch!=='undefined'&&!OnlineMatch.canAct());
   // Update turn indicator to show whose turn it is
   let turnDisplay = currentTeam;
+  if(opponentType==='HUMAN')turnDisplay=currentTeam.replace(/^PLAYER(\d*)$/,(_,n)=>'Player '+(n||1));
   if (opponentType === 'LOCAL_2P') {
     turnDisplay = currentTeam === 'PLAYER' ? 'Player 1' : 'Player 2';
   }
@@ -363,7 +364,7 @@ function updateUI() {
     const resourceParts = activeTeams.map(team => {
       const teamResources = resources[team] || { gold: 0, materials: 0 };
       const color = getTeamColorHex(team);
-      const shortName = team === 'PLAYER' ? 'P' : team === 'PLAYER2' ? 'P2' : team;
+      const shortName = team.replace(/^PLAYER(\d*)$/,(_,n)=>'P'+(n||'1'));
       
       // Add diplomacy indicator for AI teams
       let dipIcon = '';

@@ -12,7 +12,7 @@ function applyCrownDeath(crown) {
   if(isAITeam(crown.team)){
     for(const u of units)if(u.team===crown.team&&u.name!=='Dragon')u.morale=0;
   }else{
-    gameOver=true;
+    if(typeof OnlineMatch==='undefined'||!OnlineMatch.playing)gameOver=true;
     checkEndGame();
   }
 }
@@ -352,8 +352,7 @@ function endTurn(expectedAITeam = null) {
   cleanupExpiredTradeProposals();
   // In multiplayer, validate that it's actually this player's turn
   if (opponentType === 'HUMAN') {
-    const isMyTurn = (myRole === 'P1' && currentTeam === 'PLAYER') || 
-                     (myRole === 'P2' && currentTeam === 'PLAYER2');
+    const isMyTurn = currentTeam===getLocalPlayableTeam();
     if (!isMyTurn) {
       console.warn('Attempted to end turn when it\'s not our turn. Role:', myRole, 'currentTeam:', currentTeam);
       return; // Don't allow ending turn if it's not our turn
@@ -417,11 +416,16 @@ function endTurn(expectedAITeam = null) {
   
   // Calculate turn order and advance to next team
   calculateTurnOrder(); // Ensure we have the current turn order
-  currentTurnIndex = (currentTurnIndex + 1) % turnOrder.length;
+  let wrappedTurn=false;
+  for(let n=0;n<turnOrder.length;n++){
+    currentTurnIndex=(currentTurnIndex+1)%turnOrder.length;
+    if(currentTurnIndex===0)wrappedTurn=true;
+    if(typeof OnlineMatch==='undefined'||!OnlineMatch.playing||!OnlineMatch.eliminated(turnOrder[currentTurnIndex]))break;
+  }
   currentTeam = turnOrder[currentTurnIndex];
   
   // Increment global turn number when we complete a full cycle (back to first team)
-  if (currentTurnIndex === 0) {
+  if (wrappedTurn) {
     turnNumber++;
     console.log('New turn cycle started - Turn Number:', turnNumber);
     

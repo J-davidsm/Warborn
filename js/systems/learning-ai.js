@@ -136,7 +136,9 @@ function getTeamColor(team) {
     'AI2': { fill: [85, 235, 85], stroke: [20, 120, 20] },       // Green
     'AI3': { fill: [235, 235, 85], stroke: [120, 120, 20] },     // Yellow
     'AI4': { fill: [235, 85, 235], stroke: [120, 20, 120] },     // Magenta
-    'PLAYER2': { fill: [255, 165, 0], stroke: [128, 82, 0] }     // Orange
+    'PLAYER2': { fill: [255, 165, 0], stroke: [128, 82, 0] },    // Orange
+    'PLAYER3': { fill: [100, 215, 120], stroke: [25, 100, 45] },
+    'PLAYER4': { fill: [200, 130, 245], stroke: [85, 40, 120] }
   };
   
   return teamColors[team] || { fill: [128, 128, 128], stroke: [64, 64, 64] }; // Default gray
@@ -151,7 +153,7 @@ function getTeamColorHex(team) {
 function generateAITeamDisplay(count) {
   const aiTeams = [];
   for (let i = 1; i <= count; i++) {
-    const teamName = i === 1 ? 'AI' : `AI${i + 1}`;
+    const teamName = i === 1 ? 'AI' : `AI${i}`;
     const color = getTeamColorHex(teamName);
     aiTeams.push(`<span style="color: ${color}; font-weight: bold;">●</span>`);
   }

@@ -75,7 +75,33 @@
     return {seed:String(seed),theme:{id:theme.id,name:theme.name},cols,rows,terrain,settlements,units,
       resources:{PLAYER:{...zeroResources},PLAYER2:{...zeroResources}},firstTeam:random()<.5?'PLAYER':'PLAYER2'};
   }
-  const api={generate,themes:THEMES.map(({id,name})=>({id,name}))};
+  function generateForPlayers(seed, count=2) {
+    if(count===2)return {...generate(seed),playerCount:2};
+    if(![3,4].includes(count))throw new Error('Choose 2, 3, or 4 players.');
+    const source=generate(seed), radius=10, cols=21, rows=21;
+    const teams=['PLAYER','PLAYER2','PLAYER3','PLAYER4'].slice(0,count);
+    const terrain=Array(cols*rows).fill('VOID'),settlements=Array(cols*rows).fill(null),units=[];
+    const tile=(q,r)=>({col:q+radius,row:r+Math.floor(q/2)+radius});
+    const orbit=(q,r)=>count===3?[[q,r],[-q-r,q],[r,-q-r]]:[[q,r],[r,q],[-q,-r],[-r,-q]];
+    const index=(q,r)=>{const t=tile(q,r);return t.row*cols+t.col;};
+    let cursor=0;
+    for(let q=-radius;q<=radius;q++)for(let r=-radius;r<=radius;r++){
+      if(Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r))>radius||terrain[index(q,r)]!=='VOID')continue;
+      const type=source.terrain[cursor++%source.terrain.length];
+      for(const [a,b]of orbit(q,r))terrain[index(a,b)]=type;
+    }
+    // Each spawn and approach is an exact hex-grid isometry of every other.
+    for(let k=0;k<=7;k++)for(const [q,r]of orbit(k,0))terrain[index(q,r)]=null;
+    for(let q=5;q<=9;q++)for(let r=-2;r<=2;r++)if(Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r))<=radius)
+      for(const [a,b]of orbit(q,r))terrain[index(a,b)]=null;
+    const formation=[['Knight',7,0],['Soldier',6,0],['Soldier',7,-1],['Archer',8,0],['Spearman',6,1]];
+    formation.forEach(([name,q,r],i)=>orbit(q,r).forEach(([a,b],j)=>{const t=tile(a,b);terrain[index(a,b)]=null;units.push({id:`p${j+1}-${i}`,name,team:teams[j],...t});}));
+    orbit(7,0).forEach(([q,r],j)=>{settlements[index(q,r)]={type:'CITY',owner:teams[j]};});
+    if(source.settlements.filter(Boolean).length!==4)settlements[index(0,0)]={type:'VILLAGE',owner:null};
+    return {seed:String(seed),playerCount:count,theme:source.theme,cols,rows,terrain,settlements,units,
+      resources:Object.fromEntries(teams.map(t=>[t,{gold:0,materials:0}])),firstTeam:teams[String(seed).split('').reduce((a,c)=>(Math.imul(a,31)+c.charCodeAt(0))>>>0,0)%count]};
+  }
+  const api={generate,generateForPlayers,themes:THEMES.map(({id,name})=>({id,name}))};
   if(typeof module!=='undefined') module.exports=api;
   else root.FairMap=api;
 })(typeof window==='undefined'?globalThis:window);

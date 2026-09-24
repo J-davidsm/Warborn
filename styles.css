@@ -708,3 +708,12 @@ footer {
 #lobbyPlayers { padding: 0; list-style: none; }#lobbyPlayers li { padding: 12px; margin: 8px 0; border: 1px solid #3f5454; border-radius: 8px; }#lobbyStatus { color: #a8d9d3; min-height: 24px; }.lobby-note { color: #a9b5be; font-size: 12px; }
 #onlineMatchBar { position: fixed; left: 12px; bottom: 12px; z-index: 20000; background: #132630ed; color: #f6dda2; padding: 12px; border-radius: 9px; max-width: calc(100vw - 48px); font: 13px system-ui,sans-serif; }#onlineMatchBar button { margin-left: 12px; }
 .online-match #editorModeBtn,.online-match #restartBtn,.online-match #levelNameInput,.online-match #gameModeSelect,.online-match #aiPlayerControls,.online-match #learningAIControls,.online-match #onlineMultiplayerControls,.online-match #campaignControls,.online-match #mapDiplomacyButton,.online-match #diplomacySection,.online-match #convertTeamsBtn { display: none !important; }
+
+.public-lobby { margin: 18px 0; padding: 14px; background: #0c1822; border: 1px solid #46535f; border-radius: 10px; }
+.public-lobby h3 { margin: 0 0 8px; color: #f1ce77; }
+#publicStatus { font-size: 12px; color: #aec6cd; }
+#publicPlayers { list-style: none; padding: 0; max-height: 220px; overflow-y: auto; }
+#publicPlayers li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #ffffff18; }
+#publicInvite { padding: 12px; border: 1px solid #e5c36f; margin-bottom: 12px; }
+#publicInvite button { margin: 4px; }
+#lobbyCapacity { background: #172634; color: #f6dda2; padding: 10px; border: 1px solid #586573; border-radius: 6px; }

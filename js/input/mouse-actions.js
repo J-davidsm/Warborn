@@ -144,8 +144,7 @@ function handleGridClick(c,r){
   */
   // In multiplayer, validate it's this player's turn
   if (opponentType === 'HUMAN') {
-    const canAct = (myRole === 'P1' && currentTeam === 'PLAYER') || 
-                   (myRole === 'P2' && currentTeam === 'PLAYER2');
+    const canAct = currentTeam===getLocalPlayableTeam();
     if (!canAct) {
       console.log('Not your turn - ignoring click. Role:', myRole, 'currentTeam:', currentTeam);
       return;

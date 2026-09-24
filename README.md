@@ -8,9 +8,9 @@ A browser-based fantasy strategy game. No installation or server is needed to pl
 
 - Choose **Play** for a quick battle against the AI.
 - Click a unit, then a reachable tile to move or an enemy to attack. Choose **End Turn** when finished.
-- Choose **Local 2-Player** in the game mode selector for a shared-screen match.
+- Choose **Multiplayer** to find other visitors or join a room with a code.
 - Choose **Campaign → Start Campaign** to play the built-in campaign. For a generated battle, choose **Generate Scenario**, then **Test Scenario** on the new scenario card.
-- Use the map zoom controls and arrow keys to navigate. The editor lets you build custom maps.
+- Use the mouse wheel and arrow keys to navigate. The editor lets you build custom maps.
 - Saves are stored in this browser. Use the in-game export controls to keep a portable copy.
 
 Desktop browsers with a mouse or trackpad offer the best experience.
@@ -33,13 +33,15 @@ AI, campaigns, the map editor, and local play run entirely in the browser. Onlin
 
 ## Online multiplayer
 
-1. Choose **Multiplayer**, enter your display name, and **Create room**.
-2. Share the 8-character room code or **Copy invite link**. Your friend opens the game, enters their name and code, and chooses **Join room**.
-3. Both names appear in the room. Both players choose **Ready**; the host chooses **Generate & start**.
-4. Each new match uses a fresh seed and a 20×16 hex map. It selects a distinct setting—highlands, desert, islands, ancient forest, flooded marsh, or open frontier—and places 3–5 settlements. Terrain is mirrored by a 180-degree rotation; armies are identical, capitals are connected, neutral objectives are equally reachable, the first player is randomized, and both players begin with 0 gold and 0 materials.
-5. **Return to lobby** ends the current match for both players. Ready up again for a newly generated map.
+1. Choose **Multiplayer** to see visitors currently on the website. Enter your display name, **Join** an open room, or **Invite** an available commander.
+2. To host, choose **2, 3, or 4 players** and **Create room**. Players can also join using the 8-character room code or **Copy invite link**.
+3. Everyone chooses **Ready**; the host chooses **Generate & start** once all seats are filled.
+4. Each match generates fresh terrain: highlands, desert, islands, ancient forest, flooded marsh, or open frontier, with 3–5 settlements. Two-player maps use a 20×16 board with rotational symmetry. Three-player maps use a hexagonal board with 120-degree symmetry; four-player boards use matching reflected territories. Each kingdom starts with an identical five-unit army, a capital, and **0 gold and 0 materials**. Capitals connect through fair routes and the first player is randomized.
+5. **Return to lobby** ends the current match for everyone. Ready up again for a newly generated map.
 
-Keep both game tabs open. Rooms have two seats and are joined by invitation, not through a public room directory. Closing the host tab ends the room; reloads do not resume a match. Disconnects pause input, and a new match requires both players to ready up again. Editor and saved-map loading are unavailable during online matches.
+Keep the host's game tab open. Closing it ends the room; reloads do not resume a match. Disconnects pause input, and a new match requires all seats to be filled and everyone to ready up again. Editor and saved-map loading are unavailable during online matches.
+
+The live visitor directory is coordinated by an elected visitor's browser and recovers when that visitor leaves. Presence is temporary, with stale entries expiring after about 65 seconds. Visitors receive a generated commander name until they choose their own. No separate account is required.
 
 The host coordinates numbered state revisions and turn ownership. Complete unit stats, research, resources, settlements, and victory results synchronize. This is casual multiplayer between trusted players, not a server-validated competitive anti-cheat system.
 
@@ -52,12 +54,16 @@ AI commanders defend threatened settlements, reinforce allies without abandoning
 ```sh
 node tests/fair-map.cjs
 node tests/online-lobby.cjs
+node tests/fair-multiplayer.cjs
+node tests/multiplayer-four.cjs
+node tests/public-lobby.cjs
+node tests/crown.cjs
 node tests/movement-rules.cjs
 node tests/tactics.cjs
 node tests/terrain.cjs
 ```
 
-Tests cover 250 map seeds, all six terrain themes, 3–5 reachable settlements, geometry and resource symmetry, zero-resource multiplayer starts, movement terrain and occupancy restrictions, readiness, state/research synchronization, turn locking, stale revisions, disconnects, and fresh rematches. PeerJS's MIT license is included in `vendor/peerjs-LICENSE`.
+Tests cover 550 map seeds, all six terrain themes, 3–5 reachable settlements, geometry and resource symmetry, zero-resource multiplayer starts, movement terrain and occupancy restrictions, public discovery and invitations, directory takeover, 2–4-player readiness, state/research synchronization, turn locking, stale revisions, disconnects, and fresh rematches. PeerJS's MIT license is included in `vendor/peerjs-LICENSE`.
 
 ## Artwork
 

@@ -5,7 +5,7 @@
   <title>Warborn — Turn-Based Strategy</title>
   <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=resource-banner1">
+  <link rel="stylesheet" href="styles.css?v=public4">
   <script src="vendor/p5.min.js"></script>
 </head>
 <body>
@@ -24,16 +24,23 @@
 
   <section id="onlineLobby" class="lobby-overlay" hidden aria-label="Multiplayer lobby">
     <div class="lobby-card">
-      <p class="lobby-kicker">WARBORN · ONLINE</p><h2>Gather your opponent</h2>
-      <p>Two commanders. One freshly generated, symmetric battlefield.</p>
+      <p class="lobby-kicker">WARBORN · ONLINE</p><h2>Gather your commanders</h2>
+      <p>Meet players here, invite them, or join an open room. No code needed.</p>
       <label for="lobbyName">Your name</label><input id="lobbyName" maxlength="24" value="Commander" autocomplete="nickname">
+      <section class="public-lobby" aria-label="Online players">
+        <h3>Commanders online</h3><p id="publicStatus" role="status">Connecting to the public lobby…</p>
+        <div id="publicInvite" hidden></div>
+        <ul id="publicPlayers" aria-label="Everyone online"></ul>
+      </section>
+      <label for="lobbyCapacity">Players in your new room</label>
+      <select id="lobbyCapacity"><option value="2">2 players · Duel</option><option value="3">3 players · Three kingdoms</option><option value="4">4 players · Four kingdoms</option></select>
       <div class="lobby-actions"><button id="lobbyCreate">Create room</button><span>or join a friend</span></div>
       <label for="lobbyCode">Room code</label><div class="lobby-actions"><input id="lobbyCode" maxlength="8" placeholder="8-character code" autocomplete="off"><button id="lobbyJoin">Join room</button></div>
       <div class="lobby-code">Room <strong id="lobbyRoom">Not connected</strong><button id="lobbyCopy">Copy invite link</button></div>
       <ul id="lobbyPlayers" aria-label="Players in room" aria-live="polite"></ul>
       <p id="lobbyStatus" role="status">Create a room, or enter a code to join.</p>
       <div class="lobby-actions"><button id="lobbyReady">Ready</button><button id="lobbyStart">Generate &amp; start</button><button id="lobbyReturn">New match lobby</button><button id="lobbyLeave">Back to menu</button></div>
-      <p class="lobby-note">Every match gets mirrored terrain, equal armies and resources, and a randomly chosen first player. Keep the host’s tab open.</p>
+      <p class="lobby-note">Each player count has a symmetric map layout, equal armies and zero starting resources. Everyone must ready up. Keep the host’s tab open; a disconnect pauses the match. The public list shows connected visitors, including those browsing the site.</p>
     </div>
   </section>
   <div id="onlineMatchBar" hidden><span id="onlineMatchStatus"></span><button id="onlineReturnLobby">Return to lobby</button></div>
@@ -410,23 +417,24 @@
   <script src="js/systems/campaign.js?v=tactics1"></script>
   <script src="js/systems/settlements.js?v=tactics1"></script>
   <script src="js/boot/p5-setup.js?v=resource-banner1"></script>
-  <script src="js/systems/save-editor-teams.js?v=tactics1"></script>
-  <script src="js/systems/learning-ai.js?v=tactics1"></script>
+  <script src="js/systems/save-editor-teams.js?v=public4"></script>
+  <script src="js/systems/learning-ai.js?v=public4"></script>
   <script src="js/systems/diplomacy.js?v=tactics1"></script>
   <script src="js/ui/editor-controls.js?v=tactics1"></script>
   <script src="js/rendering/action-effects.js?v=tactics1"></script>
-  <script src="js/rendering/renderer.js?v=expansion1"></script>
+  <script src="js/rendering/renderer.js?v=public4"></script>
   <script src="js/rendering/terrain-blend.js?v=tactics1"></script>
-  <script src="js/input/mouse-actions.js?v=tactics1"></script>
-  <script src="js/systems/mechanics.js?v=crown1"></script>
+  <script src="js/input/mouse-actions.js?v=public4"></script>
+  <script src="js/systems/mechanics.js?v=public4"></script>
   <script src="js/data/units-and-build.js?v=crown1"></script>
   <script src="js/input/global-events.js?v=tactics1"></script>
-  <script src="js/systems/combat-turns.js?v=crown1"></script>
+  <script src="js/systems/combat-turns.js?v=public4"></script>
   <script src="js/systems/ai-turn.js?v=crown1"></script>
-  <script src="js/ui/endgame-and-ui.js?v=resource-banner1"></script>
+  <script src="js/ui/endgame-and-ui.js?v=public4"></script>
   <script src="js/net/multiplayer-sync.js?v=tactics1"></script>
   <script src="vendor/peerjs-1.5.5.min.js"></script>
-  <script src="js/net/fair-map.js?v=tactics1"></script>
-  <script src="js/net/online-lobby.js?v=crown1"></script>
+  <script src="js/net/fair-map.js?v=public4"></script>
+  <script src="js/net/online-lobby.js?v=public4"></script>
+  <script src="js/net/public-lobby.js?v=public4"></script>
 </body>
 </html>

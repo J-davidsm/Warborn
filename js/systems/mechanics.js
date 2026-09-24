@@ -65,6 +65,7 @@ function findMovementPath(unit, targetCol, targetRow) {
   const startTerrain = terrain[startTerrainIdx];
   const targetTerrainIdx = targetRow * COLS + targetCol;
   const targetTerrain = terrain[targetTerrainIdx];
+  if(targetTerrain==='VOID')return false;
   const crown=unit.name==='Crown';
   const grass=t=>!t||t==='GRASS';
   if(crown)maxMove=2;
@@ -149,6 +150,7 @@ function findMovementPath(unit, targetCol, targetRow) {
       // Check terrain restrictions
       const terrainIdx = newRow * COLS + newCol;
       const terrainType = terrain[terrainIdx];
+      if(terrainType==='VOID')continue;
       if (!flying && naval && terrainType !== 'WATER') continue;
       if (terrainType) {
         const terrainData = TERRAIN[terrainType];
