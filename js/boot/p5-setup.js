@@ -50,13 +50,8 @@ function setup(){
   editorModeBtn=select('#editorModeBtn');
   wireEditorModeButton();
   select('#endTurnBtn').mousePressed(()=>{if(!gameOver)endTurn();});
-  select('#restartBtn').mousePressed(()=>{
-    if (campaignMode.active) {
-      loadCurrentScenario(); // Restart current scenario
-    } else {
-      setupGame(); // Normal restart
-    }
-  });
+  select('#restartBtn').mousePressed(replayCurrentScenario);
+
   
   
   // Add convert teams button for debugging

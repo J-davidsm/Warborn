@@ -134,6 +134,8 @@ function createLevelData(name = null) {
 
 function captureScenarioSnapshot() {
   activeScenarioSnapshot = createLevelData('active-scenario');
+  activeScenarioSnapshot.resources = clonePlain(resources);
+  activeScenarioSnapshot.research = Object.fromEntries(Object.entries(researchedUnits).map(([team, known]) => [team, [...known]]));
 }
 
 function applyVictoryConditionToUI() {
@@ -235,6 +237,12 @@ function wireVictoryEditor() {
 
 function applyLevelData(data) {
   if (!data) return;
+  activeAITurn = null;
+  clearTimeout(aiTurnTimeoutId);
+  aiTurnTimeoutId = null;
+  ActionEffects.reset();
+  closeSpawnMenu();
+  buildMode = false; buildModeUnitId = null;
   mapSize = data.mapSize || mapSize;
   COLS = mapSize.cols;
   ROWS = mapSize.rows;
@@ -262,6 +270,11 @@ function applyLevelData(data) {
   if (data.aiPlayerCount && data.aiPlayerCount >= 1 && data.aiPlayerCount <= maxAIPlayers) {
     setAIPlayerCount(data.aiPlayerCount);
   }
+  resources = clonePlain(data.resources || data.startingResources || {});
+  for (const team of getActiveTeams()) {
+    if (!resources[team]) resources[team] = {gold:0, materials:0};
+  }
+  researchedUnits = Object.fromEntries(getActiveTeams().map(team => [team, new Set(data.research?.[team] || ['Soldier'])]));
   if (data.diplomacy) diplomacy = clonePlain(data.diplomacy);
   if (hasAIDiplomacy()) ensureDiplomacyForActiveTeams();
   currentVictoryCondition = normalizeVictoryCondition(data.victoryCondition);

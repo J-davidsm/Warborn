@@ -105,10 +105,10 @@ function showEndScreen(result) {
 }
 
 function replayCurrentScenario() {
+  if (typeof OnlineMatch !== 'undefined' && OnlineMatch.active) return;
   hideEndScreen();
   if (activeScenarioSnapshot) {
     applyLevelData(clonePlain(activeScenarioSnapshot));
-    captureScenarioSnapshot();
   } else if (campaignMode.active) {
     loadCurrentScenario();
   } else if (lastPlayedSavedLevelIndex !== null) {

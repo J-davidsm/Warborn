@@ -649,8 +649,14 @@ function openSpawnMenu(col, row, settlement){
         
         if (researchUnit(settlement.owner, name)) {
           console.log(`Successfully researched ${name} for ${settlement.owner}`);
-          showResearchTab(); // Refresh the research tab
+          switchTab('research'); // Clear stale buttons before rebuilding the list.
+          const confirmation = document.createElement('p');
+          confirmation.setAttribute('role', 'status');
+          confirmation.textContent = `${name} researched — available in the Build tab.`;
+          confirmation.style.color = '#8ee0ad';
+          content.prepend(confirmation);
           updateUI();
+          try { postGameState(); } catch (error) {}
         } else {
           console.log(`Failed to research ${name} for ${settlement.owner}`);
         }
