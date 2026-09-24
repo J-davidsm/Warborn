@@ -3,6 +3,7 @@
 
 function setupGame(){
   activeAITurn=null;
+  resetStartingEconomy();
   ActionEffects.reset();
   units=[];
   
@@ -80,8 +81,7 @@ function setupGame(){
   
   // Reset settlements for new game (neutral by default)
   settlements = Array(COLS * ROWS).fill(null);
-  // Grant starting income once at setup so players have resources to place in editor if needed
-  grantIncomeForTeam(currentTeam);
+  // Income is earned during play, never awarded by setup or restart.
   
   // Initialize Learning AI for new game if human players are present
   if (hasHumanPlayers() && !LEARNING_AI.enabled) {

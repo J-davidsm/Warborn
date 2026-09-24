@@ -185,3 +185,10 @@ function researchUnit(team, unitType) {
 function getResearchableUnits(team) {
   return Object.keys(RESEARCH_COSTS).filter(unitType => !hasResearched(team, unitType));
 }
+
+// Every new battle and replay starts with an empty treasury.
+function resetStartingEconomy() {
+  const empty = () => Object.fromEntries(getActiveTeams().map(team => [team, {gold:0, materials:0}]));
+  resources = empty();
+  startingResources = empty();
+}

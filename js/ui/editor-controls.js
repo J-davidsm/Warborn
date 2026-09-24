@@ -10,7 +10,7 @@ function initializeResourcesForActiveTeams() {
       resources[team] = { gold: 0, materials: 0 };
     }
     if (!(team in startingResources)) {
-      startingResources[team] = { gold: 10, materials: 0 }; // Default starting resources
+      startingResources[team] = { gold: 0, materials: 0 }; // No starting bonus
     }
   });
   

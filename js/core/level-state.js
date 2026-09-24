@@ -270,10 +270,7 @@ function applyLevelData(data) {
   if (data.aiPlayerCount && data.aiPlayerCount >= 1 && data.aiPlayerCount <= maxAIPlayers) {
     setAIPlayerCount(data.aiPlayerCount);
   }
-  resources = clonePlain(data.resources || data.startingResources || {});
-  for (const team of getActiveTeams()) {
-    if (!resources[team]) resources[team] = {gold:0, materials:0};
-  }
+  resetStartingEconomy();
   researchedUnits = Object.fromEntries(getActiveTeams().map(team => [team, new Set(data.research?.[team] || ['Soldier'])]));
   if (data.diplomacy) diplomacy = clonePlain(data.diplomacy);
   if (hasAIDiplomacy()) ensureDiplomacyForActiveTeams();

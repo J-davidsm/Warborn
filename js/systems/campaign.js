@@ -564,18 +564,7 @@ function addGeneratedSettlement(settlementsList, occupied, cols, rows, terrainGr
 }
 
 function createGeneratedStartingResources(teams, profile, aiCount) {
-  const resourcesByTeam = {};
-  teams.forEach(team => {
-    if (team === 'PLAYER') {
-      resourcesByTeam[team] = {
-        gold: profile.playerResources.gold + Math.max(0, aiCount - 1) * 5,
-        materials: profile.playerResources.materials + Math.max(0, aiCount - 1) * 2
-      };
-    } else {
-      resourcesByTeam[team] = { ...profile.aiResources };
-    }
-  });
-  return resourcesByTeam;
+  return Object.fromEntries(teams.map(team => [team, {gold:0, materials:0}]));
 }
 
 function createDefaultWarDiplomacy(teams) {
