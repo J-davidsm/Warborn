@@ -47,6 +47,12 @@ The host coordinates numbered state revisions and turn ownership. Complete unit 
 
 Some restrictive networks cannot establish direct WebRTC connections without a separately configured TURN relay. PeerJS Cloud availability is an external dependency. No private server credentials are included in this repository. See [PeerJS connection requirements](https://peerjs.com/client/faq).
 
+## Trading with AI kingdoms
+
+Open **Diplomacy**, select an AI kingdom, and choose **Negotiate Trade**. Build a two-sided offer combining gold, materials, units, and settlements. No treaty is required, even during war. The menu shows acceptance chances and explains refusals. Friendly kingdoms tolerate a small disadvantage; enemies demand a premium and often refuse anyway. AI valuation considers unit health, morale, experience, and settlement income, and protects essential defenses and the last settlement.
+
+Crowns and mission targets are protected. Transfer occupying units together with a settlement; transferred units stay on their tiles and act on their next turn. Ownership and balances are rechecked before the complete exchange. Repeating an offer in the same turn does not reroll acceptance.
+
 ## Tests
 
 AI commanders defend threatened settlements, reinforce allies without abandoning their last garrison, protect mission targets, and use clerics. Recruitment balances counters, elite-unit research and saving, with at most three mobile units per owned settlement. Fortifications do not count toward that cap. Anchored land units can cross water and return to land; ships stay on water and dragons fly over every terrain. Fortresses remain immobile at every rank. The economy uses gold and materials only; old food values are ignored when loading saves.
@@ -58,6 +64,7 @@ node tests/fair-multiplayer.cjs
 node tests/multiplayer-four.cjs
 node tests/public-lobby.cjs
 node tests/crown.cjs
+node tests/trade.cjs
 node tests/movement-rules.cjs
 node tests/tactics.cjs
 node tests/terrain.cjs

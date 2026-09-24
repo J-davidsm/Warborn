@@ -1,0 +1,26 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+let war=false,friend=false;
+const c={console,structuredClone,Math,turnNumber:1,COLS:10,currentVictoryCondition:{},units:[],settlements:Array(100).fill(null),resources:{PLAYER:{gold:500,materials:500},AI:{gold:500,materials:500}},tradeProposals:[],selectedUnit:null,isAITeam:t=>typeof t==='string'&&t.startsWith('AI'),isFortressUnit:u=>u.name==='Castle',manhattan:(a,b,x,y)=>Math.abs(a-x)+Math.abs(b-y),canAttack:(a,b)=>a!==b,isAtWar:()=>war,getTrust:()=>friend?50:0,hasTreaty:()=>false,addAIMessage(){}};
+vm.createContext(c);
+vm.runInContext(fs.readFileSync('js/data/units-and-build.js','utf8'),c);
+vm.runInContext(fs.readFileSync('js/ui/popups-and-assets.js','utf8').match(/const SETTLEMENTS = \{[\s\S]*?\n\};/)[0],c);
+vm.runInContext(fs.readFileSync('js/systems/trade.js','utf8'),c);
+const bundle=(gold=0,materials=0,units=[],settlements=[])=>({resources:{gold,materials},units,settlements});
+const proposal=(offer,request)=>c.createTradeProposal('PLAYER','AI','MIXED_EXCHANGE',offer,request);
+const troop=(id,team,col,row,name='Soldier')=>({id,team,col,row,name,hp:50,maxHp:50,dmg:15,hasMoved:false,hasActed:false});
+let p=proposal(bundle(10),bundle(0,7));friend=true;const friendly=c.assessTrade('AI',p).chance;assert(friendly>0);friend=false;assert.equal(c.assessTrade('AI',p).chance,0,'neutral rejects unfavorable deal');
+p=proposal(bundle(15),bundle(0,10));const neutral=c.assessTrade('AI',p).chance;friend=true;assert(c.assessTrade('AI',p).chance>neutral);friend=false;war=true;assert.equal(c.assessTrade('AI',p).chance,0,'enemy requires premium');p=proposal(bundle(18),bundle(0,10));const hostile=c.assessTrade('AI',p).chance;assert(hostile>0&&hostile<neutral);war=false;
+friend=true;p=proposal(bundle(1),bundle(0,100));assert.equal(c.assessTrade('AI',p).chance,0,'friends reject obvious loss');p=proposal(bundle(100),bundle(100,50));assert.equal(c.assessTrade('AI',p).chance,0,'padding identical gold does not disguise a loss');
+for(const value of [-1,NaN,Infinity,0.5,100000]){p=proposal(bundle(value),bundle(1));assert(c.tradeValidation(p));}
+c.units=[troop('p','PLAYER',1,1),troop('a','AI',8,8),troop('a2','AI',7,8),troop('a3','AI',6,8)];c.settlements[11]={type:'VILLAGE',owner:'PLAYER'};c.settlements[88]={type:'CITY',owner:'AI'};c.settlements[99]={type:'VILLAGE',owner:'AI'};
+p=proposal(bundle(100,0,['p'],[11]),bundle(0,10,['a'],[88]));assert.equal(c.tradeValidation(p),'');assert(c.assessTrade('AI',p).chance>0);assert(c.acceptTradeProposal(p.id,'AI'));assert.equal(c.resources.PLAYER.gold,400);assert.equal(c.resources.PLAYER.materials,510);assert.equal(c.units[0].team,'AI');assert.equal(c.units[1].team,'PLAYER');assert(c.units[0].hasActed&&c.units[1].hasMoved);assert.equal(c.units[1].col,8);assert.equal(c.settlements[88].owner,'PLAYER');assert.equal(c.settlements[11].owner,'AI');assert(!c.acceptTradeProposal(p.id,'AI'),'cannot execute twice');
+p=proposal(bundle(20),bundle(0,0,['a2','a2']));assert(c.tradeValidation(p));
+p=proposal(bundle(20),bundle(0,0,[],[99]));c.settlements[99].owner='PLAYER';const before=JSON.stringify(c.resources);assert(!c.acceptTradeProposal(p.id,'AI'));assert.equal(JSON.stringify(c.resources),before,'stale trade makes no partial transfer');
+c.units.push(troop('crown','AI',5,5,'Crown'));p=proposal(bundle(100),bundle(0,0,['crown']));assert(c.tradeValidation(p));c.currentVictoryCondition={type:'KILL_UNIT_LIMIT',targetUnitId:'a2'};p=proposal(bundle(100),bundle(0,0,['a2']));assert(c.tradeValidation(p));c.currentVictoryCondition={};
+p=proposal(bundle(20),bundle(0,0,[],[11]));assert.match(c.tradeValidation(p),/occupying/,'town requires occupying units');
+p=proposal(bundle(20),bundle(0,0,['p']));assert.match(c.tradeValidation(p),/settlement beneath/,'garrison requires town');
+p=proposal(bundle(200),bundle(0,0,['p'],[11]));assert.match(c.assessTrade('AI',p).reason,/last settlement/);
+c.settlements[66]={type:'VILLAGE',owner:'AI'};c.units.push(troop('enemy','PLAYER',6,5));p=proposal(bundle(100),bundle(0,0,['a3']));assert.match(c.assessTrade('AI',p).reason,/threatened/);
+p=proposal(bundle(100),bundle(0,0,['a2','a3','p'],[11]));assert.match(c.assessTrade('AI',p).reason,/army too weak/);
+p=proposal(bundle(15),bundle(0,10));const decision=c.evaluateTradeProposal('AI',p);assert.equal(c.evaluateTradeProposal('AI',proposal(bundle(15),bundle(0,10))),decision,'same-turn resubmission cannot reroll');
+console.log('Trade valuation, war/friendship, anti-padding, resource validation, atomic mixed transfers, stale assets, garrisons, mission protection, army survival, and repeat-offer stability pass.');
