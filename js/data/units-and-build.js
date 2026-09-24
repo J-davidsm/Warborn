@@ -847,20 +847,22 @@ function spawnUnitAt(name, team, col, row){
   const u = makeUnit(name, team, col, row, { maxHp: t.hp, atkRange: t.atkRange, dmg: t.dmg, cost: unitCost, justSpawned: true });
   units.push(u);
   
-  // Record human unit spawn for learning AI
-  if (!isAITeam(team)) {
-    recordHumanAction('unitSpawn', {
-      unitType: name,
-      col: col,
-      row: row,
-      cost: unitCost,
-      nearSettlement: getSettlementAt(col, row) ? true : false
-    });
-  }
-  
   // close menu and update UI
   closeSpawnMenu(); updateUI();
   try{ postGameState(); } catch(e){}
+  // Record human unit spawn for learning AI
+  if (!isAITeam(team)) {
+    try {
+      recordHumanAction('unitSpawn', {
+        unitType: name,
+        col: col,
+        row: row,
+        cost: unitCost,
+        nearSettlement: !!settlements[row * COLS + col]
+      });
+    } catch (error) { console.warn('Optional spawn recording failed', error); }
+  }
+  
   // Inform parent/hub about resources change and spawn (optional)
   try{ if(window.parent) window.parent.postMessage({ type:'resourcesUpdate', team, resources: getResources(team) }, '*'); } catch(e){}
 }

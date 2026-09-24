@@ -1,0 +1,14 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const events=[];
+const c={document:{getElementById:()=>({remove:()=>events.push('close')})},console:{log(){},warn(){}},COLS:3,units:[],settlements:[{owner:'PLAYER',type:'CITY'},null,null],isActionAllowed:()=>true,getUnitAt:(col,row)=>c.units.find(u=>u.col===col&&u.row===row),showPopup(){},recordAction(){},makeUnit:(name,team,col,row)=>({name,team,col,row}),isAITeam:t=>t.startsWith('AI'),closeSpawnMenu:()=>events.push('close'),postGameState:()=>events.push('publish'),window:{},recordHumanAction(){throw Error('optional recording unavailable');}};
+vm.createContext(c);
+for(const file of ['js/systems/economy-research.js','js/data/units-and-build.js'])vm.runInContext(fs.readFileSync(file,'utf8'),c);
+const run=s=>vm.runInContext(s,c);
+c.updateUI=()=>{c.display=JSON.parse(run('JSON.stringify(resources.PLAYER)'));events.push('refresh');};
+run('resources.PLAYER={gold:30,materials:12};');c.spawnUnitAt('Soldier','PLAYER',0,0);
+assert.equal(c.units.length,1);assert.deepEqual(c.display,{gold:28,materials:12});assert.deepEqual(events,['close','refresh','publish'],'UI and multiplayer publish complete even when optional recording throws');
+events.length=0;let recorded;c.recordHumanAction=(type,data)=>{recorded=data;};c.spawnUnitAt('Knight','PLAYER',1,0);
+assert.deepEqual(c.display,{gold:21,materials:9});assert.equal(recorded.nearSettlement,false);assert.equal(c.units.length,2);
+c.spawnUnitAt('Knight','PLAYER',0,0);assert.deepEqual(c.display,{gold:21,materials:9},'occupied tile does not spend twice');
+run('resources.PLAYER={gold:0,materials:0};');events.length=0;c.spawnUnitAt('Knight','PLAYER',2,0);assert.equal(c.units.length,2);assert.deepEqual(events,[],'unaffordable purchase is rejected');
+console.log('Gold-only and mixed-cost purchases refresh immediately, publish state, tolerate optional recording failures, and reject invalid purchases.');
