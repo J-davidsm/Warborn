@@ -38,6 +38,7 @@ const ACTION_DEBOUNCE_MS = 150; // Minimum time between actions
 const SAME_TILE_DEBOUNCE_MS = 300; // Extra protection for same tile clicks
 
 function isMenuBlockingGameInput() {
+  if(document.getElementById('endlessMenu')&&!document.getElementById('endlessMenu').hidden)return true;
   if (typeof OnlineMatch !== "undefined" && OnlineMatch.blocksMapInput()) return true;
   const mainMenu = document.getElementById('mainMenu');
   const endScreen = document.getElementById('endScreen');

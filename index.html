@@ -5,7 +5,7 @@
   <title>Warborn — Turn-Based Strategy</title>
   <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=trade1">
+  <link rel="stylesheet" href="styles.css?v=endless1">
   <script src="vendor/p5.min.js"></script>
 </head>
 <body>
@@ -16,6 +16,7 @@
       <div id="mainMenuActions">
         <button id="menuPlayBtn" type="button">Play</button>
         <button id="menuOnlineBtn" type="button">Multiplayer</button>
+        <button id="menuEndlessBtn" type="button">Endless Mode</button>
         <button id="menuCampaignBtn" type="button">Campaign</button>
       </div>
       <p class="web-menu-help">Select a unit, choose where to move, then End Turn.<br>For larger battles, open Campaign and Generate Scenario.</p>
@@ -98,6 +99,22 @@
     </div>
   </div>
 
+  <div id="endlessMenu" class="endless-overlay" hidden>
+    <section role="dialog" aria-modal="true" aria-labelledby="endlessTitle" class="endless-dialog">
+      <h2 id="endlessTitle">Endless Mode</h2>
+      <p>A 10 × 20 battlefield, with eight land columns between two water borders. Enemy waves enter from the top.</p>
+      <p>After each full round, the bottom row disappears and a new enemy row arrives. Keep advancing: your units on the disappearing row are lost. <strong>Any enemy reaching the bottom row ends your run.</strong></p>
+      <p>Capture towns for income and recruits. Both sides start with zero resources. The invasion stays at war; the AI defends, recruits, and attacks normally.</p>
+      <label for="endlessDifficulty">Difficulty</label>
+      <select id="endlessDifficulty">
+        <option value="easy">Easy — small waves, slow escalation</option>
+        <option value="medium" selected>Medium — growing waves, earlier elites</option>
+        <option value="hard">Hard — larger waves, early elites</option>
+        <option value="impossible">Impossible — relentless waves and early dragons</option>
+      </select>
+      <div class="endless-actions"><button id="endlessStart">Start Endless</button><button id="endlessCancel">Back</button></div>
+    </section>
+  </div>
   <div id="endScreen" aria-live="polite">
     <div id="endScreenShade"></div>
     <div id="endScreenContent">
@@ -116,6 +133,7 @@
   
   <div id="container">
     <div id="game">
+      <div id="endlessBar" hidden><strong id="endlessStatus"></strong><span id="endlessWarning"></span><button id="endlessExit">Menu</button></div>
       <div id="resourceBanner" role="status" aria-label="Your resources">
         <strong>Your resources</strong>
         <span>Gold <b id="bannerGold">0</b></span>
@@ -410,32 +428,33 @@
   <script src="js/net/connection-state.js?v=tactics1"></script>
   <script src="js/net/websocket-client.js?v=tactics1"></script>
   <script src="js/systems/economy-research.js?v=zero-start1"></script>
-  <script src="js/systems/diplomacy-data.js?v=tactics1"></script>
+  <script src="js/systems/diplomacy-data.js?v=endless1"></script>
   <script src="js/ui/popups-and-assets.js?v=crown1"></script>
-  <script src="js/core/level-state.js?v=zero-start1"></script>
-  <script src="js/core/game-setup.js?v=zero-start1"></script>
+  <script src="js/core/level-state.js?v=endless1"></script>
+  <script src="js/core/game-setup.js?v=endless1"></script>
   <script src="js/systems/campaign.js?v=zero-start1"></script>
   <script src="js/systems/settlements.js?v=tactics1"></script>
   <script src="js/boot/p5-setup.js?v=restart-research1"></script>
-  <script src="js/systems/save-editor-teams.js?v=public4"></script>
+  <script src="js/systems/save-editor-teams.js?v=endless1"></script>
   <script src="js/systems/learning-ai.js?v=public4"></script>
-  <script src="js/systems/diplomacy.js?v=trade1"></script>
+  <script src="js/systems/diplomacy.js?v=endless1"></script>
   <script src="js/systems/trade.js?v=trade1"></script>
   <script src="js/ui/editor-controls.js?v=zero-start1"></script>
   <script src="js/rendering/action-effects.js?v=tactics1"></script>
-  <script src="js/rendering/renderer.js?v=public4"></script>
+  <script src="js/rendering/renderer.js?v=endless1"></script>
   <script src="js/rendering/terrain-blend.js?v=tactics1"></script>
-  <script src="js/input/mouse-actions.js?v=public4"></script>
+  <script src="js/input/mouse-actions.js?v=endless1"></script>
   <script src="js/systems/mechanics.js?v=public4"></script>
   <script src="js/data/units-and-build.js?v=restart-research1"></script>
   <script src="js/input/global-events.js?v=tactics1"></script>
-  <script src="js/systems/combat-turns.js?v=public4"></script>
-  <script src="js/systems/ai-turn.js?v=crown1"></script>
-  <script src="js/ui/endgame-and-ui.js?v=restart-research1"></script>
+  <script src="js/systems/combat-turns.js?v=endless1"></script>
+  <script src="js/systems/ai-turn.js?v=endless1"></script>
+  <script src="js/ui/endgame-and-ui.js?v=endless1"></script>
   <script src="js/net/multiplayer-sync.js?v=tactics1"></script>
   <script src="vendor/peerjs-1.5.5.min.js"></script>
   <script src="js/net/fair-map.js?v=public4"></script>
   <script src="js/net/online-lobby.js?v=public4"></script>
   <script src="js/net/public-lobby.js?v=public4"></script>
+  <script src="js/systems/endless.js?v=endless1"></script>
 </body>
 </html>

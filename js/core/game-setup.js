@@ -2,6 +2,7 @@
 // Section: js/core/game-setup.js
 
 function setupGame(){
+  if(typeof Endless!=='undefined')Endless.stop();
   activeAITurn=null;
   resetStartingEconomy();
   ActionEffects.reset();

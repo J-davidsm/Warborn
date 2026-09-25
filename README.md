@@ -8,6 +8,7 @@ A browser-based fantasy strategy game. No installation or server is needed to pl
 
 - Choose **Play** for a quick battle against the AI.
 - Click a unit, then a reachable tile to move or an enemy to attack. Choose **End Turn** when finished.
+- Choose **Endless Mode** for a scrolling survival battle on Easy, Medium, Hard, or Impossible.
 - Choose **Multiplayer** to find other visitors or join a room with a code.
 - Choose **Campaign → Start Campaign** to play the built-in campaign. For a generated battle, choose **Generate Scenario**, then **Test Scenario** on the new scenario card.
 - Use the mouse wheel and arrow keys to navigate. The editor lets you build custom maps.
@@ -47,6 +48,16 @@ The host coordinates numbered state revisions and turn ownership. Complete unit 
 
 Some restrictive networks cannot establish direct WebRTC connections without a separately configured TURN relay. PeerJS Cloud availability is an external dependency. No private server credentials are included in this repository. See [PeerJS connection requirements](https://peerjs.com/client/faq).
 
+## Endless Mode
+
+Choose **Endless Mode** on the main menu and select a difficulty. The map is exactly 10 columns by 20 rows, including water along both side columns. A five-unit army and a city give you a foothold; both kingdoms begin with zero gold and materials.
+
+After each full round (your turn and the AI turn), the bottom row disappears, everything else shifts down, and a new enemy row enters from the top. Your units on the removed row are lost. Any living enemy reaching the red bottom row ends the run. Clearing the current enemies does not end the invasion.
+
+Capture villages and cities for income and recruitment. New enemy settlements arrive every three waves, or every two on Impossible. The AI continues defending, researching, recruiting, healing and attacking. Invasion enemies stay at war. Terrain changes between grassland, forest, desert, mountains and marsh, with clear central routes.
+
+Easy starts with one enemy per wave and escalates slowly; Medium escalates faster; Hard starts with two; Impossible starts with three and brings elite units early. Waves grow to six incoming units, in addition to AI recruitment. The HUD counts survived rounds and warns about endangered units. **Restart** repeats the same seed and difficulty with zero resources. **Menu → Play** returns to your previous ordinary scenario.
+
 ## Trading with AI kingdoms
 
 Open **Diplomacy**, select an AI kingdom, and choose **Negotiate Trade**. Build a two-sided offer combining gold, materials, units, and settlements. No treaty is required, even during war. The menu shows acceptance chances and explains refusals. Friendly kingdoms tolerate a small disadvantage; enemies demand a premium and often refuse anyway. AI valuation considers unit health, morale, experience, and settlement income, and protects essential defenses and the last settlement.
@@ -65,6 +76,10 @@ node tests/multiplayer-four.cjs
 node tests/public-lobby.cjs
 node tests/crown.cjs
 node tests/trade.cjs
+node tests/endless.cjs
+node tests/scenario-restart.cjs
+node tests/research-menu.cjs
+node tests/purchase-refresh.cjs
 node tests/movement-rules.cjs
 node tests/tactics.cjs
 node tests/terrain.cjs

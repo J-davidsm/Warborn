@@ -236,6 +236,7 @@ function wireVictoryEditor() {
 }
 
 function applyLevelData(data) {
+  if(typeof Endless!=='undefined')Endless.stop();
   if (!data) return;
   activeAITurn = null;
   clearTimeout(aiTurnTimeoutId);

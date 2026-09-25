@@ -105,6 +105,7 @@ function showEndScreen(result) {
 }
 
 function replayCurrentScenario() {
+  if(typeof Endless!=='undefined'&&Endless.active){Endless.restart();return;}
   if (typeof OnlineMatch !== 'undefined' && OnlineMatch.active) return;
   hideEndScreen();
   if (activeScenarioSnapshot) {
@@ -261,6 +262,7 @@ function getWinner(){
   return null; // No winner yet - multiple teams still alive
 }
 function checkEndGame(){
+  if(typeof Endless!=='undefined'&&Endless.active){Endless.check();return;}
   if (typeof OnlineMatch !== "undefined" && OnlineMatch.playing) { OnlineMatch.finish(); return; }
   if (gameOver && endScreenShown) return;
   
@@ -339,8 +341,9 @@ function checkCampaignVictory() {
  * Handles: turn indicator, resource display, unit selection panel, health bars
  */
 function updateUI() {
+  if(typeof Endless!=='undefined')Endless.refresh();
   const modeSummary=document.getElementById("modeSummary");
-  if(modeSummary)modeSummary.textContent=opponentType==="HUMAN"?"Online match":"vs AI";
+  if(modeSummary)modeSummary.textContent=typeof Endless!=='undefined'&&Endless.active?'Endless Mode':opponentType==="HUMAN"?"Online match":"vs AI";
   for(const table of [resources,startingResources])for(const team of Object.keys(table))table[team]=getEffectiveCost(table[team]);
   const endButton=document.getElementById('endTurnBtn');
   if(endButton)endButton.disabled=gameOver||isAITeam(currentTeam)||(typeof OnlineMatch!=='undefined'&&!OnlineMatch.canAct());

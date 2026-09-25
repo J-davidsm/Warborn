@@ -108,6 +108,7 @@ html, body {
 
 #menuPlayBtn,
 #menuOnlineBtn,
+#menuEndlessBtn,
 #menuCampaignBtn,
 #continueCampaignBtn,
 #replayScenarioBtn,
@@ -130,6 +131,7 @@ html, body {
 
 #menuPlayBtn:hover,
 #menuOnlineBtn:hover,
+#menuEndlessBtn:hover,
 #menuCampaignBtn:hover,
 #continueCampaignBtn:hover,
 #replayScenarioBtn:hover,
@@ -723,3 +725,7 @@ footer {
 .trade-dialog header,.trade-dialog footer{display:flex;align-items:center;justify-content:space-between;gap:12px}.trade-dialog h2,.trade-dialog h3{margin:0 0 10px;color:#eaca87}.trade-dialog p{line-height:1.5;color:#b8c9d8}.trade-columns{display:grid;grid-template-columns:1fr 1fr;gap:18px}.trade-side{padding:18px;background:#0d1823;border:1px solid #344b5b;border-radius:10px}.trade-resource{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;text-transform:capitalize}.trade-resource input{width:95px;padding:8px;background:#223747;color:white;border:1px solid #678296;border-radius:5px}.trade-assets{max-height:175px;overflow:auto;display:grid;gap:8px;font-size:13px}.trade-assets label{display:flex;align-items:center;gap:8px;padding:8px;background:#1a2b39;border-radius:5px}.trade-assets input{accent-color:#eaca87}.trade-assets label:has(input:disabled){opacity:.5}#tradeAssessment{padding:16px;margin:16px 0;background:#223747;border-radius:8px;line-height:1.5}.trade-dialog footer{justify-content:flex-end}.trade-dialog button{padding:10px 16px}#tradeSubmit{background:#eaca87;color:#16222c;font-weight:bold}@media(max-width:650px){.trade-columns{grid-template-columns:1fr}.trade-dialog{padding:14px}.trade-overlay{padding:8px}}
 
 .trade-overlay,.trade-dialog,.trade-side{box-sizing:border-box}.trade-side{min-width:0}.trade-dialog button{border:1px solid #678296;border-radius:7px;background:#263d4e;color:#e5edf5;cursor:pointer}.trade-dialog button:disabled{opacity:.45;cursor:not-allowed}.trade-dialog input:focus-visible,.trade-dialog button:focus-visible{outline:2px solid #eaca87;outline-offset:2px}
+
+.endless-overlay{position:fixed;inset:0;z-index:51000;background:#06101be8;display:grid;place-items:center;padding:20px}.endless-overlay[hidden],#endlessBar[hidden]{display:none}.endless-dialog{box-sizing:border-box;width:min(580px,100%);max-height:90vh;overflow:auto;padding:28px;background:#152534;border:1px solid #c5a76b;border-radius:16px;color:#e5edf5}.endless-dialog h2{color:#f4d385;margin-top:0}.endless-dialog p{line-height:1.6;color:#bfd0de}.endless-dialog select{display:block;width:100%;padding:12px;margin:10px 0 24px;background:#263e51;color:white;border:1px solid #607a8f;border-radius:6px}.endless-actions{display:flex;gap:12px}.endless-actions button,#endlessExit{padding:10px 16px;border:1px solid #c5a76b;border-radius:7px;background:#ecd18d;color:#172634;cursor:pointer}#endlessBar{position:absolute;left:12px;top:86px;z-index:20;max-width:min(540px,calc(100% - 24px));padding:10px 12px;border:1px solid #94514e;background:#111e2eee;border-radius:9px;color:#f4d385;box-sizing:border-box}#endlessBar span{display:block;font-size:12px;color:#f4b8ad;margin:5px 0}#endlessExit{padding:3px 9px;font-size:11px}
+
+#endlessBar{z-index:5001;max-width:min(290px,calc(100% - 24px))}.endless-match #mapDiplomacyButton,.endless-match #diplomacySection,.endless-match #aiPlayerControls,.endless-match #editorModeBtn,.endless-match #levelNameInput{display:none!important}

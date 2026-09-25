@@ -427,6 +427,7 @@ function endTurn(expectedAITeam = null) {
   // Increment global turn number when we complete a full cycle (back to first team)
   if (wrappedTurn) {
     turnNumber++;
+    if(typeof Endless!=='undefined'&&Endless.active){Endless.advance();if(gameOver){updateUI();return;}}
     console.log('New turn cycle started - Turn Number:', turnNumber);
     
     // Process diplomacy updates only once per full turn cycle

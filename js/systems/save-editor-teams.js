@@ -370,6 +370,7 @@ function hasAIDiplomacy() {
 }
 
 function isDiplomacyActive() {
+  if(typeof Endless!=='undefined'&&Endless.active)return false;
   return !!(diplomacy && diplomacy.trust && Object.keys(diplomacy.trust).length > 0);
 }
 

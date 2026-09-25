@@ -133,7 +133,7 @@ function draw(){
   translate(origin.x + panX, origin.y + panY);
   scale(zoomLevel);
   
-  drawGrid(); drawUnits(); drawHighlights();
+  drawGrid(); drawEndlessEdge(); drawUnits(); drawHighlights();
   
   pop();
   // image load status indicator (small, top-right)
@@ -1135,4 +1135,16 @@ function drawGameOver(){
   }
   
   text(msg, width/2, height/2);
+}
+
+function drawEndlessEdge(){
+  if(typeof Endless==='undefined'||!Endless.active)return;
+  push();translate(OFFSET,OFFSET);
+  if(useHexGrid){const origin=getHexGridOffset();translate(origin.x,origin.y);}
+  fill(235,55,65,65);stroke(255,100,105,230);strokeWeight(2);
+  for(let col=0;col<COLS;col++){
+    if(useHexGrid){const p=hexToPixel(col-cameraX,ROWS-1-cameraY);drawHexagon(p.x,p.y,HEX_SIZE*.96);}
+    else rect((col-cameraX)*TILE,(ROWS-1-cameraY)*TILE,TILE,TILE);
+  }
+  pop();
 }

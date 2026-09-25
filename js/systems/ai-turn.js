@@ -64,6 +64,7 @@ function aiObjectives(u) {
   const protectedUnit=aiProtectedUnit(u.team);
   const captureWeight=aiExpansionMode(u.team)?320:240;
   const objectives=[];
+  if(typeof Endless!=='undefined'&&Endless.active&&u.team==='AI')objectives.push({col:u.col,row:ROWS-1,weight:180});
   for(const s of aiAssets(u.team))if(aiThreat(s,u.team)>0)objectives.push({...s,weight:120});
   // Respond to attacks on allies, with our own garrisons protected by aiMayLeave.
   const allied=units.filter(a=>a.hp>0&&a.team!==u.team&&areFriendlyTeams(u.team,a.team));
@@ -237,6 +238,7 @@ async function aiTakeTurn(team='AI') {
       if(!u.hasMoved&&(tile.col!==u.col||tile.row!==u.row)&&canMoveTo(u,tile.col,tile.row)){
         aiMoveWithGarrison(u,tile);
       }
+      if(typeof Endless!=='undefined'&&Endless.active){Endless.check();if(gameOver)return;}
       aiHeal(u);
       if(u.name!=='Cleric'&&!aiRecoveryClerics(u).length&&!u.hasActed&&aiCanFire(u,u)){const target=aiTargets(u)[0];if(target)attackUnit(u,target);}
       updateUI();checkEndGame();
