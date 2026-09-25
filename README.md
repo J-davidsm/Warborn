@@ -50,13 +50,13 @@ Some restrictive networks cannot establish direct WebRTC connections without a s
 
 ## Endless Mode
 
-Choose **Endless Mode** on the main menu and select a difficulty. The map is exactly 10 columns by 20 rows, including water along both side columns. A five-unit army and a city give you a foothold; both kingdoms begin with zero gold and materials.
+Choose **Endless Mode** on the main menu and select a difficulty. The map is exactly 10 columns by 20 rows, including water along both side columns. A five-unit army (six on Easy) and a city give you a foothold; both kingdoms begin with zero gold and materials.
 
 After each full round (your turn and the AI turn), the bottom row disappears, everything else shifts down, and a new enemy row enters from the top. Your units on the removed row are lost. Any living enemy reaching the red bottom row ends the run. Clearing the current enemies does not end the invasion.
 
-Capture villages and cities for income and recruitment. New enemy settlements arrive every three waves, or every two on Impossible. The AI continues defending, researching, recruiting, healing and attacking. Invasion enemies stay at war. Terrain changes between grassland, forest, desert, mountains and marsh, with clear central routes.
+Capture villages and cities for income and recruitment. New enemy settlements arrive every four waves on Easy, every three on Medium and Hard, and every two on Impossible. The AI continues defending, researching, recruiting, healing and attacking. Invasion enemies stay at war. Terrain changes between grassland, forest, desert, mountains and marsh, with clear central routes.
 
-Easy starts with one enemy per wave and escalates slowly; Medium escalates faster; Hard starts with two; Impossible starts with three and brings elite units early. Waves grow to six incoming units, in addition to AI recruitment. The HUD counts survived rounds and warns about endangered units. **Restart** repeats the same seed and difficulty with zero resources. **Menu → Play** returns to your previous ordinary scenario.
+Easy gives you an extra knight, Archer and Cleric research, and a position four rows farther from the back edge. Its first ten waves contain only soldiers, wave size stays at one until wave 23, and elites begin at wave 36. Medium, Hard and Impossible also have delayed escalation, with elites beginning at waves 18, 10 and 6. Waves grow to at most three incoming units on Easy, five on Medium, and six on Hard and Impossible, in addition to AI recruitment. The HUD counts survived rounds and warns about endangered units. **Restart** repeats the same seed and difficulty with zero resources. **Menu → Play** returns to your previous ordinary scenario.
 
 ## Trading with AI kingdoms
 

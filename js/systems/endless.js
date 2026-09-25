@@ -1,10 +1,10 @@
 // A fixed 10 x 20 window onto an advancing invasion corridor.
 const Endless = (() => {
   const difficulties = {
-    easy:{name:'Easy',base:1,growth:12,townEvery:3,eliteAt:18,description:'One enemy per row at first. Slow escalation.'},
-    medium:{name:'Medium',base:1,growth:7,townEvery:3,eliteAt:12,description:'Waves grow sooner, with earlier elite units.'},
-    hard:{name:'Hard',base:2,growth:6,townEvery:3,eliteAt:7,description:'Two enemies per row at first. Early elites.'},
-    impossible:{name:'Impossible',base:3,growth:4,townEvery:2,eliteAt:3,description:'Three enemies per row at first. Rapid escalation and dragons.'}
+    easy:{name:'Easy',base:1,growth:22,townEvery:4,eliteAt:36,maxWave:3,forward:4,description:'One enemy per row at first. Slow escalation.'},
+    medium:{name:'Medium',base:1,growth:10,townEvery:3,eliteAt:18,maxWave:5,forward:2,description:'Waves grow sooner, with earlier elite units.'},
+    hard:{name:'Hard',base:2,growth:8,townEvery:3,eliteAt:10,maxWave:6,forward:1,description:'Two enemies per row at first. Early elites.'},
+    impossible:{name:'Impossible',base:3,growth:5,townEvery:2,eliteAt:6,maxWave:6,forward:0,description:'Three enemies per row at first. Rapid escalation and dragons.'}
   };
   let active=false,difficulty='medium',seed=0,wave=0,lastAdvance=1,previousScenario=null;
   const $=id=>document.getElementById(id);
@@ -15,8 +15,8 @@ const Endless = (() => {
     return Array.from({length:10},(_,col)=>col===0||col===9?'WATER':col===4||col===5?'GRASS':biome[Math.floor(random(index,col)*biome.length)]);
   }
   function waveNames(n){
-    const p=difficulties[difficulty],count=Math.min(6,p.base+Math.floor((n-1)/p.growth));
-    const pool=n>=p.eliteAt?['Knight','Swordsman','Assassin','Archer','Cleric','Dragon']:n>=Math.ceil(p.eliteAt/2)?['Soldier','Spearman','Archer','Swordsman']:['Soldier','Archer','Spearman'];
+    const p=difficulties[difficulty],count=Math.min(p.maxWave,p.base+Math.floor((n-1)/p.growth));
+    const pool=difficulty==='easy'&&n<=10?['Soldier']:n>=p.eliteAt?['Knight','Swordsman','Assassin','Archer','Cleric','Dragon']:n>=Math.ceil(p.eliteAt/2)?['Soldier','Spearman','Archer','Swordsman']:['Soldier','Archer','Spearman'];
     return Array.from({length:count},(_,i)=>{
       if(n>=p.eliteAt&&n%3===0&&i===count-1)return 'Dragon';
       const name=pool[Math.floor(random(n,i,771)*pool.length)];
@@ -28,7 +28,7 @@ const Endless = (() => {
     names.forEach((name,i)=>units.push(makeUnit(name,'AI',columns[i],row)));
     if(wave===1||wave%difficulties[difficulty].townEvery===0){
       const col=wave%2?2:7;
-      settlements[row*10+col]={type:wave>=difficulties[difficulty].eliteAt?'CITY':'VILLAGE',owner:'AI'};
+      settlements[row*10+col]={type:wave>=difficulties[difficulty].eliteAt?'CITY':difficulty==='easy'&&wave%2?'HAMLET':'VILLAGE',owner:'AI'};
       terrain[row*10+col]='GRASS';
     }
   }
@@ -58,13 +58,16 @@ const Endless = (() => {
     setupGame();
     active=true;COLS=10;ROWS=20;mapSize={cols:10,rows:20};TILE=BOARD_SIZE/COLS;useHexGrid=true;updateHexSize();resizeGameCanvas();
     terrain=Array.from({length:20},(_,row)=>rowTerrain(-row)).flat();settlements=Array(200).fill(null);units=[];
-    [['Knight',4,14],['Soldier',3,14],['Spearman',5,14],['Archer',6,15],['Cleric',4,16]].forEach(([name,col,row])=>units.push(makeUnit(name,'PLAYER',col,row)));
-    settlements[15*10+4]={type:'CITY',owner:'PLAYER'};
-    settlements[10*10+5]={type:'VILLAGE',owner:null};
+    const forward=difficulties[difficulty].forward;
+    [['Knight',4,14],['Soldier',3,14],['Spearman',5,14],['Archer',6,15],['Cleric',4,16]].forEach(([name,col,row])=>units.push(makeUnit(name,'PLAYER',col,row-forward)));
+    if(difficulty==='easy')units.push(makeUnit('Knight','PLAYER',6,14-forward));
+    settlements[(15-forward)*10+4]={type:'CITY',owner:'PLAYER'};
+    settlements[(10-Math.min(forward,2))*10+5]={type:'VILLAGE',owner:null};
     settlements[5*10+7]={type:'VILLAGE',owner:'AI'};
-    for(const i of [154,105,57])terrain[i]='GRASS';
+    for(let i=0;i<settlements.length;i++)if(settlements[i])terrain[i]='GRASS';
+    for(const u of units)terrain[u.row*10+u.col]='GRASS';
     units.push(makeUnit('Soldier','AI',7,5));spawnWave();
-    resetStartingEconomy();researchedUnits={PLAYER:new Set(['Soldier']),AI:new Set(['Soldier'])};
+    resetStartingEconomy();researchedUnits={PLAYER:new Set(difficulty==='easy'?['Soldier','Archer','Cleric']:['Soldier']),AI:new Set(['Soldier'])};
     diplomacy=createDefaultWarDiplomacy(['PLAYER','AI']);currentVictoryCondition=normalizeVictoryCondition({type:'ANNIHILATE_ALL'});
     currentTeam='PLAYER';turnNumber=1;currentTurnIndex=0;calculateTurnOrder();selectedUnit=null;gameOver=false;
     tradeProposals=[];communicationLockouts={};hideEndScreen();closeSpawnMenu();closeTradeProposalModal();
