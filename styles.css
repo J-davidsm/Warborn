@@ -55,6 +55,27 @@ html, body {
   display: none;
 }
 
+#musicToggleBtn {
+  position: fixed;
+  z-index: 55000;
+  top: 14px;
+  right: 16px;
+  padding: 9px 13px;
+  border: 1px solid rgba(247, 211, 107, 0.72);
+  border-radius: 999px;
+  background: rgba(10, 20, 27, 0.88);
+  color: #f7d98a;
+  font: 700 13px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.38);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+#musicToggleBtn:hover { background: rgba(42, 51, 48, 0.96); }
+#musicToggleBtn:focus-visible { outline: 2px solid #fff0bd; outline-offset: 3px; }
+#musicToggleBtn[aria-pressed="true"] { color: #d3dbe0; border-color: rgba(190, 204, 211, 0.55); }
+
 #mainMenuShade,
 #endScreenShade {
   position: absolute;

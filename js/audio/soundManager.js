@@ -33,9 +33,38 @@
   let masterGain = null;
   let music = null;
   let musicRequested = false;
+  let musicMuted = false;
   let preloaded = false;
   const sampleCache = {};
   const bufferCache = {};
+  const MUSIC_MUTE_KEY = 'warborn.musicMuted';
+
+  try { musicMuted = localStorage.getItem(MUSIC_MUTE_KEY) === 'true'; } catch (e) {}
+
+  function updateMusicToggleButton() {
+    const button = document.getElementById('musicToggleBtn');
+    if (!button) return;
+    button.textContent = musicMuted ? '♫ Music Off' : '♫ Music On';
+    button.setAttribute('aria-pressed', String(musicMuted));
+    button.setAttribute('aria-label', musicMuted ? 'Turn music on' : 'Mute music');
+    button.title = musicMuted ? 'Turn background music on' : 'Mute background music';
+  }
+
+  function setMusicMuted(muted) {
+    musicMuted = !!muted;
+    try { localStorage.setItem(MUSIC_MUTE_KEY, String(musicMuted)); } catch (e) {}
+    updateMusicToggleButton();
+    if (musicMuted) {
+      if (music) music.pause();
+    } else if (musicRequested) {
+      startBackgroundMusic();
+    }
+    return musicMuted;
+  }
+
+  function toggleMusicMute() {
+    return setMusicMuted(!musicMuted);
+  }
 
   function getAudioContext() {
     if (audioContext) return audioContext;
@@ -160,7 +189,7 @@
   function startBackgroundMusic() {
     preload();
     musicRequested = true;
-    if (!music) return;
+    if (!music || musicMuted) return;
     music.play().catch(() => {
       musicRequested = true;
     });
@@ -187,6 +216,9 @@
     unlock,
     startBackgroundMusic,
     stopBackgroundMusic,
+    setMusicMuted,
+    toggleMusicMute,
+    isMusicMuted: () => musicMuted,
     playAttack,
     playMove,
     playRankUp,
@@ -195,6 +227,10 @@
 
   window.SoundManager = SoundManager;
   window.zzfx = zzfx;
+
+  const musicToggleButton = document.getElementById('musicToggleBtn');
+  if (musicToggleButton) musicToggleButton.addEventListener('click', toggleMusicMute);
+  updateMusicToggleButton();
 
   ['pointerdown', 'keydown', 'touchstart'].forEach(eventName => {
     window.addEventListener(eventName, unlock, { once: true, passive: true });

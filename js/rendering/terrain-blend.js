@@ -98,6 +98,14 @@ function terrainV2Canvas(width, height) {
   return canvas;
 }
 
+function terrainV2FadeWeight(type, distance) {
+  const natureSurface = !['BRIDGE', 'FARM', 'FOUNTAIN'].includes(type);
+  const innerEdge = natureSurface ? 1.62 : 1.18;
+  const featherWidth = natureSurface ? 1.02 : 0.36;
+  const t = Math.max(0, Math.min(1, (innerEdge - distance) / featherWidth));
+  return t * t * (3 - 2 * t);
+}
+
 // Infer the stream axis from neighboring water in map coordinates, then put
 // the bridge deck perpendicular to it. Two rings also handle wider channels.
 function terrainV2BridgeAngle(col, row, cols, rows, hex, values, parity = 0) {
@@ -174,10 +182,10 @@ function terrainV2Stamp(type, variant, hex, angle = 0) {
     ctx.fillRect(0, 0, size, size);
   }
   const pixels = ctx.getImageData(0, 0, size, size);
-  // Stamp extends 25% beyond the cell. Use exact polygon distance, not a blur
-  // of the artwork, to keep interior foliage, rocks and structures crisp.
-  const softSurface = ['WATER', 'GRASS'].includes(type);
-  const extent = softSurface ? 1.5 : 1.25;
+  // Nature surfaces overlap well beyond a cell edge. This keeps biome
+  // transitions broad and continuous without blurring the artwork itself.
+  // Built features remain more local so bridges and farms stay legible.
+  const extent = !['BRIDGE', 'FARM', 'FOUNTAIN'].includes(type) ? 1.8 : 1.25;
   const apothem = Math.sqrt(3) / 2;
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -186,8 +194,7 @@ function terrainV2Stamp(type, variant, hex, angle = 0) {
       const distance = hex
         ? Math.max(Math.abs(py), Math.abs(apothem * px + 0.5 * py), Math.abs(apothem * px - 0.5 * py)) / apothem
         : Math.max(Math.abs(px), Math.abs(py));
-      const t = Math.max(0, Math.min(1, ((softSurface ? 1.35 : 1.18) - distance) / (softSurface ? 0.7 : 0.36)));
-      const weight = t * t * (3 - 2 * t);
+      const weight = terrainV2FadeWeight(type, distance);
       // Additive compositing sums premultiplied RGB and weights. Keep the sum
       // below 1 so the canvas never clamps; normalize once after all stamps.
       pixels.data[(y * size + x) * 4 + 3] = Math.round(weight * 60);
@@ -233,7 +240,7 @@ function buildTerrainV2Layer(cols, rows, hex, values, parity = 0) {
         const orientation = terrainHash(c, r, 9731);
         ctx.scale(orientation & 1 ? -1 : 1, orientation & 2 ? -1 : 1);
       }
-      const extent = ['WATER', 'GRASS'].includes(type) ? 1.5 : 1.25;
+      const extent = !['BRIDGE', 'FARM', 'FOUNTAIN'].includes(type) ? 1.8 : 1.25;
       ctx.drawImage(stamp, -radius * extent, -radius * extent, radius * extent * 2, radius * extent * 2);
       ctx.restore();
     }

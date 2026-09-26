@@ -684,13 +684,17 @@ function drawGrid(){
     } else if (!blendedTerrain) {
       drawTerrainBaseTile(screenX, screenY, TILE, TILE, terrainType, c, r);
     }
-    noFill();
-    stroke(255, 255, 255, blendedTerrain ? 7 : (useHexGrid ? 20 : 12));
-    strokeWeight(Math.max(0.35, TILE * 0.006));
-    if (useHexGrid) {
-      drawHexagon(screenX, screenY, HEX_SIZE);
-    } else {
-      rect(screenX, screenY, TILE, TILE);
+    // The blended terrain surface already communicates biome boundaries.
+    // Per-cell outlines reintroduce the hex pattern we deliberately soften.
+    if (!blendedTerrain) {
+      noFill();
+      stroke(255, 255, 255, useHexGrid ? 20 : 12);
+      strokeWeight(Math.max(0.35, TILE * 0.006));
+      if (useHexGrid) {
+        drawHexagon(screenX, screenY, HEX_SIZE);
+      } else {
+        rect(screenX, screenY, TILE, TILE);
+      }
     }
 
     // Restore state after each cell

@@ -5,6 +5,10 @@ const sources=[];
 const ctx=vm.createContext({console,Image:class {set src(v){sources.push(v)}},normalizeTerrainType:t=>t&&String(t).toUpperCase(),terrainHash:(c,r,s)=>((Math.imul(c+1,374761393)^Math.imul(r+1,668265263)^s)>>>0)});
 vm.runInContext(fs.readFileSync(require('path').join(__dirname, '../js/rendering/terrain-blend.js'),'utf8'),ctx);
 assert.equal(sources.length,54);assert.equal(new Set(sources).size,54);
+assert.equal(ctx.terrainV2FadeWeight('GRASS',0),1);
+assert.equal(ctx.terrainV2FadeWeight('WOODS',1.62),0);
+assert(ctx.terrainV2FadeWeight('MOUNTAIN',1.2)>0.25,'nature biomes should crossfade broadly beyond their hex edge');
+assert(ctx.terrainV2FadeWeight('BRIDGE',1.2)<ctx.terrainV2FadeWeight('GRASS',1.2),'built details should keep a tighter edge');
 const variants=ctx.terrainV2Variants(50,50);
 assert.equal(new Set(variants).size,6);
 for(let r=0;r<50;r++)for(let c=0;c<50;c++){

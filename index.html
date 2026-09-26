@@ -5,7 +5,7 @@
   <title>Warborn — Turn-Based Strategy</title>
   <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=chronicles2">
+  <link rel="stylesheet" href="styles.css?v=terrain-music1">
   <script src="vendor/p5.min.js"></script>
 </head>
 <body>
@@ -432,11 +432,13 @@
     </div>
   </div>
 
+  <button id="musicToggleBtn" type="button" aria-label="Mute music" aria-pressed="false" title="Mute background music">♫ Music On</button>
+
   <!-- Modals will be included here -->
   <!-- All the diplomacy, campaign editor and other modal content would continue here but keeping it brief for file size -->
 
   <script src="js/core/state-and-grid.js?v=chronicles2"></script>
-  <script src="js/audio/soundManager.js?v=chronicles2"></script>
+  <script src="js/audio/soundManager.js?v=musicmute1"></script>
   <script src="js/net/connection-state.js?v=chronicles2"></script>
   <script src="js/net/websocket-client.js?v=chronicles2"></script>
   <script src="js/systems/economy-research.js?v=chronicles2"></script>
@@ -455,8 +457,8 @@
   <script src="js/systems/trade.js?v=chronicles2"></script>
   <script src="js/ui/editor-controls.js?v=chronicles2"></script>
   <script src="js/rendering/action-effects.js?v=chronicles2"></script>
-  <script src="js/rendering/renderer.js?v=chronicles2"></script>
-  <script src="js/rendering/terrain-blend.js?v=chronicles2"></script>
+  <script src="js/rendering/renderer.js?v=terrainmeld1"></script>
+  <script src="js/rendering/terrain-blend.js?v=terrainmeld1"></script>
   <script src="js/input/mouse-actions.js?v=chronicles2"></script>
   <script src="js/systems/mechanics.js?v=chronicles2"></script>
   <script src="js/data/units-and-build.js?v=chronicles2"></script>
