@@ -23,6 +23,26 @@ for(const chapter of catalog){assert.equal(chapter.scenarios.length,7);for(const
  for(const t of s.diplomacy.treaties)assert(!s.diplomacy.warDeclarations.some(w=>t.participants.includes(w.attacker)&&t.participants.includes(w.target)));
 }}
 assert.equal(signatures.size,21);
+const missions=catalog.flatMap(c=>c.scenarios);
+const signatureOfArmy=s=>s.startingUnits.PLAYER.map(u=>u.type).sort().join('|');
+assert.equal(new Set(missions.map(signatureOfArmy)).size,21,'every player starting army is distinct');
+assert.equal(new Set(missions.map(s=>JSON.stringify(s.settlements))).size,21,'every settlement layout is distinct');
+for(const chapter of catalog){
+ assert(new Set(chapter.scenarios.map(s=>s.startingUnits.PLAYER.length)).size>=3,'army sizes vary within each campaign');
+ assert(new Set(chapter.scenarios.map(s=>s.settlements.length)).size>=3,'settlement counts vary within each campaign');
+ assert.equal(new Set(chapter.scenarios.map(s=>JSON.stringify(s.mapSize))).size,7);
+}
+for(const s of missions){
+ const keys=new Set();
+ for(const t of s.settlements){
+  assert(t.col>=0&&t.row>=0&&t.col<s.mapSize.cols&&t.row<s.mapSize.rows);
+  const key=t.row*s.mapSize.cols+t.col;assert(!keys.has(key),'towns cannot overlap');keys.add(key);
+ }
+ const target=s.settlements.find(t=>t.col===s.victoryCondition.holdCol&&t.row===s.victoryCondition.holdRow);
+ if(s.victoryCondition.type==='CAPTURE_TOWN')assert.equal(target.owner,'AI');
+ if(s.victoryCondition.type==='HOLD_TILE')assert.equal(target.owner,null);
+}
+
 // Objective outcomes must not require eliminating uninvolved factions or allies.
 Object.assign(ctx,{areFriendlyTeams:(a,b)=>a===b||b==='AI2',teamHasLife:()=>true,isTeamConquered:()=>false,getWinner:()=>null,settlements:Array(16).fill(null),COLS:4,turnNumber:1});
 vm.runInContext(fs.readFileSync('js/ui/endgame-and-ui.js','utf8'),ctx);
@@ -34,6 +54,6 @@ ctx.currentVictoryCondition.crownFallenTeams=['PLAYER'];assert.equal(ctx.evaluat
 console.log('21 reproducible missions: valid rosters, zero resources, routes, alliances, unique geography, town and Crown objectives pass.');
 // The setup snapshot reads stale editor settings: loading must restore this mission's rules afterward.
 Object.assign(ctx,{campaignMode:{active:true,currentScenarioIndex:1,campaignData:catalog[0]},resources:{},startingResources:{},researchedUnits:{},currentAIPlayers:1,aiTurnTimeoutId:null,clearTimeout(){},closeSpawnMenu(){},showPopup(){},clonePlain:x=>JSON.parse(JSON.stringify(x)),ensureDiplomacyForActiveTeams(){},setupGame(){ctx.currentVictoryCondition={type:'ANNIHILATE_ALL'};ctx.settlements=Array(ctx.COLS*ctx.ROWS).fill(null);},makeUnit:(name,team,col,row,opts)=>({name,team,col,row,id:opts.id,hp:200}),applyVictoryConditionToUI(){},updateUI(){},captureScenarioSnapshot(){},terrain:Array(800).fill('WATER')});
-ctx.loadCurrentScenario();assert.equal(ctx.currentVictoryCondition.type,'KILL_CROWN');assert.equal(ctx.currentVictoryCondition.targetUnitId,catalog[0].scenarios[1].victoryCondition.targetUnitId);assert.equal(ctx.terrain.length,18*16);assert.equal(ctx.terrain.filter(Boolean).length,catalog[0].scenarios[1].terrain.length);
-ctx.campaignMode.currentScenarioIndex=2;ctx.loadCurrentScenario();assert.equal(ctx.currentVictoryCondition.type,'HOLD_TILE');assert.equal(ctx.currentVictoryCondition.holdCol,9);
+ctx.loadCurrentScenario();assert.equal(ctx.currentVictoryCondition.type,'KILL_CROWN');assert.equal(ctx.currentVictoryCondition.targetUnitId,catalog[0].scenarios[1].victoryCondition.targetUnitId);assert.equal(ctx.terrain.length,catalog[0].scenarios[1].mapSize.cols*catalog[0].scenarios[1].mapSize.rows);assert.equal(ctx.terrain.filter(Boolean).length,catalog[0].scenarios[1].terrain.length);
+ctx.campaignMode.currentScenarioIndex=2;ctx.loadCurrentScenario();assert.equal(ctx.currentVictoryCondition.type,'HOLD_TILE');assert.equal(ctx.currentVictoryCondition.holdCol,catalog[0].scenarios[2].victoryCondition.holdCol);
 console.log('Mission load and transitions restore authored objectives after setup, with no stale terrain.');

@@ -36,8 +36,13 @@ function renderCampaignBrowser(){
     const title=document.createElement('h3');title.textContent=scenario.name;
     const objective=document.createElement('p');objective.className='mission-objective';objective.textContent=scenario.victory;
     const relations=document.createElement('p');relations.className='mission-relations';relations.textContent=`${scenario.ally?'Green ally':'No starting allies'} · ${scenario.coalition?'Enemy coalition':scenario.aiCount-(scenario.ally?1:0)>1?'Rival kingdoms':'One enemy kingdom'}`;
+    const deployment=document.createElement('p');deployment.className='mission-deployment';
+    const counts={};for(const u of scenario.startingUnits.PLAYER)counts[u.type]=(counts[u.type]||0)+1;
+    deployment.textContent=`Starting army: ${Object.entries(counts).map(([type,count])=>`${count} × ${type}`).join(' · ')}`;
+    const layout=document.createElement('p');layout.className='mission-relations';
+    layout.textContent=`${scenario.approach} · ${scenario.mapSize.cols} × ${scenario.mapSize.rows} · Settlements: ${scenario.settlements.filter(t=>t.owner==='PLAYER').length} yours, ${scenario.settlements.filter(t=>!t.owner).length} neutral`;
     const start=document.createElement('button');start.textContent='Play mission';start.onclick=()=>playCampaignMission(selectedCampaignChapter,i);
-    content.append(tag,title,objective,relations,start);card.append(canvas,content);missions.append(card);
+    content.append(tag,title,objective,relations,layout,deployment,start);card.append(canvas,content);missions.append(card);
   });
 }
 function drawCampaignPreview(canvas,scenario){
