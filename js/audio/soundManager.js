@@ -229,7 +229,12 @@
   window.zzfx = zzfx;
 
   const musicToggleButton = document.getElementById('musicToggleBtn');
-  if (musicToggleButton) musicToggleButton.addEventListener('click', toggleMusicMute);
+  if (musicToggleButton) {
+    ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'touchstart', 'touchend'].forEach(eventName => {
+      musicToggleButton.addEventListener(eventName, event => event.stopPropagation());
+    });
+    musicToggleButton.addEventListener('click', toggleMusicMute);
+  }
   updateMusicToggleButton();
 
   ['pointerdown', 'keydown', 'touchstart'].forEach(eventName => {
