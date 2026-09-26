@@ -55,3 +55,10 @@ for(const target of ['Soldier','Stockade','Castle','Heavy Fortress']){
  assert.equal(1000-defender.hp,target==='Soldier'?35:70,'siege damage against '+target);
 }
 console.log('Catapult has 160 HP, deals 70 damage against all fortress tiers, and keeps 35 damage against ordinary units.');
+// Every attacking unit, including flying Dragons and Assassins, suffers marsh's 50% penalty.
+ctx.TERRAIN.SWAMP={getDefense:()=>.1,assassinBonus:true,noAttack:false};
+for(const name of ['Soldier','Archer','Assassin','Dragon','Catapult']){
+ ctx.terrain.fill(null);const normal=hit(name);ctx.terrain[1*7+2]='SWAMP';const marsh=hit(name);
+ assert.equal(marsh,Math.floor(normal*.5),'marsh attacking penalty: '+name);
+}
+console.log('Marsh allows attacks and halves damage for ordinary, specialist, flying and siege units.');

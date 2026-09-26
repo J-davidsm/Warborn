@@ -43,6 +43,7 @@ function attackUnit(a, d) {
   
   // Start with base damage from unit stats
   let dmg = a.dmg;
+  if(terrain[a.row*COLS+a.col]==='SWAMP')dmg*=0.5;
   if(hasCrownAura(a))dmg*=1.10;
   if(a.name==='Assassin'&&d.name==='Crown')dmg*=2;
   if(a.name==='Catapult'&&isFortressUnit(d))dmg*=2;
@@ -171,6 +172,7 @@ function attackUnit(a, d) {
   if (isFortressUnit(d) && d.hp > 0 && a.hp > 0 && manhattan(d.col, d.row, a.col, a.row) <= fortRetRange) {
     // Calculate counter damage from fortress: scale by fortress health (with same 40% floor)
     let counterDmg = d.dmg;
+    if(terrain[d.row*COLS+d.col]==='SWAMP')counterDmg*=0.5;
     const fortHealthPct = max(d.hp / d.maxHp, 0.4);
     counterDmg = floor(counterDmg * fortHealthPct);
     // Apply defender morale modifiers to counter (treat fortress as non-dragon)
@@ -332,6 +334,7 @@ function moraleCheck(u){
 // ---------- Turn ----------
 let lastHumanEndTurn=0;
 function endTurn(expectedAITeam = null) {
+  if(!expectedAITeam&&typeof BattleGuide!=='undefined'&&BattleGuide.blocking)return;
   if(gameOver || (isAITeam(currentTeam) && expectedAITeam!==currentTeam))return;
   if(expectedAITeam && expectedAITeam!==currentTeam)return;
   if(!expectedAITeam){if(Date.now()-lastHumanEndTurn<350)return;lastHumanEndTurn=Date.now();}

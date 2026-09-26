@@ -56,7 +56,7 @@ const OnlineMatch = (() => {
    if(peer!==p||!host||playing||links.size>=capacity-1){c.on('open',()=>{tx(c,{type:'full'});setTimeout(()=>c.close(),300);});return;}
    const slot=TEAMS.slice(1,capacity).find(t=>!links.has(t));links.set(slot,c);attach(c,p,slot);
   });
-  p.on('error',e=>{if(peer===p)failure(e.type==='peer-unavailable'?'Room not found or the host is offline.':e.type==='unavailable-id'?'Room code already in use. Leave and retry.':'Connection failed. Leave and retry; some networks block peer connections.');});
+  p.on('error',e=>{if(peer===p&&playing&&connected()&&['network','server-error','socket-error','socket-closed'].includes(e.type)){status('Signaling interrupted; the existing game connection is still active.');return;}if(peer===p)failure(e.type==='peer-unavailable'?'Room not found or the host is offline.':e.type==='unavailable-id'?'Room code already in use. Leave and retry.':'Connection failed. Leave and retry; some networks block peer connections.');});
   p.on('disconnected',()=>{if(peer===p&&!p.destroyed)p.reconnect();});
  }
  function attach(c,p,slot){
@@ -74,7 +74,7 @@ const OnlineMatch = (() => {
   if(host)setTimeout(()=>{if(live()&&!members.some(m=>m.team===slot))c.close();},15000);
  }
  function snapshot(){
-  return copy({effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
+  return copy({incomeReceipt:typeof BattleGuide!=='undefined'?BattleGuide.incomeReceipt:null,effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
    research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
  }
  function valid(s){
@@ -96,6 +96,7 @@ const OnlineMatch = (() => {
   researchedUnits=Object.fromEntries(Object.entries(s.research).map(([k,v])=>[k,new Set(v)]));diplomacy=copy(s.diplomacy);
   currentVictoryCondition=copy(s.victoryCondition);gameOver=s.gameOver;selectedUnit=null;closeSpawnMenu();buildMode=false;buildModeUnitId=null;
   if(typeof Endless!=='undefined')Endless.restore(mode==='coop'?copy(s.endless):null);
+  if(typeof BattleGuide!=='undefined')BattleGuide.receiveIncome(s.incomeReceipt);
   accepted=copy(s);pending=false;for(const id of [...pendingUpdates.keys()])confirmOptimisticUpdate(id);
   updateUI();finish();render();applying=false;return true;
  }
@@ -140,13 +141,14 @@ const OnlineMatch = (() => {
   if(!connected()||visible()||suspended||pending||(accepted.currentTeam!==localTeam&&!(host&&mode==='coop'&&isAITeam(accepted.currentTeam)))){if(actionId)rollbackOptimisticUpdate(actionId);return;}
   const s=snapshot();if(!valid(s))return;
   if(host){commit(s);if(actionId)confirmOptimisticUpdate(actionId);}
-  else{pending=true;const base=revision;send({type:'proposal',state:s,base});render();setTimeout(()=>{if(pending&&revision===base&&playing)failure('Sync timed out. Return to the room or reconnect.');},12000);}
+  else{pending=true;const base=revision;send({type:'proposal',state:s,base});render();setTimeout(()=>{if(pending&&revision===base&&playing&&!document.hidden)failure('Sync timed out. Return to the room or reconnect.');},12000);}
  }
  function lobby(){
   if(typeof Endless!=='undefined')Endless.stop();activeAITurn=null;aiScheduled=false;playing=false;pending=false;suspended=false;accepted=null;members=members.filter(m=>m.team==='PLAYER'||(host?links.get(m.team)?.open:m.connected));members.forEach(m=>m.ready=false);
   hideEndScreen();open();status('Ready up for a fresh match. Vacant slots must be filled.');render();
  }
  function receive(msg,c,slot){
+  if(msg.type==='syncRequest'&&host&&playing){if(accepted.currentTeam===localTeam||isAITeam(accepted.currentTeam))publish();tx(c,{type:'state',state:accepted,revision,resume:true,paused:suspended});scheduleAI();return;}
   if(msg.type==='full'){failure('Room full or already playing. Leave and choose another.');return;}
   if(msg.type==='hello'&&host&&!playing){
    if(typeof msg.name!=='string'||msg.name.length>24||members.some(m=>m.team===slot))return;
@@ -161,7 +163,7 @@ const OnlineMatch = (() => {
    if(suspended||msg.base!==revision||accepted.currentTeam!==slot||!valid(msg.state)||JSON.stringify(msg.state.terrain)!==JSON.stringify(accepted.terrain)||JSON.stringify(msg.state.turnOrder)!==JSON.stringify(accepted.turnOrder)||(mode==='coop'&&(JSON.stringify({...msg.state.endless,lossReason:''})!==JSON.stringify({...accepted.endless,lossReason:''})||msg.state.turnNumber!==accepted.turnNumber))){tx(c,{type:'state',state:accepted,revision});return;}
    apply(msg.state);commit(msg.state);return;
   }
-  if(msg.type==='state'&&!host&&playing&&Number.isInteger(msg.revision)&&msg.revision>=revision){if(apply(msg.state))revision=msg.revision;return;}
+  if(msg.type==='state'&&!host&&playing&&Number.isInteger(msg.revision)&&msg.revision>=revision){if(apply(msg.state)){revision=msg.revision;if(msg.resume&&!msg.paused&&connected()){suspended=false;$('onlineLobby').hidden=true;render();}}return;}
   if(msg.type==='pause'&&!host){failure('A player disconnected. The host can return everyone to the room.');return;}
   if(msg.type==='lobbyRequest'&&host){lobby();send({type:'lobby'});roster();return;}
   if(msg.type==='lobby'&&!host){lobby();return;}
@@ -186,12 +188,14 @@ const OnlineMatch = (() => {
    if(!active)return;const id=event.target.closest('button,select,input')?.id;
    if(['replayScenarioBtn','backToMenuBtn'].includes(id)){event.preventDefault();event.stopImmediatePropagation();returnLobby();return;}
    if(['restartBtn','editorModeBtn','gameModeSelect','convertTeamsBtn','menuCampaignBtn'].includes(id)){event.preventDefault();event.stopImmediatePropagation();return;}
-   if(!canAct()&&!event.target.closest('#onlineLobby,#onlineMatchBar,#endlessExit,#musicToggleBtn')&&!event.target.closest('#game canvas')){event.preventDefault();event.stopImmediatePropagation();}
+   if(!canAct()&&!event.target.closest('#onlineLobby,#onlineMatchBar,#endlessExit,#musicToggleBtn,#battleHelp,#battleHandbook,#battleTutorial,#battleMenuBtn')&&!event.target.closest('#game canvas')){event.preventDefault();event.stopImmediatePropagation();}
   },true);
   setInterval(()=>{if(playing&&!applying&&!pending&&connected()&&!visible()&&!suspended&&(accepted?.currentTeam===localTeam||(host&&mode==='coop'&&isAITeam(accepted?.currentTeam||'')))&&JSON.stringify(snapshot())!==JSON.stringify(accepted))publish();},300);
  });
+ function resume(){if(!playing||document.hidden)return;if(host){publish();scheduleAI();}else send({type:'syncRequest'});updateUI();}
+ document.addEventListener('visibilitychange',resume);window.addEventListener('focus',resume);window.addEventListener('pageshow',resume);
  window.addEventListener('beforeunload',()=>peer?.destroy());
- return {canRunAI,returnLobby,get isHost(){return host;},get coop(){return mode==='coop'&&playing;},get active(){return active;},get playing(){return playing;},get localTeam(){return localTeam;},get teams(){return mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity);},get turnOrder(){return accepted?.turnOrder||(mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity));},
+ return {canRunAI,returnLobby,get isHost(){return host;},get coop(){return mode==='coop'&&playing;},get active(){return active;},get playing(){return playing;},get localTeam(){return localTeam;},playerName:team=>members.find(m=>m.team===team)?.name||(team==='AI'?'Invaders':team),get teams(){return mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity);},get turnOrder(){return accepted?.turnOrder||(mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity));},
   get publicInfo(){return {room:active?code:'',host:active&&host,count:members.length,capacity,playing,mode,difficulty,where:playing?'In battle':active?'In a room':visible()?'In lobby':'Browsing'};},
   blocksMapInput:()=>visible()||(active&&!playing),canAct,publish,finish,open,eliminated,invite,join:code=>{open();createPeer(false,code);}};
 })();

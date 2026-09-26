@@ -768,3 +768,60 @@ footer {
 .workshop-content{position:relative;width:min(1180px,calc(100% - 40px));margin:24px auto}.workshop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.workshop-header h2{font:30px Georgia,serif}
 #scenarioWorkshop #scenariosList{max-height:none;overflow:visible}
 @media(max-width:760px){.campaign-choices,.campaign-missions{grid-template-columns:1fr}.campaign-choice{min-height:0;padding:16px}.campaign-mission{gap:12px}#campaignPageHeader h2{font-size:24px}.campaign-mission h3{font-size:19px}}
+
+/* Battle HUD: separate map, sidebar, inspection and training regions. */
+:root { --battle-side: 376px; --inspection-height: 0px; }
+#panel {box-sizing:border-box;width:var(--battle-side);right:12px;top:12px;bottom:calc(12px + var(--inspection-height));max-width:none;}
+#battleToolbar {display:flex;gap:8px;align-items:center;flex-shrink:0;}
+#battleToolbar button {padding:8px 12px;border:1px solid #b69b62;border-radius:7px;background:#253544;color:#f7d98a;cursor:pointer;}
+#battleToolbar #musicToggleBtn {position:static;margin-left:auto;font-size:11px;padding:8px;white-space:nowrap;}
+#battleHelp {font-size:18px;font-weight:bold;}
+#resourceBanner {box-sizing:border-box;width:226px;max-width:226px;padding:10px 12px;gap:4px 12px;}
+#turnRibbon {position:fixed;top:6px;left:248px;right:calc(var(--battle-side) + 28px);height:78px;z-index:2070;display:none;align-items:center;justify-content:center;pointer-events:none;}
+#turnRibbon img {position:absolute;width:100%;height:100%;object-fit:fill;}
+#turnRibbon strong {position:relative;max-width:74%;font-size:15px;text-align:center;color:white;text-shadow:0 2px 3px #000;overflow-wrap:anywhere;}
+.battle-active #turnRibbon {display:flex;}
+#battleNotice {background:#283c4f;border-left:3px solid #edce84;padding:10px;line-height:1.5;font-size:13px;flex-shrink:0;opacity:1;transition:opacity .7s;}
+#battleNotice.fade {opacity:0;}
+#panel #endlessBar {position:static;max-width:none;width:auto;margin:0;flex-shrink:0;}
+#onlineMatchBar {box-sizing:border-box;right:calc(var(--battle-side) + 28px);max-width:none;display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:11px;}
+#onlineMatchBar[hidden] {display:none;}
+#objectInspector {position:fixed;box-sizing:border-box;right:12px;bottom:12px;width:var(--battle-side);max-height:36vh;overflow:auto;background:#132432;border:1px solid #d2b66e;border-radius:10px;padding:12px;z-index:2200;font-size:12px;line-height:1.5;}
+#objectInspector h3 {margin:0 28px 8px 0;color:#f1cf81;text-transform:capitalize;}
+#objectInspector h4 {margin:12px 0 4px;color:#f1cf81;}
+#objectInspector p {margin:6px 0;}
+#inspectorClose {float:right;background:transparent;color:white;border:0;font-size:23px;cursor:pointer;}
+.stat-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;font-size:12px;}
+.stat-grid span {padding:4px;background:#ffffff09;border-radius:4px;overflow-wrap:anywhere;}
+.matchups {display:flex;flex-direction:column;gap:6px;font-size:12px;margin:8px 0;}
+.matchup {display:flex;align-items:center;gap:8px;}
+.matchup img {width:30px;height:30px;object-fit:contain;}
+.unit-ability,.settlement-hint,.terrain-note {font-size:12px;line-height:1.5;}
+.settlement-hint {color:#f4d582;}
+#battleTutorial {position:fixed;left:12px;right:calc(var(--battle-side) + 28px);bottom:12px;max-height:43vh;z-index:23000;display:flex;gap:16px;padding:16px;box-sizing:border-box;background:#0e202ff5;border:1px solid #d4b878;border-radius:12px;box-shadow:0 8px 32px #0009;}
+.guide-portrait {width:118px;max-height:170px;object-fit:cover;align-self:center;border-radius:8px;border:1px solid #a58d59;}
+.guide-copy {min-width:0;overflow:auto;flex:1;}
+.guide-copy h2 {font-size:17px;color:#f2d188;margin:0 0 8px;}
+.guide-copy p {font-size:14px;line-height:1.6;margin:0 0 12px;}
+.guide-copy nav {display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.guide-copy button,#battleHandbook button {padding:8px 12px;border:1px solid #9d8556;border-radius:6px;background:#e6c982;color:#17222f;cursor:pointer;}
+#guideProgress {font-size:12px;color:#c1cbd1;}
+#guideSkip {background:transparent;color:#d3c8a8;border-color:transparent;}
+.training-active #onlineMatchBar {visibility:hidden;}
+#battleHandbook {position:fixed;inset:0;background:#060e18e8;z-index:60000;display:grid;place-items:center;padding:20px;}
+.handbook-card {box-sizing:border-box;width:min(850px,100%);max-height:92vh;overflow:auto;padding:24px;border:1px solid #c8ac68;border-radius:14px;background:#152636;}
+.handbook-card header {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.handbook-card h2 {color:#efd38e;font-size:23px;}
+.handbook-card details {border-bottom:1px solid #ffffff20;padding:12px 0;}
+.handbook-card summary {cursor:pointer;color:#eed18c;font-weight:650;}
+.handbook-card p {line-height:1.6;}
+#battleTutorial[hidden],#battleHandbook[hidden],#objectInspector[hidden],#battleNotice[hidden] {display:none;}
+#spawnMenu {max-height:80vh;overflow-y:auto;max-width:calc(100vw - 32px)!important;min-width:min(400px,calc(100vw - 32px))!important;}
+@media(max-width:950px){:root{--battle-side:290px;}#turnRibbon{left:192px;height:70px;}#resourceBanner{width:170px;font-size:11px;gap:3px 6px;}#turnRibbon strong{font-size:12px;}.guide-portrait{width:76px;max-height:115px;}#battleTutorial{gap:10px;padding:12px;}.guide-copy p{font-size:12px;}}
+@media(max-width:650px){:root{--battle-side:230px;}#panel{left:auto;padding:10px;gap:8px;}#resourceBanner{width:135px;max-width:135px;font-size:10px;}#turnRibbon{left:155px;height:62px;}#battleTutorial{right:252px;max-height:55vh;flex-direction:column;}.guide-portrait{width:54px;height:54px;align-self:flex-start;}#battleToolbar{flex-wrap:wrap;}#battleToolbar #musicToggleBtn{margin-left:0;}#battleTutorial button{padding:6px;font-size:11px;}#objectInspector{max-height:30vh;}}
+#panel #mapDiplomacyButton {position:static!important;transform:none!important;align-self:flex-start;margin:8px 0;}
+.training-active #buildWidget {display:none!important;}
+#buildWidget {left:auto!important;right:calc(var(--battle-side) + 30px)!important;bottom:84px!important;transform:none!important;}
+#waterUpgradeWidget {left:auto!important;right:calc(var(--battle-side) + 86px)!important;bottom:84px!important;}
+.training-active #waterUpgradeWidget {display:none!important;}
+body:has(#spawnMenu) #buildWidget,body:has(#spawnMenu) #waterUpgradeWidget {display:none!important;}

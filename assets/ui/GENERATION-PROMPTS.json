@@ -1,0 +1,34 @@
+{
+  "tool": "Built-in image_gen",
+  "warrior": "Strong broad-shouldered medieval veteran warrior, black beard, steel and chainmail, chest-up painterly portrait, warm rim light and dark blue background, no text.",
+  "assets": [
+    [
+      "banner",
+      "Use case: stylized-concept. A single horizontal medieval fantasy game UI banner, 3:1 aspect ratio. Rich royal blue woven silk with broad empty middle for a player name overlaid by game code, ornate aged gold trim, curled cloth ends, slight realistic folds, hand-painted fantasy strategy artwork. Symmetrical front view, isolated on transparent background, no letters, no text, no watermark. Banner fills most image width."
+    ],
+    [
+      "marsh1",
+      "Use case: stylized-concept. Seamless square top-down terrain texture for a painted medieval fantasy strategy map. Marsh variation 1 of six: shallow teal pools and small scattered golden cattails. Small-scale terrain details evenly distributed edge to edge, calm muted blue-green water and ochre reeds, plainly a wet marsh. No bushes, no trees, no forest canopy, no buildings, no horizon, no hex outline, no text or border. Natural painted ground texture that blends with adjacent tiles."
+    ],
+    [
+      "marsh2",
+      "Use case: stylized-concept. Seamless square top-down terrain texture for a painted medieval fantasy strategy map. Marsh variation 2 of six: muddy channels between thin straw-colored reeds. Small-scale terrain details evenly distributed edge to edge, calm muted blue-green water and ochre reeds, plainly a wet marsh. No bushes, no trees, no forest canopy, no buildings, no horizon, no hex outline, no text or border. Natural painted ground texture that blends with adjacent tiles."
+    ],
+    [
+      "marsh3",
+      "Use case: stylized-concept. Seamless square top-down terrain texture for a painted medieval fantasy strategy map. Marsh variation 3 of six: waterlogged sedges and rust-brown cattail seed heads. Small-scale terrain details evenly distributed edge to edge, calm muted blue-green water and ochre reeds, plainly a wet marsh. No bushes, no trees, no forest canopy, no buildings, no horizon, no hex outline, no text or border. Natural painted ground texture that blends with adjacent tiles."
+    ],
+    [
+      "marsh4",
+      "Use case: stylized-concept. Seamless square top-down terrain texture for a painted medieval fantasy strategy map. Marsh variation 4 of six: wide shallow puddles with sparse pale rushes. Small-scale terrain details evenly distributed edge to edge, calm muted blue-green water and ochre reeds, plainly a wet marsh. No bushes, no trees, no forest canopy, no buildings, no horizon, no hex outline, no text or border. Natural painted ground texture that blends with adjacent tiles."
+    ],
+    [
+      "marsh5",
+      "Use case: stylized-concept. Seamless square top-down terrain texture for a painted medieval fantasy strategy map. Marsh variation 5 of six: dark wet soil with winding water rivulets and golden reeds. Small-scale terrain details evenly distributed edge to edge, calm muted blue-green water and ochre reeds, plainly a wet marsh. No bushes, no trees, no forest canopy, no buildings, no horizon, no hex outline, no text or border. Natural painted ground texture that blends with adjacent tiles."
+    ],
+    [
+      "marsh6",
+      "Use case: stylized-concept. Seamless square top-down terrain texture for a painted medieval fantasy strategy map. Marsh variation 6 of six: soft mossy wetland with silver-blue pools and cattails. Small-scale terrain details evenly distributed edge to edge, calm muted blue-green water and ochre reeds, plainly a wet marsh. No bushes, no trees, no forest canopy, no buildings, no horizon, no hex outline, no text or border. Natural painted ground texture that blends with adjacent tiles."
+    ]
+  ]
+}

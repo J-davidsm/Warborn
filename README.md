@@ -66,6 +66,18 @@ Each player gets the same starting army, a city, and zero resources. The shared 
 
 Players take turns, followed by one host-controlled AI turn. The map scrolls once per full round; movement, damage effects, recruitment, resources, and waves synchronize. Any enemy reaching the back edge defeats the team. Losing one player’s army and towns does not end the run while another ally survives; eliminated players watch the remaining allies. Keep the host connected. Return to the lobby to start another run.
 
+## Field training and controls
+
+The first battle on a browser or desktop profile opens Captain Garran’s guided training. The black-bearded captain explains the actual mission and points out your troops, objective, settlements and terrain. Use Next/Back, finish or skip, and replay it at any time from **?**. The field manual also contains all terrain effects and a unit reference with illustrated matchups.
+
+Click any tile or unit to inspect it at bottom right. The sidebar uses stat symbols with hover labels and lists special abilities. To manage an occupied settlement, select its garrison and click it again. Upgrades show gold/material income increases and use the settlement’s configured cost. Villages are visibly smaller than towns, and cities larger.
+
+The top cloth banner shows the active commander. Turn changes show an income receipt and announce the next commander, including online turns. Map zoom follows the pointer, stops at whole-map fit, respects the sidebar, and is disabled in settlement menus. H has no shortcut binding. **← Menu** returns from AI battles to the main menu.
+
+Marsh attacks now deal 50% damage for every unit; the old attack prohibition is removed. Marsh art uses water, reeds and cattails, while forests use the original painting set. Connected bridges use one painting and a shared crossing direction.
+
+Online matches resynchronize with their host when a tab becomes visible again, restoring authoritative unit readiness without granting extra actions. Browsers may still suspend a tab or device entirely; keep the host available. The desktop build disables Electron background throttling.
+
 ## Trading with AI kingdoms
 
 Open **Diplomacy**, select an AI kingdom, and choose **Negotiate Trade**. Build a two-sided offer combining gold, materials, units, and settlements. No treaty is required, even during war. The menu shows acceptance chances and explains refusals. Friendly kingdoms tolerate a small disadvantage; enemies demand a premium and often refuse anyway. AI valuation considers unit health, morale, experience, and settlement income, and protects essential defenses and the last settlement.

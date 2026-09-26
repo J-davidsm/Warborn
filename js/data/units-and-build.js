@@ -311,7 +311,7 @@ function openSpawnMenu(col, row, settlement){
   title.style.fontWeight = '700';
   title.style.fontSize = '16px';
   title.style.color = '#4a9eff';
-  title.textContent = `${settlement.owner} - ${settlement.type}`;
+  title.textContent = `${settlement.owner} — ${{HAMLET:'Village',VILLAGE:'Town',CITY:'City',PORT:'Port'}[settlement.type]||settlement.type}`;
   header.appendChild(title);
   
   const subtitle = document.createElement('div');
@@ -509,7 +509,7 @@ function openSpawnMenu(col, row, settlement){
     
     const currentType = settlement.type;
     let nextType = null;
-    let upgradeCost = 15;
+    let upgradeCost = SETTLEMENTS[currentType]?.upgradeCost?.gold || 0;
     
     if (currentType === 'HAMLET') nextType = 'VILLAGE';
     else if (currentType === 'VILLAGE') nextType = 'CITY';
@@ -519,10 +519,10 @@ function openSpawnMenu(col, row, settlement){
         <div style="font-size: 32px; margin-bottom: 16px;">⬆️</div>
         <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px;">Upgrade Settlement</div>
         <div style="color: #9aa6b2; margin-bottom: 16px;">
-          ${currentType} → ${nextType}
+          ${{HAMLET:'Village',VILLAGE:'Town',CITY:'City'}[currentType]} → ${{HAMLET:'Village',VILLAGE:'Town',CITY:'City'}[nextType]}
         </div>
         <div style="font-size: 12px; color: #9aa6b2; margin-bottom: 20px;">
-          Upgraded settlements provide better income and can build stronger units
+          Income each turn: 💰 ${SETTLEMENTS[currentType].income.gold} → ${SETTLEMENTS[nextType].income.gold} (+${SETTLEMENTS[nextType].income.gold-SETTLEMENTS[currentType].income.gold})<br>⚒️ ${SETTLEMENTS[currentType].income.materials} → ${SETTLEMENTS[nextType].income.materials} (+${SETTLEMENTS[nextType].income.materials-SETTLEMENTS[currentType].income.materials})<br>Upgrades also unlock stronger units.
         </div>
       `;
       
@@ -542,6 +542,7 @@ function openSpawnMenu(col, row, settlement){
           resources[settlement.owner].gold -= upgradeCost;
           settlement.type = nextType;
           console.log(`${settlement.owner} upgraded settlement to ${nextType}`);
+          postGameState();
           closeSpawnMenu();
           updateUI();
         }

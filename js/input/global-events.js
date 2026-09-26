@@ -15,7 +15,7 @@ window.addEventListener('keydown', (e) => {
     closeSpawnMenu(); 
   }
   
-  if (e.key === 'H' || e.key === 'h') e.preventDefault();
+
   
   // Camera scrolling with arrow keys
   if (mapCanvasFocused && e.key.startsWith('Arrow')) e.preventDefault();

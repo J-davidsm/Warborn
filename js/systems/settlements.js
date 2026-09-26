@@ -104,6 +104,7 @@ function grantIncomeForTeam(team){
   
   // Use two-resource system
   addResources(team, inc);
+  if(typeof BattleGuide!=='undefined')BattleGuide.recordIncome(team,inc);
   
   // Notify parent/hub about resource change
   try{ 

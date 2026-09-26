@@ -38,6 +38,7 @@ const ACTION_DEBOUNCE_MS = 150; // Minimum time between actions
 const SAME_TILE_DEBOUNCE_MS = 300; // Extra protection for same tile clicks
 
 function isMenuBlockingGameInput() {
+  if(document.getElementById('spawnMenu')||typeof BattleGuide!=='undefined'&&BattleGuide.blocking)return true;
   if (['campaignPage','scenarioWorkshop'].some(id=>document.getElementById(id)?.classList.contains('visible'))) return true;
   if(document.getElementById('endlessMenu')&&!document.getElementById('endlessMenu').hidden)return true;
   if (typeof OnlineMatch !== "undefined" && OnlineMatch.blocksMapInput()) return true;
@@ -65,7 +66,9 @@ function recordAction(col = -1, row = -1) {
   lastActionCoords = { col, row };
 }
 
-function mouseClicked(){
+function mouseClicked(event){
+  const canvasEl = document.querySelector('#game canvas');
+  if (event && event.target && event.target !== canvasEl) return;
   console.log('Mouse clicked:', { x: mouseX, y: mouseY, isEditorMode });
   if (isMenuBlockingGameInput()) return;
   if (suppressClickAfterDrag) {
@@ -129,6 +132,7 @@ function mouseClicked(){
 }
 // (editor click handler with placement exists earlier in the file)
 function handleGridClick(c,r){
+  if(typeof BattleGuide!=='undefined')BattleGuide.inspect(c,r);
   if (typeof OnlineMatch !== "undefined" && !OnlineMatch.canAct()) return;
   console.log('DEBUG: handleGridClick called - pos:', c, r, 'currentTeam:', currentTeam, 'opponentType:', opponentType, 'gameMode:', gameMode);
   
@@ -167,6 +171,7 @@ function handleGridClick(c,r){
   // Check for settlement upgrade (Shift+Click on owned settlement)
   const idx = r * COLS + c;
   const s = settlements[idx];
+  if(clicked&&selectedUnit?.id===clicked.id&&s?.owner===currentTeam&&clicked.team===currentTeam){openSpawnMenu(c,r,s);return;}
   if (keyIsDown(SHIFT) && s && s.owner === currentTeam && !clicked) {
     console.log('DEBUG: Attempting settlement upgrade at', c, r);
     upgradeSettlement(c, r, currentTeam);

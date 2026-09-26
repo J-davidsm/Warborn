@@ -25,7 +25,7 @@ function aiThreat(tile,team) {
   },0);
 }
 function aiCanFire(u,tile) {
-  return u.name==='Dragon'||u.name==='Assassin'||terrain[tile.row*COLS+tile.col]!=='SWAMP';
+  return u.name!=='Crown';
 }
 function aiProtectedUnit(team) {
   const mission=['KILL_UNIT_LIMIT','KILL_CROWN'].includes(currentVictoryCondition.type)&&units.find(u=>u.hp>0&&u.team===team&&u.id===currentVictoryCondition.targetUnitId);
@@ -50,7 +50,7 @@ function aiTargets(u) {
 }
 function aiAttackValue(u,e) {
   const damage=u.dmg*Math.max(.4,u.hp/u.maxHp)*(u.name==='Knight'&&e.name==='Dragon'||u.name==='Assassin'&&e.name==='Crown'||u.name==='Catapult'&&isFortressUnit(e)?2:1)*(hasCrownAura(u)?1.1:1)*(hasCrownAura(e)?0.75:1);
-  return Math.min(damage,e.hp)+(damage>=e.hp?75:0)+(e.name==='Crown'?120:e.name==='Cleric'?25:0)+e.dmg*.5;
+  return Math.min(damage*(terrain[u.row*COLS+u.col]==='SWAMP'?0.5:1),e.hp)+(damage>=e.hp?75:0)+(e.name==='Crown'?120:e.name==='Cleric'?25:0)+e.dmg*.5;
 }
 function aiMoveOptions(u) {
   const result=[{col:u.col,row:u.row}];

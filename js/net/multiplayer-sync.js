@@ -285,6 +285,7 @@ window.addEventListener('beforeunload', () => {
 
 // Handle visibility changes (tab switching, etc.)
 document.addEventListener('visibilitychange', () => {
+  if(typeof OnlineMatch!=='undefined'&&OnlineMatch.active)return;
   if (document.hidden) {
     // Page became hidden - reduce heartbeat frequency
     if (heartbeatInterval) {

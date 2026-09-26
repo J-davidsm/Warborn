@@ -36,8 +36,9 @@ function worldToScreen(worldX, worldY) {
 
 // Set zoom level with bounds checking
 function setZoom(newZoom, centerX = width/2, centerY = height/2) {
+  if(document.getElementById('spawnMenu')||typeof BattleGuide!=='undefined'&&BattleGuide.blocking)return;
   const oldZoom = zoomLevel; // Use current zoom, not target zoom
-  const newZoomClamped = constrain(newZoom, minZoom, maxZoom);
+  const newZoomClamped = constrain(newZoom, minimumMapZoom(), maxZoom);
 
   // Only adjust pan if zoom actually changed
   if (oldZoom !== newZoomClamped && centerX !== undefined && centerY !== undefined) {
@@ -52,8 +53,8 @@ function setZoom(newZoom, centerX = width/2, centerY = height/2) {
     const newScreenPoint = worldToScreen(worldPoint.x, worldPoint.y);
 
     // Adjust pan to move that point back under the cursor
-    targetPanX += centerX - newScreenPoint.x;
-    targetPanY += centerY - newScreenPoint.y;
+    targetPanX = panX + centerX - newScreenPoint.x;
+    targetPanY = panY + centerY - newScreenPoint.y;
     panX = targetPanX; // Update immediately for stability
     panY = targetPanY;
   } else {
@@ -69,27 +70,35 @@ function panCamera(deltaX, deltaY) {
   clampPanToMap();
 }
 
+function getBattleViewport() {
+  const canvas=document.querySelector('#game canvas'), panel=document.getElementById('panel');
+  const cr=canvas?.getBoundingClientRect(), pr=panel?.getBoundingClientRect();
+  const right=pr&&cr&&pr.left>cr.left?Math.min(width,pr.left-cr.left):width;
+  const tutorial=document.getElementById('battleTutorial');
+  const bottom=tutorial&&!tutorial.hidden?tutorial.getBoundingClientRect().top-18:height-90;
+  return {left:24,right:Math.max(120,right-24),top:90,bottom:Math.max(190,bottom)};
+}
+function minimumMapZoom(){
+  const v=getBattleViewport(),b=getMapWorldBounds();
+  return Math.min(maxZoom,Math.max(0.1,Math.min((v.right-v.left)/b.width,(v.bottom-v.top)/b.height)));
+}
 function clampPanToMap() {
-  const z = Math.max(0.01, targetZoom || zoomLevel || 1);
-  const origin = getMapOrigin();
-  const bounds = getMapWorldBounds();
-  const margin = 80;
-  const leftLimit = margin - origin.x - bounds.x * z;
-  const rightLimit = width - margin - origin.x - (bounds.x + bounds.width) * z;
-  const topLimit = margin - origin.y - bounds.y * z;
-  const bottomLimit = height - margin - origin.y - (bounds.y + bounds.height) * z;
-  const minPanX = Math.min(leftLimit, rightLimit);
-  const maxPanX = Math.max(leftLimit, rightLimit);
-  const minPanY = Math.min(topLimit, bottomLimit);
-  const maxPanY = Math.max(topLimit, bottomLimit);
-  targetPanX = constrain(targetPanX, minPanX, maxPanX);
-  targetPanY = constrain(targetPanY, minPanY, maxPanY);
-  panX = constrain(panX, minPanX, maxPanX);
-  panY = constrain(panY, minPanY, maxPanY);
+  const v=getBattleViewport(),b=getMapWorldBounds(),o=getMapOrigin();
+  const z=Math.max(minimumMapZoom(),Math.min(maxZoom,targetZoom||1));
+  targetZoom=z;zoomLevel=Math.max(minimumMapZoom(),Math.min(maxZoom,zoomLevel));
+  const clampAxis=(value,start,end,origin,base,size)=>{
+    if(size*z<=end-start)return (start+end)/2-origin-(base+size/2)*z;
+    return constrain(value,end-origin-(base+size)*z,start-origin-base*z);
+  };
+  targetPanX=clampAxis(targetPanX,v.left,v.right,o.x,b.x,b.width);
+  targetPanY=clampAxis(targetPanY,v.top,v.bottom,o.y,b.y,b.height);
+  panX=clampAxis(panX,v.left,v.right,o.x,b.x,b.width);
+  panY=clampAxis(panY,v.top,v.bottom,o.y,b.y,b.height);
 }
 
 // ---------- Draw ----------
 function drawTerrainInfo() {
+  if(typeof BattleGuide!=='undefined')return;
   if (!inspectedTerrain) return;
   const info = getTerrainInfoText(inspectedTerrain.col, inspectedTerrain.row);
   if (!info) return;
@@ -134,15 +143,8 @@ function draw(){
   scale(zoomLevel);
 
   drawGrid(); drawEndlessEdge(); drawUnits(); drawHighlights();
+  if(typeof BattleGuide!=='undefined')BattleGuide.drawHighlight();
 
-  pop();
-  // image load status indicator (small, top-right)
-  push(); noStroke(); fill(255,200); textSize(12); textAlign(RIGHT, TOP);
-  const totalImgs = Object.keys(DEFAULT_IMAGE_MAP).length + Object.keys(SETTLEMENT_IMAGE_MAP).length;
-  const loadedImgs = Object.values(IMAGE_LOAD_STATUS).filter(s=>s==='loaded').length || 0;
-  const errImgs = Object.values(IMAGE_LOAD_STATUS).filter(s=>s==='error').length || 0;
-  text(`Sprites: ${loadedImgs}/${totalImgs}${errImgs? ' (err:'+errImgs+')':''}`, width - 12, 8);
-  text('Grid: HEX', width - 12, 24);
   pop();
   drawTerrainInfo();
   if(gameOver) drawGameOver();
@@ -473,7 +475,7 @@ function drawSettlementMarker(settlement, screenX, screenY) {
   const sprite = IMAGES[imageKey];
   if (sprite && IMAGE_LOAD_STATUS[imageKey] === 'loaded') {
     // Oversized settlement art may overlap neighboring tiles in either grid.
-    const size = markerScale * 1.88;
+    const size = markerScale * 1.88 * (settlement.type==='HAMLET'?0.5:settlement.type==='CITY'?1.5:1);
     const ratio = Math.min(size / sprite.width, size / sprite.height);
     const width = sprite.width * ratio;
     const height = sprite.height * ratio;

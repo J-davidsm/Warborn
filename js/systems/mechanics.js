@@ -705,6 +705,8 @@ function mouseWheel(event) {
 }
 
 function keyPressed() {
+  if(document.activeElement?.closest?.('input,textarea,select,[contenteditable]'))return;
+  if(isMenuBlockingGameInput())return;
   // Only respond to zoom/pan keys if canvas is focused
   if (mapCanvasFocused) {
     // Keyboard controls for zoom and pan
@@ -741,7 +743,7 @@ function keyPressed() {
     }
   }
   
-  if (key === 'h' || key === 'H') return false;
+
 }
 
 /**

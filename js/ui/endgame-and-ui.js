@@ -347,6 +347,7 @@ function checkCampaignVictory() {
  * Handles: turn indicator, resource display, unit selection panel, health bars
  */
 function updateUI() {
+  if(typeof BattleGuide!=='undefined')BattleGuide.refresh();
   if(typeof Endless!=='undefined')Endless.refresh();
   const modeSummary=document.getElementById("modeSummary");
   if(modeSummary)modeSummary.textContent=typeof Endless!=='undefined'&&Endless.active?(typeof OnlineMatch!=='undefined'&&OnlineMatch.coop?'Co-op Endless':'Endless Mode'):opponentType==="HUMAN"?"Online match":"vs AI";
@@ -403,7 +404,7 @@ function updateUI() {
   if(selectedUnit){
     const unitName = getUnitDisplayName(selectedUnit);
     const xpProgress = getPromotionProgress(selectedUnit);
-    const xpDisplay = xpProgress.nextRank !== 'Max Level' ? ` • XP ${xpProgress.current}/${xpProgress.needed}` : ' • Max Level';
+    const xpDisplay = xpProgress.nextRank !== 'Max Level' ? ` • ⭐ ${xpProgress.current}/${xpProgress.needed}` : ' • Max Level';
     
     selNameEl.html(unitName);
     
@@ -419,10 +420,11 @@ function updateUI() {
       costDisplay = parts.join('/') || '0';
     }
     
-    selDetailsEl.html(`Team: ${getTeamDisplayName(selectedUnit.team)} • Move:${selectedUnit.move} • Range:${selectedUnit.atkRange} • Cost:${costDisplay}${xpDisplay}`);
+    selDetailsEl.html(`🚩 ${getTeamDisplayName(selectedUnit.team)} • 👣${selectedUnit.move} • 🎯${selectedUnit.atkRange} • 💰${costDisplay}${xpDisplay}`);
     if(selectedUnit.name==='Crown')selDetailsEl.html('👑 Crown • 2 grassland / 1 other terrain • Cannot attack or be bought • Adjacent friendly units: +25% defense, +10% attack • Assassin damage ×2 • Protect your Crown!');
+    if(typeof BattleGuide!=='undefined')selDetailsEl.html(BattleGuide.unitDetails(selectedUnit));
     selHPEl.style('width',(selectedUnit.hp/selectedUnit.maxHp*100)+"%");
-    selNumsEl.html(`HP ${selectedUnit.hp}/${selectedUnit.maxHp} • Morale ${selectedUnit.morale} (${moraleLabel(selectedUnit)})`);
+    selNumsEl.html(`❤️ ${selectedUnit.hp}/${selectedUnit.maxHp} • 🔥 ${selectedUnit.morale} (${moraleLabel(selectedUnit)})`);
 
   } else {
     selNameEl.html("No unit selected"); selDetailsEl.html("Click a friendly unit to select it.");
@@ -433,7 +435,7 @@ function updateUI() {
   try{
     let buildWidget = document.getElementById('buildWidget');
     // Show the widget when it's the player's turn and either buildMode is active or a friendly unit is selected
-    const shouldShowWidget = (currentTeam === 'PLAYER' && (buildMode || (selectedUnit && selectedUnit.team === currentTeam && selectedUnit.hp > 0 && selectedUnit.morale > 0)));
+    const shouldShowWidget = (currentTeam === getLocalPlayableTeam() && (buildMode || (selectedUnit && selectedUnit.team === currentTeam && selectedUnit.hp > 0 && selectedUnit.morale > 0)));
     if(shouldShowWidget){
       if(!buildWidget){
         buildWidget = document.createElement('div'); buildWidget.id='buildWidget';

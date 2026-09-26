@@ -333,7 +333,7 @@ const TERRAIN = {
     emoji: '🐸',
     getDefense: () => 0.10, // Good defensive terrain
     blockedUnits: ['Knight','Catapult'], // Knights and Catapults cannot enter swamps
-    noAttack: true, // Units in swamps cannot attack (except assassins get double damage)
+    noAttack: false, attackMultiplier: 0.5, // All attacks made from marsh deal half damage
     assassinBonus: true // Assassins deal double damage to units in swamps
   },
   DESERT: {

@@ -37,7 +37,7 @@ function preloadTerrainV2() {
         TERRAIN_V2.revision++;
         console.warn('Terrain v2 image missing:', type, variant + 1);
       };
-      img.src = `assets/terrain/v2/${type.toLowerCase()}-${variant + 1}.jpg${type === 'WOODS' ? '?v=lightforest1' : ''}`;
+      img.src = `assets/terrain/v2/${type.toLowerCase()}-${variant + 1}.jpg${['WOODS','SWAMP'].includes(type) ? '?v=training1' : ''}`;
     }
   }
 }
@@ -129,6 +129,9 @@ function terrainV2BridgeAngle(col, row, cols, rows, hex, values, parity = 0) {
   if (group.length > 1) {
     const points=group.map(([c,r])=>position(c,r));
     const cx=points.reduce((sum,p)=>sum+p.x,0)/points.length,cy=points.reduce((sum,p)=>sum+p.y,0)/points.length;
+    let gx=0,gy=0,gxy=0;
+    for(const p of points){const dx=p.x-cx,dy=p.y-cy;gx+=dx*dx;gy+=dy*dy;gxy+=dx*dy;}
+    if(Math.hypot(gx-gy,2*gxy)>(gx+gy)*0.65)return Math.round((0.5*Math.atan2(2*gxy,gx-gy))/(Math.PI/12))*Math.PI/12;
     let xx=0,xy=0,yy=0;
     const left=Math.max(0,Math.min(...group.map(p=>p[0]))-3),right=Math.min(cols-1,Math.max(...group.map(p=>p[0]))+3);
     const top=Math.max(0,Math.min(...group.map(p=>p[1]))-3),bottom=Math.min(rows-1,Math.max(...group.map(p=>p[1]))+3);
@@ -157,6 +160,15 @@ function terrainV2BridgeAngle(col, row, cols, rows, hex, values, parity = 0) {
   const deckAngle = riverAngle + Math.PI / 2;
   // Quantize to 15 degrees to keep the stamp cache bounded for winding rivers.
   return Math.round(deckAngle / (Math.PI / 12)) * Math.PI / 12;
+}
+
+function terrainV2BridgeVariant(col,row,cols,rows,hex,values,parity=0){
+  const group=[[col,row]],seen=new Set([row*cols+col]);
+  for(let i=0;i<group.length;i++){
+    const [c,r]=group[i],dirs=!hex?[[1,0],[-1,0],[0,1],[0,-1]]:((c-parity)&1)?[[1,1],[1,0],[0,-1],[-1,0],[-1,1],[0,1]]:[[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[0,1]];
+    for(const [dc,dr]of dirs){const x=c+dc,y=r+dr,k=y*cols+x;if(x>=0&&x<cols&&y>=0&&y<rows&&!seen.has(k)&&terrainV2Type(values[k])==='BRIDGE'){seen.add(k);group.push([x,y]);}}
+  }
+  const first=Math.min(...seen);return terrainHash(first%cols,Math.floor(first/cols),7429)%6;
 }
 
 function terrainV2Stamp(type, variant, hex, angle = 0) {
@@ -229,7 +241,7 @@ function buildTerrainV2Layer(cols, rows, hex, values, parity = 0) {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const type = terrainV2Type(values[r * cols + c]);
-      const variant = variants[r * cols + c];
+      const variant = type==='BRIDGE'?terrainV2BridgeVariant(c,r,cols,rows,hex,values,parity):variants[r * cols + c];
       const x = hex ? (1 + 1.5 * c) * radius : (2 * c + 1) * radius;
       const y = hex ? (apothem + Math.sqrt(3) * (r + 0.5 * ((c - parity) & 1))) * radius : (2 * r + 1) * radius;
       const angle = type === 'BRIDGE' ? terrainV2BridgeAngle(c, r, cols, rows, hex, values, parity) : 0;

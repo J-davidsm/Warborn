@@ -42,3 +42,6 @@ generated.terrain.forEach((t,i)=>{if(t==='BRIDGE')crossingAngles.push(ctx.terrai
 assert.equal(new Set(crossingAngles).size,1);
 assert(crossingAngles.every(angle=>Math.abs(Math.sin(angle*Math.PI/180))<.27),'generated bridges cross the north-south river');
 console.log('Connected generated bridges share an across-river orientation.');
+const adjacent=Array(81).fill('GRASS');for(let col=2;col<=6;col++)adjacent[4*9+col]='BRIDGE';
+const joined=Array.from({length:5},(_,i)=>ctx.terrainV2BridgeVariant(i+2,4,9,9,false,adjacent));assert.equal(new Set(joined).size,1,'adjacent bridges share an image');
+for(let col=2;col<=6;col++)assert.equal(ctx.terrainV2BridgeAngle(col,4,9,9,false,adjacent),0,'bridge line stays straight without water neighbors');
