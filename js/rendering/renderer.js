@@ -785,8 +785,9 @@ function drawUnits(){
       ? hexToPixel(tile.col-cameraX,tile.row-cameraY)
       : {x:(tile.col-cameraX)*TILE+TILE/2,y:(tile.row-cameraY)*TILE+TILE/2});
     x=animated.x;y=animated.y;
-    // Adjust unit size based on grid type
-    const unitScale = useHexGrid ? 0.8 : 1.0; // Make units 20% smaller in hex mode
+    // Enlarge artwork and its health/status markers by 50% on both grids.
+    // The tile backing and movement coordinates still identify the owning cell.
+    const unitScale = (useHexGrid ? 0.8 : 1.0) * 1.5;
     const teamColor = getTeamColor(u.team);
     const canAttackNow = canUnitAttackFromCurrentPosition(u);
     const blinkPulse = canAttackNow ? (0.5 + 0.5 * Math.sin(frameCount * 0.18)) : 0;
@@ -828,7 +829,7 @@ function drawUnits(){
     const img = IMAGES[u.name];
     const spriteY = y + getUnitMoveBobOffset(u);
     if (img && IMAGE_LOAD_STATUS[u.name] === 'loaded') {
-      // Scale image to fit inside the owning tile while preserving aspect ratio.
+      // Preserve aspect ratio; larger artwork can extend beyond the owning tile.
       const maxSize = TILE * (isFortressUnit(u) ? 0.9 : 0.84) * unitScale;
       const iw = img.width || maxSize;
       const ih = img.height || maxSize;
