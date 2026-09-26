@@ -12,7 +12,7 @@ const PublicLobby=(()=>{
   $('publicStatus').textContent=online?rows.length+' commander'+(rows.length===1?'':'s')+' online':'Connecting to the public lobby… Room codes remain available.';
   for(const r of rows){
    const li=document.createElement('li'),text=document.createElement('span');
-   text.textContent=r.name+(r.id===peer?.id?' (you)':'')+' · '+r.where+(r.room?' · '+r.count+'/'+r.capacity:'');li.append(text);
+   text.textContent=r.name+(r.id===peer?.id?' (you)':'')+' · '+r.where+(r.room&&r.mode==='coop'?' · Co-op Endless ('+r.difficulty+')':'')+(r.room?' · '+r.count+'/'+r.capacity:'');li.append(text);
    if(r.id!==peer?.id&&!OnlineMatch.active){
     let button=document.createElement('button');button.className='small';
     if(r.room&&!r.playing&&r.count<r.capacity){button.textContent='Join';button.onclick=()=>OnlineMatch.join(r.room);}
@@ -29,7 +29,7 @@ const PublicLobby=(()=>{
  function clean(record,id){
   if(!record||typeof record.name!=='string')return null;
   const info={id,name:record.name.slice(0,24)||'Commander',where:['Browsing','In lobby','In a room','In battle'].includes(record.where)?record.where:'Browsing',
-   room:/^[A-HJ-NP-Z2-9]{8}$/.test(record.room)?record.room:'',host:!!record.host,count:Math.max(0,Math.min(4,Number(record.count)||0)),capacity:[2,3,4].includes(record.capacity)?record.capacity:2,playing:!!record.playing};
+   room:/^[A-HJ-NP-Z2-9]{8}$/.test(record.room)?record.room:'',host:!!record.host,count:Math.max(0,Math.min(4,Number(record.count)||0)),capacity:[2,3,4].includes(record.capacity)?record.capacity:2,playing:!!record.playing,mode:record.mode==='coop'?'coop':'competitive',difficulty:['easy','medium','hard','impossible'].includes(record.difficulty)?record.difficulty:'medium'};
   return info;
  }
  function update(force=false){

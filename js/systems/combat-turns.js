@@ -335,7 +335,7 @@ function endTurn(expectedAITeam = null) {
   if(gameOver || (isAITeam(currentTeam) && expectedAITeam!==currentTeam))return;
   if(expectedAITeam && expectedAITeam!==currentTeam)return;
   if(!expectedAITeam){if(Date.now()-lastHumanEndTurn<350)return;lastHumanEndTurn=Date.now();}
-  if (typeof OnlineMatch !== "undefined" && !OnlineMatch.canAct()) return;
+  if (typeof OnlineMatch !== "undefined" && !OnlineMatch.canAct()&&!(expectedAITeam&&OnlineMatch.canRunAI())) return;
   console.log('endTurn called. currentTeam before switch:', currentTeam, 'opponentType:', opponentType);
   
   // Update communication lockouts (reduce remaining turns)
@@ -352,7 +352,7 @@ function endTurn(expectedAITeam = null) {
   // Clean up expired trade proposals
   cleanupExpiredTradeProposals();
   // In multiplayer, validate that it's actually this player's turn
-  if (opponentType === 'HUMAN') {
+  if (opponentType === 'HUMAN'&&!expectedAITeam) {
     const isMyTurn = currentTeam===getLocalPlayableTeam();
     if (!isMyTurn) {
       console.warn('Attempted to end turn when it\'s not our turn. Role:', myRole, 'currentTeam:', currentTeam);
@@ -428,7 +428,7 @@ function endTurn(expectedAITeam = null) {
   // Increment global turn number when we complete a full cycle (back to first team)
   if (wrappedTurn) {
     turnNumber++;
-    if(typeof Endless!=='undefined'&&Endless.active){Endless.advance();if(gameOver){updateUI();return;}}
+    if(typeof Endless!=='undefined'&&Endless.active){Endless.advance();if(gameOver){updateUI();postGameState();return;}}
     console.log('New turn cycle started - Turn Number:', turnNumber);
     
     // Process diplomacy updates only once per full turn cycle
@@ -473,6 +473,7 @@ function endTurn(expectedAITeam = null) {
   try{ postGameState(); } catch(e){}
 
   // Decide what to do when it's an AI team's turn depending on opponent type
+  if(typeof OnlineMatch!=='undefined'&&OnlineMatch.playing)return;
   if (isAITeam(currentTeam)) {
     console.log(`DEBUG: It's ${currentTeam}'s turn - isAITeam: ${isAITeam(currentTeam)}, opponentType: ${opponentType}`);
     

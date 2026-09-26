@@ -219,10 +219,10 @@ function aiFortify(team,homes) {
   }
 }
 async function aiTakeTurn(team='AI') {
-  if(gameOver||currentTeam!==team||!isAITeam(team))return;
+  if(gameOver||currentTeam!==team||!isAITeam(team)||(typeof OnlineMatch!=='undefined'&&OnlineMatch.active&&!OnlineMatch.canRunAI()))return;
   if(activeAITurn&&activeAITurn.team===team&&activeAITurn.turn===turnNumber)return;
   const token={team,turn:turnNumber};activeAITurn=token;
-  const valid=()=>activeAITurn===token&&currentTeam===team&&turnNumber===token.turn&&!gameOver;
+  const valid=()=>activeAITurn===token&&currentTeam===team&&turnNumber===token.turn&&!gameOver&&(typeof OnlineMatch==='undefined'||!OnlineMatch.active||OnlineMatch.canRunAI());
   clearTimeout(aiTurnTimeoutId);
   try{
     const army=units.filter(u=>u.team===team&&u.hp>0).sort((a,b)=>(b.name==='Cleric')-(a.name==='Cleric'));
@@ -250,6 +250,7 @@ async function aiTakeTurn(team='AI') {
       aiRecruit(team);updateUI();checkEndGame();
     }
   }finally{
+    if(typeof OnlineMatch!=='undefined'&&OnlineMatch.playing)postGameState();
     if(valid()){activeAITurn=null;selectedUnit=null;endTurn(team);}
     else if(activeAITurn===token)activeAITurn=null;
   }

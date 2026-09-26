@@ -368,7 +368,7 @@ function declareWar(attacker, target) {
 }
 
 function canAttack(attacker, target) {
-  if(typeof Endless!=='undefined'&&Endless.active)return attacker!==target;
+  if(typeof Endless!=='undefined'&&Endless.active)return !areFriendlyTeams(attacker,target);
   if(attacker===target || areFriendlyTeams(attacker,target))return false;
   // If diplomacy system is not initialized for these factions, allow legacy free combat.
   if (!isDiplomacyActive() || !diplomacy.warDeclarations || !diplomacy.trust[attacker] || diplomacy.trust[attacker][target] === undefined) {
@@ -387,7 +387,7 @@ function canAttack(attacker, target) {
 }
 
 function areFriendlyTeams(a,b) {
-  if(typeof Endless!=='undefined'&&Endless.active)return a===b;
+  if(typeof Endless!=='undefined'&&Endless.active)return a===b||(Endless.players.includes(a)&&Endless.players.includes(b));
   return !!a && !!b && (a===b || (!isAtWar(a,b) && (hasTreaty(a,b,'DEFENSIVE_PACT') || hasTreaty(a,b,'NON_AGGRESSION'))));
 }
 

@@ -35,9 +35,9 @@ AI, campaigns, the map editor, and local play run entirely in the browser. Onlin
 ## Online multiplayer
 
 1. Choose **Multiplayer** to see visitors currently on the website. Enter your display name, **Join** an open room, or **Invite** an available commander.
-2. To host, choose **2, 3, or 4 players** and **Create room**. Players can also join using the 8-character room code or **Copy invite link**.
+2. To host, choose **Kingdoms · Competitive** or **Cooperative Endless**, then **2, 3, or 4 players** and **Create room**. Players can also join using the 8-character room code or **Copy invite link**.
 3. Everyone chooses **Ready**; the host chooses **Generate & start** once all seats are filled.
-4. Each match generates fresh terrain: highlands, desert, islands, ancient forest, flooded marsh, or open frontier, with 3–5 settlements. Two-player maps use a 20×16 board with rotational symmetry. Three-player maps use a hexagonal board with 120-degree symmetry; four-player boards use matching reflected territories. Each kingdom starts with an identical five-unit army, a capital, and **0 gold and 0 materials**. Capitals connect through fair routes and the first player is randomized.
+4. Each competitive match generates fresh terrain: highlands, desert, islands, ancient forest, flooded marsh, or open frontier, with 3–5 settlements. Two-player maps use a 20×16 board with rotational symmetry. Three-player maps use a hexagonal board with 120-degree symmetry; four-player boards use matching reflected territories. Each kingdom starts with an identical five-unit army, a capital, and **0 gold and 0 materials**. Capitals connect through fair routes and the first player is randomized.
 5. **Return to lobby** ends the current match for everyone. Ready up again for a newly generated map.
 
 Keep the host's game tab open. Closing it ends the room; reloads do not resume a match. Disconnects pause input, and a new match requires all seats to be filled and everyone to ready up again. Editor and saved-map loading are unavailable during online matches.
@@ -57,6 +57,14 @@ After each full round (your turn and the AI turn), the bottom row disappears, ev
 Capture villages and cities for income and recruitment. New enemy settlements arrive every four waves on Easy, every three on Medium and Hard, and every two on Impossible. The AI continues defending, researching, recruiting, healing and attacking. Invasion enemies stay at war. Terrain changes between grassland, forest, desert, mountains and marsh, with clear central routes.
 
 Easy gives you an extra knight, Archer and Cleric research, and a position four rows farther from the back edge. Its first ten waves contain only soldiers, wave size stays at one until wave 23, and elites begin at wave 36. Medium, Hard and Impossible also have delayed escalation, with elites beginning at waves 18, 10 and 6. Waves grow to at most three incoming units on Easy, five on Medium, and six on Hard and Impossible, in addition to AI recruitment. The HUD counts survived rounds and warns about endangered units. **Restart** repeats the same seed and difficulty with zero resources. **Menu → Play** returns to your previous ordinary scenario.
+
+## Cooperative Endless
+
+Choose **Multiplayer → Cooperative Endless**, select Easy, Medium, Hard, or Impossible, and create a room for 2–4 players. Join through the public lobby or a room code, then everyone readies up. Human kingdoms are permanently allied: they can move through and heal allied units and cannot attack allies or capture their towns.
+
+Each player gets the same starting army, a city, and zero resources. The shared corridor remains 20 rows tall and widens to 18, 26, or 34 columns for 2, 3, or 4 players. Every extra player adds an eight-column front, a matching enemy wave, and recurring capturable settlements. Difficulty controls each front’s wave size and escalation, so total enemy pressure and AI settlement income grow with the party.
+
+Players take turns, followed by one host-controlled AI turn. The map scrolls once per full round; movement, damage effects, recruitment, resources, and waves synchronize. Any enemy reaching the back edge defeats the team. Losing one player’s army and towns does not end the run while another ally survives; eliminated players watch the remaining allies. Keep the host connected. Return to the lobby to start another run.
 
 ## Trading with AI kingdoms
 
