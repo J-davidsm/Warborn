@@ -138,7 +138,7 @@ function playerControlsTile(col, row) {
 function evaluateVictoryCondition() {
   if(currentVictoryCondition.crownFallenTeams?.includes('PLAYER'))return {outcome:'defeat',explanation:'Your Crown has fallen. Your kingdom is defeated.'};
   const vc = normalizeVictoryCondition(currentVictoryCondition);
-  const enemies = getActiveTeams().filter(team => team !== 'PLAYER');
+  const enemies = getActiveTeams().filter(team => team !== 'PLAYER' && !areFriendlyTeams('PLAYER', team));
   const playerAlive = teamHasLife('PLAYER');
   
   if (!playerAlive) {
@@ -146,6 +146,12 @@ function evaluateVictoryCondition() {
   }
   
   switch (vc.type) {
+    case 'CAPTURE_TOWN':
+      if (settlements[vc.holdRow * COLS + vc.holdCol]?.owner === 'PLAYER') return {outcome:'victory', explanation:`You captured ${vc.targetName || 'the objective town'}.`};
+      break;
+    case 'KILL_CROWN':
+      if (currentVictoryCondition.crownFallenTeams?.includes(vc.targetTeam) || !units.some(u=>u.id===vc.targetUnitId && u.hp>0)) return {outcome:'victory', explanation:`The enemy Crown has fallen. The mission is complete.`};
+      break;
     case 'ANNIHILATE_TEAM':
       if (isTeamConquered(vc.targetTeam)) {
         return { outcome: 'victory', explanation: `${getTeamDisplayName(vc.targetTeam)} has no surviving units or settlements left to rally from.` };
@@ -175,7 +181,7 @@ function evaluateVictoryCondition() {
       
     case 'KILL_UNIT_LIMIT': {
       let target = units.find(u => u.id === vc.targetUnitId);
-      if (!target) {
+      if (!vc.targetUnitId) {
         target = units.find(u => u.team !== 'PLAYER');
         if (target) {
           vc.targetUnitId = target.id;

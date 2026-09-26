@@ -78,6 +78,8 @@ function inferVictoryConditionFromText(text = '') {
 function getVictoryConditionLabel(condition = currentVictoryCondition) {
   const vc = normalizeVictoryCondition(condition);
   switch (vc.type) {
+    case 'CAPTURE_TOWN': return `Capture ${vc.targetName || 'the marked town'} at ${vc.holdCol},${vc.holdRow}`;
+    case 'KILL_CROWN': return `Kill ${getTeamDisplayName(vc.targetTeam)}’s Crown`;
     case 'ANNIHILATE_TEAM':
       return `Annihilate ${getTeamDisplayName(vc.targetTeam)} and take their settlements`;
     case 'HOLD_TILE':
@@ -179,6 +181,10 @@ function readVictoryConditionFromUI() {
     targetUnitId: document.getElementById('victoryTargetUnit')?.value || currentVictoryCondition.targetUnitId,
     killTurnLimit: document.getElementById('victoryKillTurns')?.value ?? currentVictoryCondition.killTurnLimit
   });
+  if (currentVictoryCondition.type === 'KILL_CROWN') {
+    const crown = units.find(u=>u.team === currentVictoryCondition.targetTeam && u.name === 'Crown');
+    if (crown) currentVictoryCondition.targetUnitId = crown.id;
+  }
   return currentVictoryCondition;
 }
 
@@ -199,7 +205,7 @@ function refreshVictoryEditorOptions() {
       const label = `${getTeamDisplayName(u.team)} ${u.name} at ${u.col},${u.row}`;
       return `<option value="${u.id}">${label}</option>`;
     }).join('');
-    if (enemyUnits.length && !enemyUnits.some(u => u.id === currentVictoryCondition.targetUnitId)) {
+    if (enemyUnits.length && !currentVictoryCondition.targetUnitId) {
       currentVictoryCondition.targetUnitId = enemyUnits[0].id;
     }
   }
@@ -214,8 +220,8 @@ function updateVictoryEditorVisibility(shouldRead = true) {
     survive: document.getElementById('victorySurviveRow'),
     kill: document.getElementById('victoryKillUnitRow')
   };
-  if (rows.targetTeam) rows.targetTeam.style.display = type === 'ANNIHILATE_TEAM' ? 'block' : 'none';
-  if (rows.hold) rows.hold.style.display = type === 'HOLD_TILE' ? 'block' : 'none';
+  if (rows.targetTeam) rows.targetTeam.style.display = ['ANNIHILATE_TEAM','KILL_CROWN'].includes(type) ? 'block' : 'none';
+  if (rows.hold) rows.hold.style.display = ['HOLD_TILE','CAPTURE_TOWN'].includes(type) ? 'block' : 'none';
   if (rows.survive) rows.survive.style.display = type === 'SURVIVE_TURNS' ? 'block' : 'none';
   if (rows.kill) rows.kill.style.display = type === 'KILL_UNIT_LIMIT' ? 'block' : 'none';
 }

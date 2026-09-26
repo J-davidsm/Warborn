@@ -25,7 +25,7 @@ const UNIT_TEMPLATES = {
   Knight: { hp: 150, move: 2, atkRange: 1, dmg: 28, cost: { gold: 7, materials: 3 } },
   
   // Siege weapon - long range, high damage, very slow, vulnerable to melee
-  Catapult: { hp: 80, move: 1, atkRange: 3, dmg: 35, cost: { gold: 8, materials: 4 } },
+  Catapult: { hp: 160, move: 1, atkRange: 3, dmg: 35, cost: { gold: 8, materials: 4 } },
   
   // Ultimate unit - high stats all around, expensive, has damage resistances  
   Dragon: { hp: 200, move: 3, atkRange: 2, dmg: 40, cost: { gold: 15, materials: 8 } },

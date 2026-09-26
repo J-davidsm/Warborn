@@ -1,0 +1,75 @@
+{
+  "mode": "built-in image_gen",
+  "assets": [
+    {
+      "name": "forest-1",
+      "prompt": "Use case: stylized-concept. Asset type: square overhead fantasy strategy game terrain texture. Paint sunlit oak groves. Light spring green, clearly recognizable individual trees with trunks and rounded leafy crowns, overhead slightly isometric miniature painted style. Bright dry grassy floor, warm daylight, sharp readable tree silhouettes. Fill entire square edge to edge with continuous forest, no horizon, water, marsh, fog, hex border, lettering or interface. Consistent light green palette. This is forest variation 1 for Warborn.",
+      "path": "assets/terrain/v2/woods-1.jpg"
+    },
+    {
+      "name": "forest-2",
+      "prompt": "Use case: stylized-concept. Asset type: square overhead fantasy strategy game terrain texture. Paint slender birches and round lime-green canopies. Light spring green, clearly recognizable individual trees with trunks and rounded leafy crowns, overhead slightly isometric miniature painted style. Bright dry grassy floor, warm daylight, sharp readable tree silhouettes. Fill entire square edge to edge with continuous forest, no horizon, water, marsh, fog, hex border, lettering or interface. Consistent light green palette. This is forest variation 2 for Warborn.",
+      "path": "assets/terrain/v2/woods-2.jpg"
+    },
+    {
+      "name": "flag-AI",
+      "prompt": "Use case: stylized-concept. Asset type: fantasy strategy game faction flag picture. One rectangular crimson red cloth flag bearing a white rampant lion, bold centered simple heraldic emblem easily readable at tiny size. Front view flat rectangular cloth, subtle fabric folds, golden narrow edging. Landscape 3:2 composition, flag fills frame edge to edge, no pole, no surrounding scenery, no words, no other symbols. Painted medieval game art, high contrast.",
+      "path": "assets/flags/ai.jpg"
+    },
+    {
+      "name": "flag-AI2",
+      "prompt": "Use case: stylized-concept. Asset type: fantasy strategy game faction flag picture. One rectangular forest green cloth flag bearing a golden oak leaf, bold centered simple heraldic emblem easily readable at tiny size. Front view flat rectangular cloth, subtle fabric folds, golden narrow edging. Landscape 3:2 composition, flag fills frame edge to edge, no pole, no surrounding scenery, no words, no other symbols. Painted medieval game art, high contrast.",
+      "path": "assets/flags/ai2.jpg"
+    },
+    {
+      "name": "flag-AI3",
+      "prompt": "Use case: stylized-concept. Asset type: fantasy strategy game faction flag picture. One rectangular golden yellow cloth flag bearing a black sun, bold centered simple heraldic emblem easily readable at tiny size. Front view flat rectangular cloth, subtle fabric folds, golden narrow edging. Landscape 3:2 composition, flag fills frame edge to edge, no pole, no surrounding scenery, no words, no other symbols. Painted medieval game art, high contrast.",
+      "path": "assets/flags/ai3.jpg"
+    },
+    {
+      "name": "flag-AI4",
+      "prompt": "Use case: stylized-concept. Asset type: fantasy strategy game faction flag picture. One rectangular magenta cloth flag bearing a silver crescent moon, bold centered simple heraldic emblem easily readable at tiny size. Front view flat rectangular cloth, subtle fabric folds, golden narrow edging. Landscape 3:2 composition, flag fills frame edge to edge, no pole, no surrounding scenery, no words, no other symbols. Painted medieval game art, high contrast.",
+      "path": "assets/flags/ai4.jpg"
+    },
+    {
+      "name": "flag-PLAYER",
+      "prompt": "Use case: stylized-concept. Asset type: fantasy strategy game faction flag picture. One rectangular royal blue cloth flag bearing a large golden five-point star, bold centered simple heraldic emblem easily readable at tiny size. Front view flat rectangular cloth, subtle fabric folds, golden narrow edging. Landscape 3:2 composition, flag fills frame edge to edge, no pole, no surrounding scenery, no words, no other symbols. Painted medieval game art, high contrast.",
+      "path": "assets/flags/player.jpg"
+    },
+    {
+      "name": "flag-PLAYER2",
+      "prompt": "Use case: stylized-concept. Asset type: fantasy strategy game faction flag picture. One rectangular orange cloth flag bearing a white crossed pair of swords, bold centered simple heraldic emblem easily readable at tiny size. Front view flat rectangular cloth, subtle fabric folds, golden narrow edging. Landscape 3:2 composition, flag fills frame edge to edge, no pole, no surrounding scenery, no words, no other symbols. Painted medieval game art, high contrast.",
+      "path": "assets/flags/player2.jpg"
+    },
+    {
+      "name": "flag-PLAYER3",
+      "prompt": "Use case: stylized-concept. Asset type: fantasy strategy game faction flag picture. One rectangular emerald green cloth flag bearing a silver stag head, bold centered simple heraldic emblem easily readable at tiny size. Front view flat rectangular cloth, subtle fabric folds, golden narrow edging. Landscape 3:2 composition, flag fills frame edge to edge, no pole, no surrounding scenery, no words, no other symbols. Painted medieval game art, high contrast.",
+      "path": "assets/flags/player3.jpg"
+    },
+    {
+      "name": "flag-PLAYER4",
+      "prompt": "Use case: stylized-concept. Asset type: fantasy strategy game faction flag picture. One rectangular violet purple cloth flag bearing a golden phoenix, bold centered simple heraldic emblem easily readable at tiny size. Front view flat rectangular cloth, subtle fabric folds, golden narrow edging. Landscape 3:2 composition, flag fills frame edge to edge, no pole, no surrounding scenery, no words, no other symbols. Painted medieval game art, high contrast.",
+      "path": "assets/flags/player4.jpg"
+    },
+    {
+      "name": "forest-3",
+      "prompt": "Use case: stylized-concept. Asset type: square overhead fantasy strategy game terrain texture. Paint pine clusters with bright new growth. Light spring green, clearly recognizable individual trees with trunks and rounded leafy crowns, overhead slightly isometric miniature painted style. Bright dry grassy floor, warm daylight, sharp readable tree silhouettes. Fill entire square edge to edge with continuous forest, no horizon, water, marsh, fog, hex border, lettering or interface. Consistent light green palette. This is forest variation 3 for Warborn.",
+      "path": "assets/terrain/v2/woods-3.jpg"
+    },
+    {
+      "name": "forest-4",
+      "prompt": "Use case: stylized-concept. Asset type: square overhead fantasy strategy game terrain texture. Paint beech crowns and grassy clearings. Light spring green, clearly recognizable individual trees with trunks and rounded leafy crowns, overhead slightly isometric miniature painted style. Bright dry grassy floor, warm daylight, sharp readable tree silhouettes. Fill entire square edge to edge with continuous forest, no horizon, water, marsh, fog, hex border, lettering or interface. Consistent light green palette. This is forest variation 4 for Warborn.",
+      "path": "assets/terrain/v2/woods-4.jpg"
+    },
+    {
+      "name": "forest-5",
+      "prompt": "Use case: stylized-concept. Asset type: square overhead fantasy strategy game terrain texture. Paint scattered broadleaf trees beside dry rocky ground. Light spring green, clearly recognizable individual trees with trunks and rounded leafy crowns, overhead slightly isometric miniature painted style. Bright dry grassy floor, warm daylight, sharp readable tree silhouettes. Fill entire square edge to edge with continuous forest, no horizon, water, marsh, fog, hex border, lettering or interface. Consistent light green palette. This is forest variation 5 for Warborn.",
+      "path": "assets/terrain/v2/woods-5.jpg"
+    },
+    {
+      "name": "forest-6",
+      "prompt": "Use case: stylized-concept. Asset type: square overhead fantasy strategy game terrain texture. Paint dense leafy treetops with a winding grassy footpath. Light spring green, clearly recognizable individual trees with trunks and rounded leafy crowns, overhead slightly isometric miniature painted style. Bright dry grassy floor, warm daylight, sharp readable tree silhouettes. Fill entire square edge to edge with continuous forest, no horizon, water, marsh, fog, hex border, lettering or interface. Consistent light green palette. This is forest variation 6 for Warborn.",
+      "path": "assets/terrain/v2/woods-6.jpg"
+    }
+  ]
+}

@@ -187,6 +187,9 @@ const SETTLEMENT_IMAGE_MAP = {
 };
 try{ preloadImages(SETTLEMENT_IMAGE_MAP); } catch(e){ console.warn('Settlement preload failed', e); }
 
+const FACTION_FLAG_MAP = Object.fromEntries(['PLAYER','AI','AI2','AI3','AI4','PLAYER2','PLAYER3','PLAYER4'].map(team=>['flag_'+team,`assets/flags/${team.toLowerCase()}.jpg`]));
+try { preloadImages(FACTION_FLAG_MAP); } catch(e) { console.warn('Flag preload failed',e); }
+
 const INDICATOR_IMAGES = {};
 const INDICATOR_IMAGE_STATUS = {};
 const INDICATOR_IMAGE_MAP = {
@@ -363,45 +366,7 @@ const TERRAIN = {
 // CAMPAIGN SYSTEM
 // ========================================
 
-let campaignMode = {
-  active: false,
-  currentScenarioIndex: 0,
-  campaignData: {
-    name: "Default Campaign",
-    scenarios: [
-      {
-        name: "Tutorial: First Steps",
-        description: "Learn the basics of commanding your forces. Build your first units and capture settlements to expand your kingdom.",
-        victory: "Capture 3 settlements",
-        difficulty: "Easy",
-        startingUnits: {PLAYER: [{type: "Knight", col: 1, row: 2}], AI: [{type: "Archer", col: 6, row: 5}]},
-        startingResources: {PLAYER: {gold: 20, materials: 0}, AI: {gold: 15, materials: 0}},
-        aiCount: 1,
-        mapSize: {cols: 8, rows: 8}
-      },
-      {
-        name: "The Border Conflict",
-        description: "Neighboring kingdoms threaten your borders. Use strategic thinking and multiple unit types to defeat your enemies.",
-        victory: "Eliminate all enemy forces",
-        difficulty: "Medium",
-        startingUnits: {PLAYER: [{type: "Knight", col: 1, row: 3}, {type: "Archer", col: 2, row: 2}], AI: [{type: "Knight", col: 6, row: 4}, {type: "Footman", col: 7, row: 5}]},
-        startingResources: {PLAYER: {gold: 25, materials: 5}, AI: {gold: 25, materials: 5}},
-        aiCount: 1,
-        mapSize: {cols: 10, rows: 8}
-      },
-      {
-        name: "The Final Stand",
-        description: "Face overwhelming odds as multiple enemies unite against you. This is the ultimate test of your strategic mastery.",
-        victory: "Survive 15 turns and control the center",
-        difficulty: "Hard",
-        startingUnits: {PLAYER: [{type: "Knight", col: 2, row: 4}, {type: "Cleric", col: 1, row: 4}, {type: "Archer", col: 3, row: 3}], AI: [{type: "Knight", col: 7, row: 2}], AI2: [{type: "Footman", col: 8, row: 6}]},
-        startingResources: {PLAYER: {gold: 40, materials: 15}, AI: {gold: 30, materials: 10}, AI2: {gold: 30, materials: 10}},
-        aiCount: 2,
-        mapSize: {cols: 12, rows: 10}
-      }
-    ]
-  }
-};
+let campaignMode = { active:false, currentScenarioIndex:0, campaignData:{name:'Custom Scenarios',scenarios:[]} };
 
 // Grids of settlements and terrain, null means none
 // settlements holds either null or an object: { type: 'HAMLET'|'VILLAGE'|'CITY', owner: null|'PLAYER'|'AI'|'PLAYER2' }

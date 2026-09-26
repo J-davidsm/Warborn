@@ -45,6 +45,7 @@ function attackUnit(a, d) {
   let dmg = a.dmg;
   if(hasCrownAura(a))dmg*=1.10;
   if(a.name==='Assassin'&&d.name==='Crown')dmg*=2;
+  if(a.name==='Catapult'&&isFortressUnit(d))dmg*=2;
 
   // Calculate health percentage (0-1)
   const healthPct = a.hp / a.maxHp;

@@ -47,3 +47,11 @@ assert(ctx.gameOver&&ctx.ended);assert(ctx.currentVictoryCondition.crownFallenTe
 vm.runInContext(fs.readFileSync('js/ui/endgame-and-ui.js','utf8'),ctx);
 assert.equal(ctx.evaluateVictoryCondition().outcome,'defeat');
 console.log('Crown purchase block, movement, promotions, aura, assassin vulnerability, and both death outcomes pass.');
+ctx.gameOver=false;ctx.currentVictoryCondition={type:'ANNIHILATE_ALL'};ctx.checkEndGame=()=>{};
+assert.equal(unit('Catapult','PLAYER',1).maxHp,160);
+for(const target of ['Soldier','Stockade','Castle','Heavy Fortress']){
+ const siege=unit('Catapult','PLAYER',1),defender=unit(target,'AI',3);defender.hp=defender.maxHp=1000;
+ ctx.units=[siege,defender];ctx.attackUnit(siege,defender);
+ assert.equal(1000-defender.hp,target==='Soldier'?35:70,'siege damage against '+target);
+}
+console.log('Catapult has 160 HP, deals 70 damage against all fortress tiers, and keeps 35 damage against ordinary units.');

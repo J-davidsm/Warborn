@@ -9,13 +9,10 @@ function openCampaignEditor() {
 }
 
 function openCampaignPage() {
-  normalizeCampaignData();
-  const page = document.getElementById('campaignPage');
-  if (page) page.classList.add('visible');
+  document.getElementById('scenarioWorkshop')?.classList.remove('visible');
+  document.getElementById('campaignPage')?.classList.add('visible');
   document.getElementById('mainMenu')?.classList.add('hidden');
-  const nameInput = document.getElementById('campaignNameInput');
-  if (nameInput) nameInput.value = campaignMode.campaignData.name;
-  renderScenariosEditor();
+  renderCampaignBrowser();
 }
 
 function closeCampaignEditor() {
@@ -23,6 +20,7 @@ function closeCampaignEditor() {
 }
 
 function closeCampaignPage(showMenu = true) {
+  document.getElementById('scenarioWorkshop')?.classList.remove('visible');
   const page = document.getElementById('campaignPage');
   if (page) page.classList.remove('visible');
   if (showMenu) document.getElementById('mainMenu')?.classList.remove('hidden');
@@ -764,6 +762,7 @@ function loadCampaign() {
 
 function startCampaign() {
   try { SoundManager.startBackgroundMusic(); } catch (e) {}
+  if (!campaignMode.campaignData.scenarios.length) return showPopup('No scenarios', 'Generate a scenario first.', 'info');
   saveCampaign();
   campaignMode.active = true;
   campaignMode.currentScenarioIndex = 0;
@@ -797,8 +796,15 @@ function loadCurrentScenario() {
     startingResources[team] = { ...scenario.startingResources[team] };
   });
   
-  // Start the game (this initializes empty settlements and terrain)
+  opponentType = 'AI';
+  clearTimeout(aiTurnTimeoutId);
+  closeSpawnMenu();
+  terrain = Array(COLS * ROWS).fill(null);
+  for (const team of getActiveTeams()) researchedUnits[team] = new Set(['Soldier']);
+  // Start a clean board; no terrain, research, or AI actions leak from the last mission.
   setupGame();
+  // setupGame captures the previous editor state; mission rules must win.
+  currentVictoryCondition = normalizeVictoryCondition(scenario.victoryCondition || inferVictoryConditionFromText(scenario.victory));
   if (scenario.diplomacy) {
     diplomacy = clonePlain(scenario.diplomacy);
     ensureDiplomacyForActiveTeams();
@@ -811,7 +817,8 @@ function loadCurrentScenario() {
       if (index >= 0 && index < settlements.length) {
         settlements[index] = {
           type: settlementData.type,
-          owner: settlementData.owner
+          owner: settlementData.owner,
+          name: settlementData.name || null
         };
       }
     });
@@ -843,6 +850,7 @@ function loadCurrentScenario() {
   }
   
   applyVictoryConditionToUI();
+  if (typeof fitMapToViewport === 'function') fitMapToViewport();
   updateUI();
   captureScenarioSnapshot();
 }
@@ -886,6 +894,9 @@ function updateCampaignUI() {
     const scenario = campaignMode.campaignData.scenarios[campaignMode.currentScenarioIndex];
     currentScenarioDisplay.textContent = `${campaignMode.currentScenarioIndex + 1} / ${campaignMode.campaignData.scenarios.length}`;
     scenarioNameDisplay.textContent = scenario.name;
+    let objective = document.getElementById('campaignObjective');
+    if (!objective) { objective = document.createElement('p'); objective.id='campaignObjective'; campaignControls.append(objective); }
+    objective.textContent = scenario.victory;
     
     prevBtn.disabled = campaignMode.currentScenarioIndex === 0;
     nextBtn.disabled = campaignMode.currentScenarioIndex === campaignMode.campaignData.scenarios.length - 1;
@@ -977,6 +988,7 @@ function createNewCampaign() {
 }
 
 function testScenario(index) {
+  if (!campaignMode.campaignData.scenarios.length) return showPopup('No scenarios', 'Generate a scenario first.', 'info');
   saveCampaign();
   campaignMode.active = true;
   campaignMode.currentScenarioIndex = index;

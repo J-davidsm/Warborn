@@ -9,7 +9,7 @@ function updateZoomAndPan() {
   cameraY = 0;
   // Smooth zoom interpolation
   zoomLevel = lerp(zoomLevel, targetZoom, zoomSpeed);
-  
+
   // Smooth pan interpolation
   panX = lerp(panX, targetPanX, panSpeed);
   panY = lerp(panY, targetPanY, panSpeed);
@@ -21,7 +21,7 @@ function screenToWorld(screenX, screenY) {
   const origin = getMapOrigin();
   const worldX = (screenX - origin.x - panX) / zoomLevel;
   const worldY = (screenY - origin.y - panY) / zoomLevel;
-  
+
   return { x: worldX, y: worldY };
 }
 
@@ -30,7 +30,7 @@ function worldToScreen(worldX, worldY) {
   const origin = getMapOrigin();
   const screenX = origin.x + panX + worldX * zoomLevel;
   const screenY = origin.y + panY + worldY * zoomLevel;
-  
+
   return { x: screenX, y: screenY };
 }
 
@@ -38,19 +38,19 @@ function worldToScreen(worldX, worldY) {
 function setZoom(newZoom, centerX = width/2, centerY = height/2) {
   const oldZoom = zoomLevel; // Use current zoom, not target zoom
   const newZoomClamped = constrain(newZoom, minZoom, maxZoom);
-  
+
   // Only adjust pan if zoom actually changed
   if (oldZoom !== newZoomClamped && centerX !== undefined && centerY !== undefined) {
     // Get the world point under the cursor before zooming
     const worldPoint = screenToWorld(centerX, centerY);
-    
+
     // Set new zoom
     targetZoom = newZoomClamped;
     zoomLevel = newZoomClamped; // Update immediately for calculation
-    
+
     // Calculate where that world point is now on screen
     const newScreenPoint = worldToScreen(worldPoint.x, worldPoint.y);
-    
+
     // Adjust pan to move that point back under the cursor
     targetPanX += centerX - newScreenPoint.x;
     targetPanY += centerY - newScreenPoint.y;
@@ -97,7 +97,7 @@ function drawTerrainInfo() {
   push();
   // Position in upper right corner
   translate(width - 12, 12);
-  
+
   // Draw background
   fill(20, 36, 48, 240);
   stroke(255, 40);
@@ -108,7 +108,7 @@ function drawTerrainInfo() {
   const boxWidth = 200;
   const boxHeight = lines.length * lineHeight + padding * 2;
   rect(- boxWidth, 0, boxWidth, boxHeight, 8);
-  
+
   // Draw text
   fill(255);
   noStroke();
@@ -123,18 +123,18 @@ function drawTerrainInfo() {
 function draw(){
   ensureGridValid();
   background(14,20,30);
-  
+
   // Update smooth zoom and pan
   updateZoomAndPan();
-  
+
   // Apply zoom and pan transformations
   push();
   const origin = getMapOrigin();
   translate(origin.x + panX, origin.y + panY);
   scale(zoomLevel);
-  
+
   drawGrid(); drawEndlessEdge(); drawUnits(); drawHighlights();
-  
+
   pop();
   // image load status indicator (small, top-right)
   push(); noStroke(); fill(255,200); textSize(12); textAlign(RIGHT, TOP);
@@ -190,7 +190,7 @@ function getTerrainBaseColor(terrainType) {
     case 'DESERT': return [176, 134, 74];
     case 'SWAMP': return [78, 94, 64];
     case 'MOUNTAIN': return [86, 92, 76];
-    case 'WOODS': return [54, 91, 51];
+    case 'WOODS': return [126, 167, 74];
     case 'FOUNTAIN': return [58, 103, 91];
     case 'FARM': return [88, 119, 54];
     case 'BRIDGE': return [100, 88, 66];
@@ -237,7 +237,7 @@ function drawTerrainImage(img, x, y, w, h, alpha = 1, centered = false) {
   if (!img || !(img.complete || img.width)) return false;
   const ctx = typeof drawingContext !== 'undefined'
     ? drawingContext
-    : (document.querySelector('canvas') || {}).getContext?.('2d');
+    : (document.querySelector('#game canvas') || {}).getContext?.('2d');
   if (!ctx || typeof ctx.drawImage !== 'function') return false;
   try {
     ctx.save();
@@ -500,9 +500,18 @@ function drawSettlementMarker(settlement, screenX, screenY) {
   line(poleX, poleBottom, poleX, poleTop);
   noStroke();
   fill(flagColor[0], flagColor[1], flagColor[2]);
-  const fw = Math.max(10, markerScale * 0.18);
-  const fh = Math.max(8, markerScale * 0.10);
-  rect(poleX + 3, poleTop + (fh * 0.15), fw, fh, 2);
+  const fw = Math.max(22, markerScale * 0.44);
+  const fh = fw * 2 / 3;
+  const flag = IMAGES['flag_' + owner];
+  if (owner && flag && IMAGE_LOAD_STATUS['flag_' + owner] === 'loaded') {
+    drawingContext.drawImage(flag, poleX + 2, poleTop - fh * .35, fw, fh);
+  } else {
+    rect(poleX + 3, poleTop + (fh * 0.15), fw, fh, 2);
+  }
+  if (['CAPTURE_TOWN','HOLD_TILE'].includes(currentVictoryCondition.type) && settlements[currentVictoryCondition.holdRow * COLS + currentVictoryCondition.holdCol] === settlement) {
+    fill('#ffe59b'); stroke('#182129'); strokeWeight(3); textSize(Math.max(11, markerScale*.19));
+    text('OBJECTIVE', centerX, centerY - markerScale * .65); noStroke();
+  }
 }
 
 function clampNumber(value, minValue, maxValue) {
@@ -537,7 +546,7 @@ function drawIndicatorImage(key, centerX, centerY, maxWidth, maxHeight) {
     imageMode(CORNER);
   } catch (e) {
     try {
-      const ctx = (document.querySelector('canvas') || {}).getContext('2d');
+      const ctx = (document.querySelector('#game canvas') || {}).getContext('2d');
       if (ctx) ctx.drawImage(img, centerX - drawW / 2, centerY - drawH / 2, drawW, drawH);
     } catch (ignored) {}
   }
@@ -617,35 +626,35 @@ function getUnitMoveBobOffset(unit) {
 
 function drawGrid(){
   push(); translate(OFFSET,OFFSET);
-  
+
   // Add hex grid offset to position it better on screen
   if (useHexGrid) {
     const offset = getHexGridOffset();
     translate(offset.x, offset.y); // Move hex grid down and right
   }
-  
+
   const startCol = 0;
   const endCol = COLS;
   const startRow = 0;
   const endRow = ROWS;
   const viewport = getViewportSize();
-  
+
   // board outline (only draw viewport area)
   noFill(); stroke(255,40); strokeWeight(1);
   if (!useHexGrid) {
     rect(0, 0, viewport.cols*TILE, viewport.rows*TILE, 6);
   }
-  
+
   // draw grid cells and settlements (only visible tiles)
   textAlign(CENTER, CENTER);
   textSize(TILE * 0.4);
   const blendedTerrain = typeof drawBlendedTerrainBoard === 'function' && drawBlendedTerrainBoard();
-  
+
   for(let r = startRow; r < endRow; r++) {
     for(let c = startCol; c < endCol; c++) {
       // Calculate screen position relative to camera
       let screenX, screenY;
-      
+
       if (useHexGrid) {
         // For hexagonal grid, use hex-to-pixel conversion
         const hexCoords = hexToPixel(c - cameraX, r - cameraY);
@@ -656,7 +665,7 @@ function drawGrid(){
         screenX = (c - cameraX) * TILE;
         screenY = (r - cameraY) * TILE;
       }
-      
+
     const idx = r * COLS + c;
     if(terrain[idx]==='VOID'){
       push();fill(15,20,29);noStroke();
@@ -664,10 +673,10 @@ function drawGrid(){
       else rect(screenX,screenY,TILE,TILE);
       pop();continue;
     }
-    
+
     // Save state before cell drawing
     push();
-    
+
     // Get terrain type
     const terrainType = normalizeTerrainType(terrain[idx]);
     if (!blendedTerrain && useHexGrid) {
@@ -732,18 +741,18 @@ function drawGrid(){
       pop();
     }
   }
-  
+
   pop();
 }
 function drawUnits(){
   push(); translate(OFFSET,OFFSET);
-  
+
   // Add hex grid offset to position it better on screen
   if (useHexGrid) {
     const offset = getHexGridOffset();
     translate(offset.x, offset.y); // Move hex grid down and right
   }
-  
+
   // Draw and update any damage popups
   if (!window.damagePopups) window.damagePopups = [];
   // Update popups: move up and fade
@@ -755,7 +764,7 @@ function drawUnits(){
   }
   for(const u of units){
     if(u.hp<=0)continue;
-    
+
     // Calculate screen position relative to camera
     let x, y;
     if (useHexGrid) {
@@ -789,7 +798,7 @@ function drawUnits(){
       rect(x, y, TILE * 0.94, TILE * 0.94, 6);
       rectMode(CORNER);
     }
-    
+
     // Define unit emojis
     const unitEmojis = {
       'Soldier': '⚔️',
@@ -809,7 +818,7 @@ function drawUnits(){
       'Castle': '🏰',
       'Heavy Fortress': '🛕'
     };
-    
+
     // Draw unit image if available, otherwise fallback to emoji
     noStroke(); fill(255); textAlign(CENTER,CENTER);
     const img = IMAGES[u.name];
@@ -827,25 +836,25 @@ function drawUnits(){
         try{ imageMode(CENTER); image(img, x, spriteY, w, h); imageMode(CORNER); }
         catch(e){
           // fallback to direct canvas drawImage
-          try{ const ctx = (document.querySelector('canvas')||{}).getContext('2d'); if(ctx) ctx.drawImage(img, x + OFFSET - w/2, spriteY + OFFSET - h/2, w, h); }
+          try{ const ctx = (document.querySelector('#game canvas')||{}).getContext('2d'); if(ctx) ctx.drawImage(img, x + OFFSET - w/2, spriteY + OFFSET - h/2, w, h); }
           catch(e2){ textSize(TILE*0.25); text(unitEmojis[u.name], x, spriteY-2); }
         }
       } else {
   // No p5 image(); try direct canvas drawImage (account for p5 translate(OFFSET,OFFSET))
-  try{ 
-    const ctx = (document.querySelector('canvas')||{}).getContext('2d'); 
+  try{
+    const ctx = (document.querySelector('#game canvas')||{}).getContext('2d');
     if(ctx) {
-      ctx.drawImage(img, x + OFFSET - w/2, spriteY + OFFSET - h/2, w, h); 
-    } else { 
+      ctx.drawImage(img, x + OFFSET - w/2, spriteY + OFFSET - h/2, w, h);
+    } else {
       const emojiScale = u.isWaterUnit ? 0.35 : 0.25;
-      textSize(TILE * emojiScale * unitScale); 
-      text(unitEmojis[u.name], x, spriteY-2); 
-    } 
+      textSize(TILE * emojiScale * unitScale);
+      text(unitEmojis[u.name], x, spriteY-2);
+    }
   }
-  catch(e){ 
+  catch(e){
     const emojiScale = u.isWaterUnit ? 0.35 : 0.25;
-    textSize(TILE * emojiScale * unitScale); 
-    text(unitEmojis[u.name], x, spriteY-2); 
+    textSize(TILE * emojiScale * unitScale);
+    text(unitEmojis[u.name], x, spriteY-2);
   }
       }
     } else {
@@ -854,15 +863,15 @@ function drawUnits(){
       textSize(TILE * emojiScale * unitScale);
       text(unitEmojis[u.name], x, spriteY-2);
     }
-    
+
     drawUnitStatusIndicators(u, x, y, unitScale);
-    
+
     // Draw water unit anchor in bottom-right corner if unit is water-upgraded
     if (u.isWaterUnit) {
       textSize(TILE*0.25*unitScale);
       text('⚓', x + TILE*0.2*unitScale, y + TILE*0.2*unitScale);
     }
-    
+
     // Draw spearman adjacency shield in top-left if adjacent ally Spearman exists
     if (u.name === 'Spearman') {
       const hasAdjacentAllySpearman = !!units.find(v => v !== u && v.team === u.team && v.name === 'Spearman' && manhattan(v.col, v.row, u.col, u.row) === 1);
@@ -876,10 +885,7 @@ function drawUnits(){
     const pct=constrain(u.hp/u.maxHp,0,1);
     fill(pct>0.5?'#22c55e':pct>0.25?'#facc15':'#f43f5e');
     rect(x-barW/2,hpY,barW*pct,8*unitScale,4);
-    // small icons for actions
-    textSize(10*unitScale); fill(255);
-    if(u.hasMoved) text("🚶",x-18*unitScale,y+4*unitScale);
-    if(u.hasActed) text("⚔️",x+18*unitScale,y+4*unitScale);
+
   } pop();
   // Render popups on top
   push(); translate(OFFSET, OFFSET); textAlign(CENTER, CENTER);
@@ -910,13 +916,13 @@ function moraleLabel(u){
 }
 function drawHighlights(){
   push(); translate(OFFSET,OFFSET);
-  
+
   // Add hex grid offset to position it better on screen
   if (useHexGrid) {
     const offset = getHexGridOffset();
     translate(offset.x, offset.y); // Move hex grid down and right
   }
-  
+
   if(isEditorMode) {
     // In editor mode, highlight the grid cell under the mouse
     const worldCoords = mouseToWorldCoords(mouseX, mouseY);
@@ -924,7 +930,7 @@ function drawHighlights(){
     const worldRow = worldCoords.row;
     const screenCol = worldCol - cameraX;
     const screenRow = worldRow - cameraY;
-    
+
     if(worldCol >= 0 && worldCol < COLS && worldRow >= 0 && worldRow < ROWS) {
       noFill(); stroke(80,200,255); strokeWeight(2);
       if (useHexGrid) {
@@ -936,14 +942,14 @@ function drawHighlights(){
       } else {
         rect(screenCol*TILE+4, screenRow*TILE+4, TILE-8, TILE-8, 8);
       }
-      
+
       // Draw placement preview
       if(placingUnitType && !getUnitAt(worldCol, worldRow)) {
         const previewColor = getTeamColor(placingUnitTeam);
         fill(previewColor.fill[0], previewColor.fill[1], previewColor.fill[2], 128);
         stroke(255,255,255,100);
         strokeWeight(2);
-        
+
         if (useHexGrid) {
           const hexCoords = hexToPixel(worldCol - cameraX, worldRow - cameraY);
           ellipse(hexCoords.x, hexCoords.y, HEX_SIZE * 1.3);
@@ -966,11 +972,11 @@ function drawHighlights(){
     pop();
     return;
   }
-  
+
   // Draw selected unit highlights (only if there's a selected unit and not in build mode)
   if(selectedUnit && !buildMode) {
     noFill(); stroke(255,220,120); strokeWeight(2.5);
-    
+
     if (useHexGrid) {
       const hexCoords = hexToPixel(selectedUnit.col - cameraX, selectedUnit.row - cameraY);
       ellipse(hexCoords.x, hexCoords.y, HEX_SIZE * 1.6);
@@ -1022,7 +1028,7 @@ function drawHighlights(){
         const attackerTerrainIdx = selectedUnit.row * COLS + selectedUnit.col;
         const attackerTerrain = terrain[attackerTerrainIdx];
         const canAttackFromHere = !(attackerTerrain === 'SWAMP' && TERRAIN.SWAMP.noAttack && selectedUnit.name !== 'Assassin' && selectedUnit.name !== 'Dragon');
-        
+
         if (canAttackFromHere) {
           // Normal attack - highlight enemy units (red circles)
           stroke(255,60,60); strokeWeight(3); noFill();
@@ -1057,14 +1063,14 @@ function drawHighlights(){
         const hasSettlement = !!settlements[idx];
         const isWater = normalizeTerrainType(terrain[idx]) === 'WATER';
         const nearOwnedPort = isNearOwnedPort(cc, rr, currentTeam);
-        
+
         // adjacency: check if tile is adjacent to any friendly unit (always show all buildable locations)
         const adj = units.some(u => u.team === currentTeam && u.hp > 0 && isAdjacentTile(u.col, u.row, cc, rr));
-        
+
         // Highlight if we can build fortresses OR ships
         const canBuildFortress = !isOccupied && !hasTerrain && !hasSettlement && adj;
         const canBuildShips = !isOccupied && !hasSettlement && isWater && nearOwnedPort;
-        
+
         if (canBuildFortress || canBuildShips) {
           highlightedCount++;
           // Only highlight tiles in viewport
@@ -1110,7 +1116,7 @@ function drawHighlights(){
       console.log('No buildable tiles found. Current team:', currentTeam, 'Units:', units.filter(u => u.team === currentTeam && u.hp > 0).length);
     }
   }
-  
+
   pop();
 }
 function drawGameOver(){
@@ -1118,7 +1124,7 @@ function drawGameOver(){
   fill(255); textAlign(CENTER,CENTER); textSize(32);
   const w = getWinner();
   let msg = 'Game Over';
-  
+
   if (w === 'PLAYER') {
     msg = 'You Win!';
   } else if (w === 'PLAYER2') {
@@ -1133,7 +1139,7 @@ function drawGameOver(){
     // Fallback for any other team
     msg = `${w} Wins!`;
   }
-  
+
   text(msg, width/2, height/2);
 }
 

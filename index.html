@@ -5,7 +5,7 @@
   <title>Warborn — Turn-Based Strategy</title>
   <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=endless1">
+  <link rel="stylesheet" href="styles.css?v=chronicles2">
   <script src="vendor/p5.min.js"></script>
 </head>
 <body>
@@ -17,9 +17,10 @@
         <button id="menuPlayBtn" type="button">Play</button>
         <button id="menuOnlineBtn" type="button">Multiplayer</button>
         <button id="menuEndlessBtn" type="button">Endless Mode</button>
-        <button id="menuCampaignBtn" type="button">Campaign</button>
+        <button id="menuCampaignBtn" type="button">Campaigns</button>
+        <button type="button" onclick="openScenarioWorkshop()">Generate Scenario</button>
       </div>
-      <p class="web-menu-help">Select a unit, choose where to move, then End Turn.<br>For larger battles, open Campaign and Generate Scenario.</p>
+      <p class="web-menu-help">Select a unit, choose where to move, then End Turn.<br>Choose Campaigns for story missions or Generate Scenario for custom battles.</p>
     </div>
   </div>
 
@@ -45,19 +46,28 @@
     </div>
   </section>
   <div id="onlineMatchBar" hidden><span id="onlineMatchStatus"></span><button id="onlineReturnLobby">Return to lobby</button></div>
-  <div id="campaignPage" aria-live="polite">
-    <div id="campaignPageShade"></div>
-    <div id="campaignPageContent">
-      <div id="campaignPageHeader">
+  <section id="campaignPage" aria-label="Campaigns">
+    <div id="campaignPageShade"></div><div id="campaignPageContent">
+      <div id="campaignPageHeader"><div><div class="campaign-kicker">The Warborn Chronicles</div><h2>Three roads to the throne</h2></div><button id="campaignBackBtn">Back to menu</button></div>
+      <p class="campaign-intro">21 distinct battles. Choose a campaign, then a mission. Every kingdom begins with zero resources.</p>
+      <div id="campaignChoices" class="campaign-choices"></div>
+      <div id="campaignMissionHeading"></div><div id="campaignMissions" class="campaign-missions"></div>
+      <button type="button" onclick="openScenarioWorkshop()">Create your own scenario →</button>
+    </div>
+  </section>
+  <div id="scenarioWorkshop" aria-live="polite">
+    <div class="workshop-shade"></div>
+    <div class="workshop-content">
+      <div class="workshop-header">
         <div>
-          <div class="campaign-kicker">Campaign Builder</div>
-          <h2>Forge Your Warpath</h2>
+          <div class="campaign-kicker">Scenario Workshop</div>
+          <h2>Create a battlefield</h2>
         </div>
-        <button id="campaignBackBtn" type="button">Back To Menu</button>
+        <button onclick="closeScenarioWorkshop()" type="button">Back To Menu</button>
       </div>
       <div id="campaignPageToolbar">
-        <label class="campaign-name-label" for="campaignNameInput">Campaign Title</label>
-        <input id="campaignNameInput" type="text" value="Default Campaign" />
+        <label class="campaign-name-label" for="campaignNameInput">Collection Title</label>
+        <input id="campaignNameInput" type="text" value="Custom Scenarios" />
         <button type="button" onclick="createNewCampaign()">New</button>
         <button type="button" onclick="addScenario()">Add Scenario</button>
         <label class="campaign-name-label" for="scenarioGeneratorDifficulty">Difficulty</label>
@@ -81,7 +91,7 @@
         <button type="button" onclick="loadCampaign()">Load</button>
         <button type="button" onclick="importCampaign()">Import</button>
         <button type="button" onclick="exportCampaign()">Export</button>
-        <button type="button" class="campaign-start-btn" onclick="startCampaign()">Start Campaign</button>
+        <button type="button" class="campaign-start-btn" onclick="startCampaign()">Play Collection</button>
       </div>
       <div id="campaignPageSummary"></div>
       <div id="scenariosList"></div>
@@ -163,7 +173,7 @@
       <div id="campaignControls" style="display:none !important;margin-bottom:8px;padding:8px;background:rgba(255,165,0,0.1);border-radius:6px;visibility:hidden;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <label style="color:#ffb347;font-weight:600;font-size:12px;">📜 Campaign:</label>
-          <button id="editCampaignBtn" class="small" onclick="openCampaignEditor()">Edit Campaign</button>
+          <button id="editCampaignBtn" class="small" onclick="openCampaignEditor()">Campaigns</button>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
           <div class="info" style="font-size:11px;">Scenario:</div>
@@ -311,6 +321,8 @@
             <select id="victoryConditionType" class="editor-select">
               <option value="ANNIHILATE_ALL">Annihilate all enemies and take settlements</option>
               <option value="ANNIHILATE_TEAM">Annihilate one color and take settlements</option>
+              <option value="CAPTURE_TOWN">Capture a specified town</option>
+              <option value="KILL_CROWN">Kill an enemy Crown</option>
               <option value="HOLD_TILE">Hold a settlement or square</option>
               <option value="SURVIVE_TURNS">Survive until a turn number</option>
               <option value="KILL_UNIT_LIMIT">Kill a specified enemy unit in time</option>
@@ -423,38 +435,40 @@
   <!-- Modals will be included here -->
   <!-- All the diplomacy, campaign editor and other modal content would continue here but keeping it brief for file size -->
 
-  <script src="js/core/state-and-grid.js?v=tactics1"></script>
-  <script src="js/audio/soundManager.js?v=tactics1"></script>
-  <script src="js/net/connection-state.js?v=tactics1"></script>
-  <script src="js/net/websocket-client.js?v=tactics1"></script>
-  <script src="js/systems/economy-research.js?v=zero-start1"></script>
-  <script src="js/systems/diplomacy-data.js?v=endless1"></script>
-  <script src="js/ui/popups-and-assets.js?v=crown1"></script>
-  <script src="js/core/level-state.js?v=endless1"></script>
-  <script src="js/core/game-setup.js?v=endless1"></script>
-  <script src="js/systems/campaign.js?v=zero-start1"></script>
-  <script src="js/systems/settlements.js?v=tactics1"></script>
-  <script src="js/boot/p5-setup.js?v=restart-research1"></script>
-  <script src="js/systems/save-editor-teams.js?v=endless1"></script>
-  <script src="js/systems/learning-ai.js?v=public4"></script>
-  <script src="js/systems/diplomacy.js?v=endless1"></script>
-  <script src="js/systems/trade.js?v=trade1"></script>
-  <script src="js/ui/editor-controls.js?v=zero-start1"></script>
-  <script src="js/rendering/action-effects.js?v=tactics1"></script>
-  <script src="js/rendering/renderer.js?v=endless1"></script>
-  <script src="js/rendering/terrain-blend.js?v=tactics1"></script>
-  <script src="js/input/mouse-actions.js?v=endless1"></script>
-  <script src="js/systems/mechanics.js?v=public4"></script>
-  <script src="js/data/units-and-build.js?v=restart-research1"></script>
-  <script src="js/input/global-events.js?v=tactics1"></script>
-  <script src="js/systems/combat-turns.js?v=endless1"></script>
-  <script src="js/systems/ai-turn.js?v=endless1"></script>
-  <script src="js/ui/endgame-and-ui.js?v=endless1"></script>
-  <script src="js/net/multiplayer-sync.js?v=tactics1"></script>
+  <script src="js/core/state-and-grid.js?v=chronicles2"></script>
+  <script src="js/audio/soundManager.js?v=chronicles2"></script>
+  <script src="js/net/connection-state.js?v=chronicles2"></script>
+  <script src="js/net/websocket-client.js?v=chronicles2"></script>
+  <script src="js/systems/economy-research.js?v=chronicles2"></script>
+  <script src="js/systems/diplomacy-data.js?v=chronicles2"></script>
+  <script src="js/ui/popups-and-assets.js?v=chronicles2"></script>
+  <script src="js/core/level-state.js?v=chronicles2"></script>
+  <script src="js/core/game-setup.js?v=chronicles2"></script>
+  <script src="js/systems/campaign.js?v=chronicles2"></script>
+  <script src="js/data/campaign-catalog.js?v=chronicles2"></script>
+  <script src="js/ui/campaign-browser.js?v=chronicles2"></script>
+  <script src="js/systems/settlements.js?v=chronicles2"></script>
+  <script src="js/boot/p5-setup.js?v=chronicles2"></script>
+  <script src="js/systems/save-editor-teams.js?v=chronicles2"></script>
+  <script src="js/systems/learning-ai.js?v=chronicles2"></script>
+  <script src="js/systems/diplomacy.js?v=chronicles2"></script>
+  <script src="js/systems/trade.js?v=chronicles2"></script>
+  <script src="js/ui/editor-controls.js?v=chronicles2"></script>
+  <script src="js/rendering/action-effects.js?v=chronicles2"></script>
+  <script src="js/rendering/renderer.js?v=chronicles2"></script>
+  <script src="js/rendering/terrain-blend.js?v=chronicles2"></script>
+  <script src="js/input/mouse-actions.js?v=chronicles2"></script>
+  <script src="js/systems/mechanics.js?v=chronicles2"></script>
+  <script src="js/data/units-and-build.js?v=chronicles2"></script>
+  <script src="js/input/global-events.js?v=chronicles2"></script>
+  <script src="js/systems/combat-turns.js?v=chronicles2"></script>
+  <script src="js/systems/ai-turn.js?v=chronicles2"></script>
+  <script src="js/ui/endgame-and-ui.js?v=chronicles2"></script>
+  <script src="js/net/multiplayer-sync.js?v=chronicles2"></script>
   <script src="vendor/peerjs-1.5.5.min.js"></script>
-  <script src="js/net/fair-map.js?v=public4"></script>
-  <script src="js/net/online-lobby.js?v=public4"></script>
-  <script src="js/net/public-lobby.js?v=public4"></script>
-  <script src="js/systems/endless.js?v=endless2"></script>
+  <script src="js/net/fair-map.js?v=chronicles2"></script>
+  <script src="js/net/online-lobby.js?v=chronicles2"></script>
+  <script src="js/net/public-lobby.js?v=chronicles2"></script>
+  <script src="js/systems/endless.js?v=chronicles2"></script>
 </body>
 </html>

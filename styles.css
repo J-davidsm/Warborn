@@ -729,3 +729,21 @@ footer {
 .endless-overlay{position:fixed;inset:0;z-index:51000;background:#06101be8;display:grid;place-items:center;padding:20px}.endless-overlay[hidden],#endlessBar[hidden]{display:none}.endless-dialog{box-sizing:border-box;width:min(580px,100%);max-height:90vh;overflow:auto;padding:28px;background:#152534;border:1px solid #c5a76b;border-radius:16px;color:#e5edf5}.endless-dialog h2{color:#f4d385;margin-top:0}.endless-dialog p{line-height:1.6;color:#bfd0de}.endless-dialog select{display:block;width:100%;padding:12px;margin:10px 0 24px;background:#263e51;color:white;border:1px solid #607a8f;border-radius:6px}.endless-actions{display:flex;gap:12px}.endless-actions button,#endlessExit{padding:10px 16px;border:1px solid #c5a76b;border-radius:7px;background:#ecd18d;color:#172634;cursor:pointer}#endlessBar{position:absolute;left:12px;top:86px;z-index:20;max-width:min(540px,calc(100% - 24px));padding:10px 12px;border:1px solid #94514e;background:#111e2eee;border-radius:9px;color:#f4d385;box-sizing:border-box}#endlessBar span{display:block;font-size:12px;color:#f4b8ad;margin:5px 0}#endlessExit{padding:3px 9px;font-size:11px}
 
 #endlessBar{z-index:5001;max-width:min(290px,calc(100% - 24px))}.endless-match #mapDiplomacyButton,.endless-match #diplomacySection,.endless-match #aiPlayerControls,.endless-match #editorModeBtn,.endless-match #levelNameInput{display:none!important}
+
+/* Campaign library and separate custom-scenario workshop. */
+#campaignPageContent {overflow:auto;padding-bottom:20px;box-sizing:border-box;}
+.campaign-intro{margin:0;color:#c5cbd1;line-height:1.5}
+.campaign-choices{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.campaign-choice{display:flex;flex-direction:column;text-align:left;gap:12px;padding:22px;border:1px solid #52605e;border-radius:12px;background:#17232be8;color:#f6f0e4;cursor:pointer;min-height:156px}
+.campaign-choice.selected{border-color:#efd083;background:#35443beb;box-shadow:inset 0 3px #efd083}
+.campaign-choice strong{font:24px Georgia,serif}.campaign-choice small,.campaign-mission small{color:#e5c983;letter-spacing:1px;font-size:11px}.campaign-choice span{color:#c3cec8;line-height:1.4}
+#campaignMissionHeading{font:22px Georgia,serif;margin-top:12px}
+.campaign-missions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.campaign-mission{display:flex;gap:18px;padding:16px;background:#142129ed;border:1px solid #455651;border-radius:10px;align-items:center}
+.campaign-mission canvas{width:36%;height:auto;border-radius:6px;image-rendering:pixelated}
+.campaign-mission h3{font:22px Georgia,serif;margin:8px 0}.campaign-mission p{line-height:1.4;font-size:13px}.mission-relations{color:#b6c6c0}.campaign-mission button{padding:9px 18px;background:#e0bf77;color:#142129;border:0;border-radius:5px;font-weight:bold;cursor:pointer}
+#scenarioWorkshop{position:fixed;inset:0;z-index:52000;display:none;background:#0e1922 url('assets/menu.jpg') center/cover;overflow:auto;color:#f6f0e4}
+#scenarioWorkshop.visible{display:block}.workshop-shade{position:absolute;inset:0;background:#07111aec;position:fixed;pointer-events:none}
+.workshop-content{position:relative;width:min(1180px,calc(100% - 40px));margin:24px auto}.workshop-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.workshop-header h2{font:30px Georgia,serif}
+#scenarioWorkshop #scenariosList{max-height:none;overflow:visible}
+@media(max-width:760px){.campaign-choices,.campaign-missions{grid-template-columns:1fr}.campaign-choice{min-height:0;padding:16px}.campaign-mission{gap:12px}#campaignPageHeader h2{font-size:24px}.campaign-mission h3{font-size:19px}}
