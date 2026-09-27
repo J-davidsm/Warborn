@@ -750,6 +750,13 @@ function drawGrid(){
 
   pop();
 }
+function getUnitRenderScale(){
+  const normal=(useHexGrid ? 0.8 : 1.0)*1.5;
+  // Endless is tall: TILE follows columns, while actual hexes also fit the rows.
+  // Bound artwork and health bars by the real hex, not the nominal square tile.
+  return useHexGrid&&typeof Endless!=='undefined'&&Endless.active
+    ? Math.min(normal,HEX_SIZE*1.6/(TILE*0.9)) : normal;
+}
 function drawUnits(){
   push(); translate(OFFSET,OFFSET);
 
@@ -789,7 +796,7 @@ function drawUnits(){
     x=animated.x;y=animated.y;
     // Enlarge artwork and its health/status markers by 50% on both grids.
     // The tile backing and movement coordinates still identify the owning cell.
-    const unitScale = (useHexGrid ? 0.8 : 1.0) * 1.5;
+    const unitScale = getUnitRenderScale();
     const teamColor = getTeamColor(u.team);
     const canAttackNow = canUnitAttackFromCurrentPosition(u);
     const blinkPulse = canAttackNow ? (0.5 + 0.5 * Math.sin(frameCount * 0.18)) : 0;

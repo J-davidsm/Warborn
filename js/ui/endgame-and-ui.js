@@ -457,7 +457,7 @@ function updateUI() {
           this.style.boxShadow = buildMode ? '0 0 0 10px rgba(24,120,220,0.18)' : 'none';
           try{ updateUI(); } catch(e){}
         };
-        document.body.appendChild(buildWidget);
+        (document.getElementById('unitActions')||document.body).appendChild(buildWidget);
       }
       
       // Water upgrade widget: show when a friendly unit is selected
@@ -473,7 +473,7 @@ function updateUI() {
           waterUpgradeWidget.style.cursor = 'pointer'; waterUpgradeWidget.style.zIndex = 9999; 
           waterUpgradeWidget.style.fontSize = '20px';
           waterUpgradeWidget.onclick = function() { upgradeSelectedUnitToWater(); };
-          document.body.appendChild(waterUpgradeWidget);
+          (document.getElementById('unitActions')||document.body).appendChild(waterUpgradeWidget);
         }
         
         // Update button appearance based on unit and resources

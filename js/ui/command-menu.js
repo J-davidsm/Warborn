@@ -13,13 +13,14 @@ const CommandMenu=(()=>{
   const visible=$('mainMenu')?.classList.contains('hidden')&&!gameOver;
   document.body.classList.toggle('commands-available',!!visible);
   if(!visible)close();
-  if($('mapDiplomacyButton')&&$('commandActions')&&$('mapDiplomacyButton').parentElement!==$('commandActions'))$('commandActions').append($('mapDiplomacyButton'));
+  if($('mapDiplomacyButton')&&$('turnActions')&&$('mapDiplomacyButton').parentElement!==$('turnActions'))$('turnActions').insertBefore($('mapDiplomacyButton'),$('endTurnBtn'));
+  for(const id of ['buildWidget','waterUpgradeWidget'])if($(id)&&$('unitActions')&&$(id).parentElement!==$('unitActions'))$('unitActions').append($(id));
  }
  document.addEventListener('DOMContentLoaded',()=>{
   document.body.classList.add('compact-hud');
   const panel=$('panel'),toolbar=$('battleToolbar');document.body.append(toolbar);
   toolbar.insertAdjacentHTML('afterbegin','<button id="commandToggle" aria-expanded="false" aria-controls="panel">☰ Commands</button>');
-  const dock=document.createElement('div');dock.id='turnActions';dock.append($('endTurnBtn'));document.body.append(dock);
+  const dock=document.createElement('div');dock.id='turnActions';const unitActions=document.createElement('div');unitActions.id='unitActions';dock.append(unitActions);dock.append($('endTurnBtn'));document.body.append(dock);
   document.body.append($('battleNotice'));if($('endlessBar'))document.body.append($('endlessBar'));
   const menu=document.createElement('div');menu.id='commandContents';menu.innerHTML='<header><button id="commandBack">← Back</button><h2 id="commandTitle">Commands</h2><button id="commandClose" aria-label="Close commands">×</button></header><div id="commandActions" class="command-page" data-page="actions"></div><div id="commandSettings" class="command-page" data-page="settings" hidden></div><div id="commandSaves" class="command-page" data-page="saves" hidden></div><div id="commandDiplomacy" class="command-page" data-page="diplomacy" hidden></div><div id="commandEditor" class="command-page" data-page="editor" hidden></div>';panel.append(menu);
   const move=(target,ids)=>ids.forEach(id=>{if($(id))$(target).append($(id));});

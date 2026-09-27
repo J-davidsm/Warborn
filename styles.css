@@ -845,3 +845,14 @@ body:not(.editor-mode) .editor-only-command{display:none;}#editorDrawerTab{displ
 .training-active #turnActions,.commands-open #objectInspector,.commands-open #buildWidget,.commands-open #waterUpgradeWidget{display:none!important;}
 @media(max-width:1000px){.compact-hud #turnRibbon{top:76px;width:360px;}.compact-hud #turnRibbon strong{font-size:14px;}.compact-hud #onlineMatchBar{left:12px;right:auto;bottom:76px;max-width:230px;}.compact-hud #buildWidget{right:390px!important;}}
 @media(max-width:600px){.compact-hud #turnRibbon{width:280px;top:76px;}.compact-hud #battleToolbar{gap:4px;}.compact-hud #battleToolbar button{padding:6px 8px;font-size:12px;}.compact-hud #objectInspector{max-height:35vh;bottom:76px;}.compact-hud #buildWidget{right:12px!important;bottom:18px!important;}.compact-hud #waterUpgradeWidget{right:68px!important;bottom:18px!important;}.compact-hud #battleTutorial .guide-portrait{width:65px;height:90px;}.compact-hud #battleNotice{top:180px;}}
+
+/* Proportional half-size ribbon and a single stack of battle actions. */
+.compact-hud #turnRibbon{width:min(270px,calc((100vw - 540px) / 2));aspect-ratio:3 / 1;}
+.compact-hud #turnRibbon strong{font-size:12px;}
+.compact-hud #turnActions{flex-direction:column;align-items:stretch;gap:10px;}
+#unitActions{display:flex;gap:10px;align-items:center;justify-content:center;}
+#unitActions:empty{display:none;}
+.compact-hud #turnActions #mapDiplomacyButton{position:static!important;transform:none!important;margin:0!important;width:auto!important;}
+.compact-hud #turnActions #buildWidget,.compact-hud #turnActions #waterUpgradeWidget{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;flex-shrink:0;}
+@media(max-width:1000px){.compact-hud #turnRibbon{width:180px;}.compact-hud #turnRibbon strong{font-size:11px;}.compact-hud #onlineMatchBar{bottom:190px;}}
+@media(max-width:600px){.compact-hud #turnRibbon{width:140px;}.compact-hud #turnRibbon strong{font-size:10px;}.compact-hud #objectInspector{bottom:190px;}}

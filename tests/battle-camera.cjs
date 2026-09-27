@@ -8,3 +8,7 @@ menu=true;const old=c.targetZoom;c.setZoom(4,640,360);assert.equal(c.targetZoom,
 console.log('Camera fit floor, cursor anchoring, left/right bounds and settlement zoom lock pass.');
 
 c.CommandMenu={};assert.equal(c.getBattleViewport().right,1256,'compact HUD frees the complete map width');
+
+c.useHexGrid=true;c.TILE=72;c.HEX_SIZE=20;c.Endless={active:true};
+assert(c.TILE*.9*c.getUnitRenderScale()<=c.HEX_SIZE*1.6+1e-9,'Endless fortress artwork fits its actual hex');
+c.Endless.active=false;assert(Math.abs(c.getUnitRenderScale()-1.2)<1e-9,'ordinary battle artwork keeps its existing scale');
