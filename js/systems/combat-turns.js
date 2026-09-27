@@ -137,6 +137,13 @@ function attackUnit(a, d) {
     }
   }
 
+  // Assassins can harry a fortress, but cannot meaningfully damage its walls.
+  // Apply this after the normal fortress defenses so every fortress tier is
+  // capped at 10% of the damage the hit would otherwise have dealt.
+  if (a.name === 'Assassin' && isFortressUnit(d)) {
+    dmg = floor(dmg * 0.10);
+  }
+
   // Store target's previous HP to check for kill
   if(hasCrownAura(d))dmg=floor(dmg*0.75);
   const prevHP = d.hp;
@@ -157,7 +164,7 @@ function attackUnit(a, d) {
   // Assassin special: if attacker is Assassin and target is NOT an Assassin, target morale falls to 0 instantly
   // Dragons are immune to morale drops
   if (d.name !== 'Dragon') {
-    if (a.name === 'Assassin' && d.name !== 'Assassin') {
+    if (a.name === 'Assassin' && d.name !== 'Assassin' && !isFortressUnit(d)) {
       d.morale = 0;
     } else {
       d.morale -= 15;

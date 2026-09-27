@@ -62,3 +62,15 @@ for(const name of ['Soldier','Archer','Assassin','Dragon','Catapult']){
  assert.equal(marsh,Math.floor(normal*.5),'marsh attacking penalty: '+name);
 }
 console.log('Marsh allows attacks and halves damage for ordinary, specialist, flying and siege units.');
+
+// Assassins only chip fortress units for 10% damage, and fortress morale uses
+// the ordinary combat loss instead of the Assassin's instant morale shatter.
+ctx.TERRAIN.SWAMP={getDefense:()=>.1,assassinBonus:true,noAttack:false};
+for(const [target,expectedDamage] of [['Stockade',4],['Castle',3],['Heavy Fortress',2]]){
+ const assassin=unit('Assassin','PLAYER',1),fortress=unit(target,'AI',3);
+ fortress.hp=fortress.maxHp=1000;fortress.morale=100;
+ ctx.terrain.fill(null);ctx.units=[assassin,fortress];ctx.attackUnit(assassin,fortress);
+ assert.equal(1000-fortress.hp,expectedDamage,target+' takes only 10% of a normal Assassin hit');
+ assert.equal(fortress.morale,85,target+' morale falls normally against Assassin');
+}
+console.log('Assassins chip all fortress tiers for 10% damage and affect fortress morale normally.');
