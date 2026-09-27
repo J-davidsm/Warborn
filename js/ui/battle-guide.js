@@ -10,8 +10,8 @@ const BattleGuide = (() => {
  const asset=n=>DEFAULT_IMAGE_MAP[n]||null;
  const icon=(n,label)=>asset(n)?`<span class="matchup"><img src="${asset(n)}" alt="${esc(n)}">${esc(label)}</span>`:`<span class="matchup">${esc(n)}: ${esc(label)}</span>`;
  function abilities(u){
-  const list={Soldier:'An inexpensive infantry soldier. No unique combat modifier.',Spearman:'Adjacent allied Spearmen reduce damage received by a defending Spearman by 30%.',Archer:'Ranged attacks from two tiles away.',Swordsman:'Durable frontline infantry. No unique combat modifier.',Assassin:'A hit shatters a non-Assassin, non-fortress enemy’s morale, except Dragons. Against any fortress, it deals only 10% damage and affects fortress morale normally. Heals 5 HP on its turn. Deals double damage to targets in forests or marshes.',Knight:'Can make a bonus attack. Deals double damage to Dragons; attacks from forest deal 25% less damage.',Catapult:'Deals double damage to fortresses and ignores their damage reduction and settlement defense.',Dragon:'Flies across terrain, including water. Morale stays at 150 and cannot be shattered. Resists most incoming attacks.',Cleric:'Heals friendly units within range instead of attacking. Keep this healer behind your front line.',Crown:'Cannot attack or be purchased. Adjacent friendly units gain 25% defense and 10% attack. Moves 2 on grassland, 1 elsewhere. Losing your Crown defeats your kingdom; an AI Crown’s death shatters its non-Dragon army.'};
-  if(isFortressUnit(u)){const d=getFortressPropsByName(u.name);return `Immovable, even after promotion. Retaliates when attacked within at least 2 tiles. Reduces incoming non-Catapult damage by ${Math.round((d?.damageReduction||0)*100)}%; heals ${d?.healPerTurn||0} HP per turn.`;}
+  const list={Soldier:'An inexpensive infantry soldier. No unique combat modifier.',Spearman:'Adjacent allied Spearmen reduce damage received by a defending Spearman by 30%.',Archer:'Ranged attacks from two tiles away.',Swordsman:'Durable frontline infantry. No unique combat modifier.',Assassin:'A hit shatters a non-Assassin, non-fortress enemy’s morale, except Dragons. Other Assassins are immune to this morale effect. Against any fortress, it deals only 10% damage and affects fortress morale normally. Heals 5 HP on its turn. Deals double damage to targets in forests or marshes.',Knight:'Can make a bonus attack. Deals double damage to Dragons; attacks from forest deal 25% less damage.',Catapult:'Deals double damage to fortresses and ignores their damage reduction and settlement defense.',Dragon:'Flies across terrain, including water. Morale stays at 150 and cannot be shattered. Resists most incoming attacks.',Cleric:'Heals friendly units within range instead of attacking. Keep this healer behind your front line.',Crown:'Cannot attack or be purchased. Adjacent friendly units gain 25% defense and 10% attack. Moves 2 on grassland, 1 elsewhere. Losing your Crown defeats your kingdom; an AI Crown’s death shatters its non-Dragon army.'};
+  if(isFortressUnit(u)){const d=getFortressPropsByName(u.name);return `Immovable, even after promotion. Retaliates when attacked within at least 2 tiles. Reduces incoming non-Catapult damage by ${Math.round((d?.damageReduction||0)*100)}%; heals ${d?.healPerTurn||0} HP per turn. Assassin attacks deal 10% damage and reduce fortress morale normally.`;}
   return list[u.name]||(u.isWaterUnit?'Naval unit: moves on water.':'No unique combat modifier.');
  }
  function matchups(u){
@@ -19,11 +19,12 @@ const BattleGuide = (() => {
   if(u.name==='Knight')out.push(icon('Dragon','Attack ×2'));
   if(u.name==='Archer')out.push(icon('Dragon','Attack ×1.1'));
   if(u.name==='Catapult')out.push(...['Stockade','Castle','Heavy Fortress'].map(n=>icon(n,'Attack ×2; ignores armor')),icon('Dragon','Attack ×0.5'));
-  if(u.name==='Assassin')out.push(icon('Crown','Attack ×2'),icon('Castle','Attack ×0.1; normal morale effect'),icon('Assassin','Immune to your instant morale shatter'),icon('Dragon','Immune to morale shatter; takes 20% less damage'));
+  if(u.name==='Assassin')out.push(icon('Crown','Attack ×2'),icon('Castle','Attack ×0.1; normal morale effect'),icon('Assassin','Immune to Assassin morale effect'),icon('Dragon','Immune to morale shatter; takes 20% less damage'));
   if(u.name==='Crown')out.push(icon('Assassin','Takes ×2 damage'));
   if(u.name==='Dragon')out.push(icon('Knight','Takes ×2 damage'),icon('Archer','Takes ×1.1 damage'),icon('Catapult','Takes ×0.5 damage'));
-  if(isFortressUnit(u))out.push(icon('Catapult','Takes ×2 damage; armor ignored'));
-  if(!['Dragon','Crown','Cleric','Assassin'].includes(u.name))out.push(icon('Assassin','A hit shatters morale'));
+  if(isFortressUnit(u))out.push(icon('Catapult','Takes ×2 damage; armor ignored'),icon('Assassin','Takes 10% damage; morale affected normally'));
+  else if(u.name==='Assassin')out.push(icon('Assassin','Immune to Assassin morale effect'));
+  else if(!['Dragon','Crown','Cleric'].includes(u.name))out.push(icon('Assassin','A hit shatters morale'));
   if(!['Knight','Archer','Catapult','Cleric','Crown','Assassin','Dragon'].includes(u.name))out.push(icon('Dragon','Your attacks deal 20% less damage'));
   return out.join('')||'<span>No unit-specific damage bonus.</span>';
  }

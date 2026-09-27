@@ -164,7 +164,9 @@ function attackUnit(a, d) {
   // Assassin special: if attacker is Assassin and target is NOT an Assassin, target morale falls to 0 instantly
   // Dragons are immune to morale drops
   if (d.name !== 'Dragon') {
-    if (a.name === 'Assassin' && d.name !== 'Assassin' && !isFortressUnit(d)) {
+    if (a.name === 'Assassin' && d.name === 'Assassin') {
+      // Assassins are immune to each other's morale ability.
+    } else if (a.name === 'Assassin' && !isFortressUnit(d)) {
       d.morale = 0;
     } else {
       d.morale -= 15;
