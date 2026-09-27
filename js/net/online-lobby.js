@@ -102,7 +102,7 @@ const OnlineMatch = (() => {
  }
  function fitBoard(){
   if(typeof getMapWorldBounds!=='function')return;
-  const b=getMapWorldBounds(),o=getMapOrigin(),available=Math.max(400,$('panel').getBoundingClientRect().left);
+  const b=getMapWorldBounds(),o=getMapOrigin(),available=typeof CommandMenu!=='undefined'?width:Math.max(400,$('panel').getBoundingClientRect().left);
   zoomLevel=targetZoom=Math.max(minZoom,Math.min(1,(available-120)/b.width,(height-160)/b.height));
   panX=targetPanX=available/2-o.x-(b.x+b.width/2)*targetZoom;panY=targetPanY=(height-70)/2-o.y-(b.y+b.height/2)*targetZoom;clampPanToMap();
  }
@@ -188,7 +188,7 @@ const OnlineMatch = (() => {
    if(!active)return;const id=event.target.closest('button,select,input')?.id;
    if(['replayScenarioBtn','backToMenuBtn'].includes(id)){event.preventDefault();event.stopImmediatePropagation();returnLobby();return;}
    if(['restartBtn','editorModeBtn','gameModeSelect','convertTeamsBtn','menuCampaignBtn'].includes(id)){event.preventDefault();event.stopImmediatePropagation();return;}
-   if(!canAct()&&!event.target.closest('#onlineLobby,#onlineMatchBar,#endlessExit,#musicToggleBtn,#battleHelp,#battleHandbook,#battleTutorial,#battleMenuBtn')&&!event.target.closest('#game canvas')){event.preventDefault();event.stopImmediatePropagation();}
+   if(!canAct()&&!event.target.closest('#onlineLobby,#onlineMatchBar,#endlessExit,#musicToggleBtn,#battleHelp,#battleHandbook,#battleTutorial,#battleMenuBtn,#commandToggle,#commandContents')&&!event.target.closest('#game canvas')){event.preventDefault();event.stopImmediatePropagation();}
   },true);
   setInterval(()=>{if(playing&&!applying&&!pending&&connected()&&!visible()&&!suspended&&(accepted?.currentTeam===localTeam||(host&&mode==='coop'&&isAITeam(accepted?.currentTeam||'')))&&JSON.stringify(snapshot())!==JSON.stringify(accepted))publish();},300);
  });

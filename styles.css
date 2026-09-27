@@ -825,3 +825,23 @@ footer {
 #waterUpgradeWidget {left:auto!important;right:calc(var(--battle-side) + 86px)!important;bottom:84px!important;}
 .training-active #waterUpgradeWidget {display:none!important;}
 body:has(#spawnMenu) #buildWidget,body:has(#spawnMenu) #waterUpgradeWidget {display:none!important;}
+
+/* The battlefield occupies the whole window; controls open only on demand. */
+.compact-hud #panel{display:none!important;left:auto;right:12px;top:76px;bottom:auto;width:min(420px,calc(100vw - 24px));max-height:calc(100dvh - 100px);transform:none!important;opacity:1!important;pointer-events:auto!important;z-index:23010;}
+.compact-hud.commands-open #panel{display:block!important;}
+.compact-hud #panel> :not(#commandContents){display:none!important;}
+#commandContents header{display:flex;align-items:center;gap:10px;margin-bottom:16px;}#commandContents h2{font-size:19px;color:#efd38e;flex:1;margin:0;}#commandContents button{padding:10px 14px;background:#243b4b;border:1px solid #8a7852;border-radius:7px;color:#f2d693;cursor:pointer;}#commandContents button:disabled{opacity:.45;cursor:default;}
+.command-page{display:flex;flex-direction:column;gap:12px;}.command-page[hidden],#commandContents button[hidden]{display:none!important;}#commandActions{display:grid;grid-template-columns:1fr 1fr;}#commandActions #mapDiplomacyButton{position:static!important;transform:none!important;margin:0!important;font-size:13px!important;}
+body:not(.editor-mode) .editor-only-command{display:none;}#editorDrawerTab{display:none!important;}
+.compact-hud #battleToolbar{position:fixed;right:12px;top:12px;z-index:23010;display:none;}.commands-available #battleToolbar{display:flex;}.compact-hud #battleToolbar #musicToggleBtn{margin:0;}.compact-hud #battleToolbar button{height:44px;}
+#turnActions{position:fixed;left:12px;bottom:16px;z-index:2210;display:none;}.battle-active #turnActions{display:flex;}#turnActions button{box-shadow:0 4px 20px #0007;padding:13px 24px;}
+.compact-hud #turnRibbon{left:50%;right:auto;transform:translateX(-50%);width:min(540px,calc(100vw - 540px));height:auto;aspect-ratio:3 / 1;top:4px;}.compact-hud #turnRibbon img{object-fit:contain;}.compact-hud #turnRibbon strong{font-size:16px;}
+.compact-hud #objectInspector{width:min(360px,calc(100vw - 24px));max-height:48vh;bottom:16px;}
+.compact-hud #battleTutorial{right:12px;max-width:980px;margin:auto;max-height:43vh;flex-direction:row;}
+.compact-hud #battleNotice{position:fixed;left:12px;top:100px;width:230px;box-sizing:border-box;z-index:2200;border-radius:8px;}
+.compact-hud #endlessBar{position:fixed;left:12px;top:90px;max-width:230px;z-index:2190;}.compact-hud:has(#endlessBar:not([hidden])) #battleNotice{top:220px;}
+.compact-hud #onlineMatchBar{left:170px;right:390px;bottom:16px;}
+.compact-hud #buildWidget{right:390px!important;bottom:90px!important;}.compact-hud #waterUpgradeWidget{right:446px!important;bottom:90px!important;}
+.training-active #turnActions,.commands-open #objectInspector,.commands-open #buildWidget,.commands-open #waterUpgradeWidget{display:none!important;}
+@media(max-width:1000px){.compact-hud #turnRibbon{top:76px;width:360px;}.compact-hud #turnRibbon strong{font-size:14px;}.compact-hud #onlineMatchBar{left:12px;right:auto;bottom:76px;max-width:230px;}.compact-hud #buildWidget{right:390px!important;}}
+@media(max-width:600px){.compact-hud #turnRibbon{width:280px;top:76px;}.compact-hud #battleToolbar{gap:4px;}.compact-hud #battleToolbar button{padding:6px 8px;font-size:12px;}.compact-hud #objectInspector{max-height:35vh;bottom:76px;}.compact-hud #buildWidget{right:12px!important;bottom:18px!important;}.compact-hud #waterUpgradeWidget{right:68px!important;bottom:18px!important;}.compact-hud #battleTutorial .guide-portrait{width:65px;height:90px;}.compact-hud #battleNotice{top:180px;}}

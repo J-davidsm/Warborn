@@ -54,7 +54,7 @@ const BattleGuide = (() => {
    ['Your battlefield',`I’m Captain Garran. I’ll show you how to command here${scenario?.name?' in '+scenario.name:''}. ${scenario?.description||''} We have ${army.length} ${army.length===1?'unit':'units'} on a ${COLS} by ${ROWS} battlefield.`,targetFor(u=>u.team===mine)],
    ['The mission',`First, know what wins this battle: ${goal} ${scenario?.briefing||''} Do not spend lives chasing enemies the mission does not require.`,currentVictoryCondition.holdCol>=0?{col:currentVictoryCondition.holdCol,row:currentVictoryCondition.holdRow}:targetFor(u=>u.id===currentVictoryCondition.targetUnitId)],
    ['Friends and foes',`Our banner belongs to ${teamName(mine)}. ${allies.length?'Our allies are '+allies.map(teamName).join(', ')+'. We cannot attack them or take their towns.':'The other kingdoms here are our rivals. Check their banner before you strike.'}`,targetFor(u=>u.team!==mine)],
-   ['Select a warrior','Click one of your units. Its movement and attack opportunities appear on the map. The sidebar shows its strengths, weaknesses and special abilities.',targetFor(u=>u.team===mine)],
+   ['Select a warrior','Click one of your units. Its movement and attack opportunities appear on the map. The bottom-right field report shows its strengths, weaknesses and special abilities.',targetFor(u=>u.team===mine)],
    ['Move with purpose','Choose a reachable tile to march there. We can pass through friendly troops, but cannot finish on an occupied tile or march through enemies. Watch the path—not just the destination.',targetFor(u=>u.team===mine)],
    ['Strike at the right moment','Select a ready warrior, then an enemy in range. Most troops act once per turn; Knights can make a bonus attack. Injured troops deal less damage, so protect your veterans.',targetFor(u=>u.team!==mine&&!areFriendlyTeams(mine,u.team))],
    ['Read your strength','These marks are your field ledger: 🚩 owner, 👣 movement, 🎯 range, ⚔️ damage, 💰 gold cost, ⚒️ material cost, ⭐ experience, ❤️ health and 🔥 morale. Hover a symbol for its meaning.',targetFor(u=>u.team===mine)],
@@ -70,7 +70,7 @@ const BattleGuide = (() => {
    const pos=tileFor(v=>v===t);if(pos)list.push([label,`Look at the marked ground. ${terrainNotes[t]} Choose your route with that in mind.`,pos]);
   }
   list.push(['Anchor before you sail','Ordinary land troops need the anchor upgrade before entering water. Select an eligible unit and use ⚓ when you can pay 2 gold. Dragons already fly; fortresses stay planted.',targetFor(u=>u.team===mine)],['Build a stronghold','Fortresses guard a fixed position and never march, even when promoted. Select a warrior to reveal the build control. Keep siege weapons covered: Catapults are the answer to enemy castles.',targetFor(u=>isFortressUnit(u))],['Diplomacy and allies','In ordinary AI battles, open Diplomacy to review relations and negotiate trades of resources, troops and settlements. An ally’s towns are protected from capture. In co-op, your fellow commanders remain allied.']);
-  list.push(['Know your matchups','Knights punish Dragons. Catapults break fortresses but struggle against Dragons. Assassins punish troops in forests and marshes. Every unit’s sidebar lists the relevant matchups beside portraits.',targetFor(u=>u.team===mine)]);
+  list.push(['Know your matchups','Knights punish Dragons. Catapults break fortresses but struggle against Dragons. Assassins punish troops in forests and marshes. Every unit’s field report lists the relevant matchups beside portraits.',targetFor(u=>u.team===mine)]);
   if(typeof Endless!=='undefined'&&Endless.active)list.push(['The moving front','After every full round, the back row vanishes and fresh enemies arrive at the front. Any of our troops left on the vanishing row are lost. Capture incoming towns to keep recruiting. In co-op, protect the whole allied front.',{col:Math.floor(COLS/2),row:ROWS-1}]);
   list.push(['Pass the command','Finish your moves, attacks and spending before End Turn. Income is paid when your turn ends; a brief receipt shows the gain. The upper banner names the next commander. Online, wait for your own turn.'],['Survey the field','Drag the map to pan and use the wheel to zoom toward the pointer. Settlement menus stop map zoom. Click any unit, ground tile or settlement for the field report at bottom right.'],['Your command now','You’re ready. The ? button opens my full field manual, and you can replay this tour whenever you need. Guard your Crown, keep a reserve, and make every march count.']);
   return list;
@@ -79,13 +79,14 @@ const BattleGuide = (() => {
   const [title,text,pos]=steps[step];$('guideTitle').textContent=`Captain Garran · ${title}`;$('guideText').textContent=text;$('guideProgress').textContent=`${step+1} / ${steps.length}`;$('guidePrevious').disabled=step===0;$('guideNext').textContent=step===steps.length-1?'Take command':'Next →';
   if(pos&&Number.isFinite(pos.col)&&Number.isFinite(pos.row)){const p=getTileCenterLocal(pos.col,pos.row),v=getBattleViewport(),o=getMapOrigin();targetPanX=panX=(v.left+v.right)/2-o.x-p.x*zoomLevel;targetPanY=panY=(v.top+v.bottom)/2-o.y-p.y*zoomLevel;clampPanToMap();}
  }
- function start(){closeSpawnMenu();inspected=null;$('objectInspector').hidden=true;layout();$('battleHandbook').hidden=true;steps=lessons();step=0;savedCamera={zoomLevel,targetZoom,panX,panY,targetPanX,targetPanY};training=true;$('battleTutorial').hidden=false;document.body.classList.add('training-active');showStep();$('guideNext').focus();}
+ function start(){if(typeof CommandMenu!=='undefined')CommandMenu.close();closeSpawnMenu();inspected=null;$('objectInspector').hidden=true;layout();$('battleHandbook').hidden=true;steps=lessons();step=0;savedCamera={zoomLevel,targetZoom,panX,panY,targetPanX,targetPanY};training=true;$('battleTutorial').hidden=false;document.body.classList.add('training-active');showStep();$('guideNext').focus();}
  function finish(){training=false;$('battleTutorial').hidden=true;document.body.classList.remove('training-active');seen=true;try{localStorage.setItem(key,'done');}catch{}if(savedCamera){({zoomLevel,targetZoom,panX,panY,targetPanX,targetPanY}=savedCamera);savedCamera=null;clampPanToMap();}gameInputBlockedUntil=Date.now()+300;}
  function drawHighlight(){
   const p=training?steps[step]?.[2]:null;if(!p||!Number.isFinite(p.col)||!Number.isFinite(p.row))return;
   const center=getTileCenterLocal(p.col,p.row);push();noFill();stroke(255,220,100);strokeWeight(4/zoomLevel);circle(center.x,center.y,(useHexGrid?HEX_SIZE*2.2:TILE*1.4));pop();
  }
  function handbook(){
+  if(typeof CommandMenu!=='undefined')CommandMenu.close();
   const sections=lessons().map(([title,text])=>`<details><summary>${esc(title)}</summary><p>${esc(text)}</p></details>`).join('');
   $('handbookBody').innerHTML=`<p>Your current mission: <strong>${esc(typeof Endless!=='undefined'&&Endless.active?'Survive the advancing invasion':getVictoryConditionLabel(currentVictoryCondition))}</strong></p>${sections}<h3>Terrain reference</h3>${Object.entries(terrainNotes).map(([t,n])=>`<details><summary>${esc(t==='WOODS'?'Forest':t==='SWAMP'?'Marsh':t)}</summary><p>${esc(n)}</p></details>`).join('')}<h3>All units</h3>${Object.entries(UNIT_TEMPLATES).filter(([n])=>n!=='Fortress').map(([name,u])=>`<details><summary>${esc(name)}</summary>${unitDetails({...u,name,team:local(),hp:u.hp,maxHp:u.hp,morale:100,col:-1,row:-1})}</details>`).join('')}`;
   $('battleHandbook').hidden=false;$('handbookClose').focus();
@@ -94,7 +95,7 @@ const BattleGuide = (() => {
  function notify(text){const el=$('battleNotice');if(!el)return;el.textContent=text;el.hidden=false;el.classList.remove('fade');clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.classList.add('fade');setTimeout(()=>{if(el.classList.contains('fade'))el.hidden=true;},700);},4200);}
  function refresh(){
   if(!$('turnRibbon'))return;
-  if($('mapDiplomacyButton')&&$('mapDiplomacyButton').parentElement!==$('panel'))$('panel').append($('mapDiplomacyButton'));
+  if(typeof CommandMenu!=='undefined')CommandMenu.refresh();
   const online=typeof OnlineMatch!=='undefined'&&OnlineMatch.playing,token=`${turnNumber}:${currentTeam}`,inBattle=$('mainMenu')?.classList.contains('hidden')&&!isEditorMode&&!gameOver;
   document.body.classList.toggle('battle-active',!!inBattle);$('battleMenuBtn').hidden=online;
   $('turnRibbonName').textContent=`${teamName(currentTeam)} · Turn ${turnNumber}`;

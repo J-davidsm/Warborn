@@ -72,7 +72,7 @@ function panCamera(deltaX, deltaY) {
 
 function getBattleViewport() {
   const canvas=document.querySelector('#game canvas'), panel=document.getElementById('panel');
-  const cr=canvas?.getBoundingClientRect(), pr=panel?.getBoundingClientRect();
+  const cr=canvas?.getBoundingClientRect(), pr=typeof CommandMenu==='undefined'?panel?.getBoundingClientRect():null;
   const right=pr&&cr&&pr.left>cr.left?Math.min(width,pr.left-cr.left):width;
   const tutorial=document.getElementById('battleTutorial');
   const bottom=tutorial&&!tutorial.hidden?tutorial.getBoundingClientRect().top-18:height-90;

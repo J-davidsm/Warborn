@@ -6,3 +6,5 @@ c.panCamera(99999,0);c.panX=c.targetPanX;assert.equal(c.worldToScreen(0,450).x,2
 c.zoomLevel=c.targetZoom=2;c.panX=c.targetPanX=-600;c.panY=c.targetPanY=-600;const before=c.screenToWorld(640,360);c.setZoom(2.4,640,360);const after=c.screenToWorld(640,360);assert(Math.abs(before.x-after.x)<1e-8);assert(Math.abs(before.y-after.y)<1e-8);
 menu=true;const old=c.targetZoom;c.setZoom(4,640,360);assert.equal(c.targetZoom,old,'settlement menu locks zoom');
 console.log('Camera fit floor, cursor anchoring, left/right bounds and settlement zoom lock pass.');
+
+c.CommandMenu={};assert.equal(c.getBattleViewport().right,1256,'compact HUD frees the complete map width');

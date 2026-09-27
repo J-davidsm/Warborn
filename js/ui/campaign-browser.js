@@ -64,7 +64,7 @@ function playCampaignMission(chapterIndex,missionIndex){
 }
 
 function fitMapToViewport(){
-  const b=getMapWorldBounds(),o=getMapOrigin(),available=Math.max(320,document.getElementById('panel').getBoundingClientRect().left);
+  const b=getMapWorldBounds(),o=getMapOrigin(),available=typeof CommandMenu!=='undefined'?width:Math.max(320,document.getElementById('panel').getBoundingClientRect().left);
   zoomLevel=targetZoom=Math.max(minZoom,Math.min(1,(available-100)/b.width,(height-160)/b.height));
   panX=targetPanX=available/2-o.x-(b.x+b.width/2)*targetZoom;
   panY=targetPanY=(height+40)/2-o.y-(b.y+b.height/2)*targetZoom;

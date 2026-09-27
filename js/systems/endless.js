@@ -46,7 +46,7 @@ const Endless = (() => {
   }
   function stop(){active=false;refresh();}
   function fit(){
-    const b=getMapWorldBounds(),o=getMapOrigin(),available=Math.max(320,$('panel').getBoundingClientRect().left);
+    const b=getMapWorldBounds(),o=getMapOrigin(),available=typeof CommandMenu!=='undefined'?width:Math.max(320,$('panel').getBoundingClientRect().left);
     zoomLevel=targetZoom=Math.max(minZoom,Math.min(1,(available-100)/b.width,(height-210)/b.height));
     panX=targetPanX=available/2-o.x-(b.x+b.width/2)*targetZoom;
     panY=targetPanY=(height+70)/2-o.y-(b.y+b.height/2)*targetZoom;clampPanToMap();

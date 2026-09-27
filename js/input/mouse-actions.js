@@ -38,6 +38,7 @@ const ACTION_DEBOUNCE_MS = 150; // Minimum time between actions
 const SAME_TILE_DEBOUNCE_MS = 300; // Extra protection for same tile clicks
 
 function isMenuBlockingGameInput() {
+  if(typeof CommandMenu!=='undefined'&&CommandMenu.blocking)return true;
   if(document.getElementById('spawnMenu')||typeof BattleGuide!=='undefined'&&BattleGuide.blocking)return true;
   if (['campaignPage','scenarioWorkshop'].some(id=>document.getElementById(id)?.classList.contains('visible'))) return true;
   if(document.getElementById('endlessMenu')&&!document.getElementById('endlessMenu').hidden)return true;
