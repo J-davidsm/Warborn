@@ -399,17 +399,20 @@ function isAtWar(faction1, faction2) {
   );
 }
 
+function nextDiplomacyMessageTimestamp() {
+  // One clock for both conversation replies and automatic battle notices.
+  const messages = [...(diplomacy.aiMessages || []), ...Object.values(messageHistory).flat()];
+  return messages.reduce((time, msg) => Number.isFinite(msg.timestamp) ? Math.max(time, msg.timestamp + 1) : time, Date.now());
+}
+
 function addAIMessage(fromFaction, message, type = 'GENERAL') {
-  // Add a small delay to ensure proper message ordering
-  const baseTime = Date.now();
-  const delayOffset = diplomacy.aiMessages.length; // Ensures chronological order
   
   const aiMessage = {
     from: fromFaction,
     message: message,
     type: type,
     turn: turnNumber,
-    timestamp: baseTime + delayOffset,
+    timestamp: nextDiplomacyMessageTimestamp(),
     read: false
   };
   
@@ -1258,9 +1261,9 @@ function loadMessageHistory() {
     if (a.turn !== b.turn) {
       return a.turn - b.turn;
     }
-    // If same turn, sort by timestamp (or use current time if no timestamp)
-    const aTime = a.timestamp || Date.now();
-    const bTime = b.timestamp || Date.now();
+    // Legacy untimed entries stay in stable order before newly timed messages.
+    const aTime = Number.isFinite(a.timestamp) ? a.timestamp : 0;
+    const bTime = Number.isFinite(b.timestamp) ? b.timestamp : 0;
     return aTime - bTime;
   });
   
@@ -1465,7 +1468,8 @@ function sendQuickMessage(type) {
   messageHistory[currentDiplomacyTarget].push({
     from: 'PLAYER',
     message: message,
-    turn: turnNumber
+    turn: turnNumber,
+    timestamp: nextDiplomacyMessageTimestamp()
   });
   
   // Temporarily disable the button to prevent rapid spam
@@ -1519,7 +1523,8 @@ function sendQuickMessage(type) {
     messageHistory[currentDiplomacyTarget].push({
       from: currentDiplomacyTarget,
       message: aiResponse.message,
-      turn: turnNumber
+      turn: turnNumber,
+      timestamp: nextDiplomacyMessageTimestamp()
     });
     
     // Handle lockout if triggered
@@ -1650,7 +1655,8 @@ Do you want to proceed with this proposal?`;
   messageHistory[currentDiplomacyTarget].push({
     from: 'PLAYER',
     message: `I propose we establish a ${treatyName} between our civilizations.`,
-    turn: turnNumber
+    turn: turnNumber,
+    timestamp: nextDiplomacyMessageTimestamp()
   });
   
   // Generate AI response
@@ -1662,7 +1668,8 @@ Do you want to proceed with this proposal?`;
       messageHistory[currentDiplomacyTarget].push({
         from: currentDiplomacyTarget,
         message: aiResponse.message,
-        turn: turnNumber
+        turn: turnNumber,
+        timestamp: nextDiplomacyMessageTimestamp()
       });
       
       // Positive trust boost for successful treaty
@@ -1677,7 +1684,8 @@ Do you want to proceed with this proposal?`;
       messageHistory[currentDiplomacyTarget].push({
         from: currentDiplomacyTarget,
         message: aiResponse.message,
-        turn: turnNumber
+        turn: turnNumber,
+        timestamp: nextDiplomacyMessageTimestamp()
       });
       
       // Small negative trust for rejection
