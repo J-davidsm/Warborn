@@ -1,0 +1,4 @@
+Generated with built-in image_gen on 2026-09-28.
+Final asset: assets/ui/button-banner.png
+
+Use case: stylized-concept. Asset type: reusable fantasy strategy game button background for Warborn. Create one simple horizontal dark navy cloth banner with restrained antique gold stitched edging, small swallowtail ends, flat front facing, subtly painted fabric texture. Wide 3:1 composition, banner fills frame with minimal transparent margin. Large plain dark center for live white text added by game. No text, lettering, symbols, objects, shadows beyond silhouette or watermark. Actual transparent background.

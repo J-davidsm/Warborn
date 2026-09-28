@@ -20,11 +20,7 @@ function wireMainMenu() {
     event.stopPropagation();
     try { SoundManager.startBackgroundMusic(); } catch (e) {}
     gameInputBlockedUntil = Date.now() + 500;
-    document.getElementById('mainMenu')?.classList.add('hidden');
-    hideEndScreen();
-    if (gameOver) {
-      replayCurrentScenario();
-    }
+    startIntroScenario(false);
   });
   if (campaignBtn && !campaignBtn.dataset.wired) {
     campaignBtn.dataset.wired = 'true';

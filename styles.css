@@ -856,3 +856,24 @@ body:not(.editor-mode) .editor-only-command{display:none;}#editorDrawerTab{displ
 .compact-hud #turnActions #buildWidget,.compact-hud #turnActions #waterUpgradeWidget{position:static!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;flex-shrink:0;}
 @media(max-width:1000px){.compact-hud #turnRibbon{width:180px;}.compact-hud #turnRibbon strong{font-size:11px;}.compact-hud #onlineMatchBar{bottom:190px;}}
 @media(max-width:600px){.compact-hud #turnRibbon{width:140px;}.compact-hud #turnRibbon strong{font-size:10px;}.compact-hud #objectInspector{bottom:190px;}}
+/* Painted cloth buttons keep live, accessible labels and the existing handlers. */
+body button {
+  background-color: transparent !important;
+  background-image: url('assets/ui/button-banner.png') !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 165% !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+  color: #fff4d7 !important;
+  text-shadow: 0 1px 2px #000;
+  box-shadow: none !important;
+}
+body button:hover:not(:disabled) { filter: brightness(1.28); }
+body button:focus-visible { outline: 2px solid #ffe49a; outline-offset: 3px; }
+body button:disabled { opacity: .48; filter: grayscale(.65); }
+body button[aria-pressed="true"], body button.active, body button.selected {
+  outline: 2px solid #ffe49a; outline-offset: -3px;
+}
+#mainMenuActions { gap: 8px; }
+#mainMenuActions button { min-height: 52px; padding: 13px 36px; font-family: Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
