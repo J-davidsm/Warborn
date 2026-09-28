@@ -1,0 +1,4 @@
+Generated with built-in image_gen on 2026-09-28.
+Files: warborn-icon.png (source artwork), warborn.icns (macOS icon).
+
+Use case: stylized-concept. Asset: polished macOS app icon for Warborn, a medieval fantasy turn-based strategy game about rival kingdoms, crowns, knights and dragons. Square composition, one bold gold crown above a steel sword on a royal blue heraldic shield, with subtle dragon-wing shapes integrated into the shield's silhouette. Dramatic warm gold rim lighting, deep navy shadows, richly painted metal, crisp readable shapes at small Dock sizes. Restrained ember glow. Icon has a rounded-square dark navy backing with subtle beveled gold edge, centered with a small transparent outer margin. Premium fantasy game art, simple powerful emblem, not a busy scene. No text, letters, watermark, mockup, or surrounding interface.
