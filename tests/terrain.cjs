@@ -61,3 +61,9 @@ for(const hex of [true,false])for(const parity of [0,1]){
  }
 }
 console.log('Bridge endpoints join on square, staggered hex, bends and shifted camera parity.');
+const straightMap=Array(81).fill('WATER');for(let c=1;c<8;c++)straightMap[4*9+c]='BRIDGE';
+const paths=ctx.terrainV2BridgePaths(9,9,true,straightMap);
+assert.equal(paths.length,1,'one continuous deck instead of overlapping segments');
+assert(paths[0].points.every(p=>Math.abs(p.y-paths[0].points[0].y)<1e-8),'horizontal crossing stays straight despite staggered centers');
+assert.equal(paths[0].points.length,7,'no invented endpoints in water');
+const solitary=Array(81).fill('WATER');solitary[40]='BRIDGE';assert.equal(ctx.terrainV2BridgePaths(9,9,true,solitary).length,0,'no unsupported span without a bank or neighboring deck');
