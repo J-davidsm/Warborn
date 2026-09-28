@@ -1,0 +1,8 @@
+Generated with built-in image_gen on 2026-09-28.
+Assets: bridge-timber.png and bridge-stone.png.
+
+Shared prompt:
+Use case: stylized-concept. Asset: square top-down bridge terrain tile for a painted medieval strategy game. Strict orthographic directly overhead, no perspective. A straight horizontal bridge travels LEFT TO RIGHT exactly through image center, touches and continues beyond BOTH left and right image edges, no visible endpoints. Constant width deck occupying exactly central quarter of image height, including thin railings. Entire remaining image is uninterrupted muted teal river water, edge to edge, no land whatsoever, no shore, no islands, no vegetation, no buildings, no text, no hex outline. Deck and water remain seamless at left and right boundaries. Small detailed hand painted texture with clear readable geometry.
+
+Timber addition: Weathered warm brown timber plank bridge with thin wooden rails.
+Stone addition: Weathered pale gray stone slab bridge with thin stone parapets.

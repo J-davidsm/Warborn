@@ -4,7 +4,7 @@ const assert = require('assert/strict');
 const sources=[];
 const ctx=vm.createContext({console,Image:class {set src(v){sources.push(v)}},normalizeTerrainType:t=>t&&String(t).toUpperCase(),terrainHash:(c,r,s)=>((Math.imul(c+1,374761393)^Math.imul(r+1,668265263)^s)>>>0)});
 vm.runInContext(fs.readFileSync(require('path').join(__dirname, '../js/rendering/terrain-blend.js'),'utf8'),ctx);
-assert.equal(sources.length,54);assert.equal(new Set(sources).size,54);
+assert.equal(sources.length,54);assert.equal(new Set(sources).size,50);
 assert.equal(ctx.terrainV2FadeWeight('GRASS',0),1);
 assert.equal(ctx.terrainV2FadeWeight('WOODS',1.62),0);
 assert(ctx.terrainV2FadeWeight('MOUNTAIN',1.2)>0.25,'nature biomes should crossfade broadly beyond their hex edge');
@@ -45,3 +45,19 @@ console.log('Connected generated bridges share an across-river orientation.');
 const adjacent=Array(81).fill('GRASS');for(let col=2;col<=6;col++)adjacent[4*9+col]='BRIDGE';
 const joined=Array.from({length:5},(_,i)=>ctx.terrainV2BridgeVariant(i+2,4,9,9,false,adjacent));assert.equal(new Set(joined).size,1,'adjacent bridges share an image');
 for(let col=2;col<=6;col++)assert.equal(ctx.terrainV2BridgeAngle(col,4,9,9,false,adjacent),0,'bridge line stays straight without water neighbors');
+
+// Offset-column rows must form a connected zigzag, not disjoint horizontal stamps.
+for(const hex of [true,false])for(const parity of [0,1]){
+ const map=Array(81).fill('WATER');
+ const path=[[2,4],[3,4],[4,4],[4,5],[5,5]];
+ for(const [c,r] of path)map[r*9+c]='BRIDGE';
+ for(const [c,r] of path){
+  const links=ctx.terrainV2BridgeConnections(c,r,9,9,hex,map,parity);
+  for(const link of links.filter(l=>l.to.type==='BRIDGE')){
+   const back=ctx.terrainV2BridgeConnections(link.to.c,link.to.r,9,9,hex,map,parity);
+   assert(back.some(l=>l.to.x===link.from.x&&l.to.y===link.from.y&&l.from.x===link.to.x&&l.from.y===link.to.y),'every bridge joins exactly at the adjacent deck');
+   if(hex&&link.to.c!==c)assert.notEqual(link.from.y,link.to.y,'cross-column deck follows the staggered hex height');
+  }
+ }
+}
+console.log('Bridge endpoints join on square, staggered hex, bends and shifted camera parity.');

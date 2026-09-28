@@ -1,9 +1,8 @@
 // Warborn terrain art v2. Six original paintings per surface, blended in map space.
 // Cached separately from units, selection and UI: no per-frame image processing.
 const TERRAIN_V2_TYPES = ['GRASS', 'WOODS', 'MOUNTAIN', 'SWAMP', 'DESERT', 'WATER', 'FOUNTAIN', 'BRIDGE', 'FARM'];
-// Inspected travel direction in each painting (not the long side of its art).
-// Paintings 1, 4 and 6 have north-south paths over an east-west stream.
-const TERRAIN_V2_BRIDGE_DECK_ANGLES = [90, 0, 0, 90, 0, 90];
+// New bridge paintings all run edge-to-edge from left to right.
+const TERRAIN_V2_BRIDGE_DECK_ANGLES = [0, 0, 0, 0, 0, 0];
 const TERRAIN_V2 = {
   images: {}, loaded: 0, failed: 0, revision: 0, layer: null, key: '',
   variants: null, variantsKey: '', stamps: new Map(), builds: 0
@@ -37,7 +36,9 @@ function preloadTerrainV2() {
         TERRAIN_V2.revision++;
         console.warn('Terrain v2 image missing:', type, variant + 1);
       };
-      img.src = `assets/terrain/v2/${type.toLowerCase()}-${variant + 1}.jpg${['WOODS','SWAMP'].includes(type) ? '?v=training1' : ''}`;
+      img.src = type === 'BRIDGE'
+        ? `assets/terrain/v3/bridge-${variant % 2 ? 'stone' : 'timber'}.png`
+        : `assets/terrain/v2/${type.toLowerCase()}-${variant + 1}.jpg${['WOODS','SWAMP'].includes(type) ? '?v=training1' : ''}`;
     }
   }
 }
@@ -224,6 +225,47 @@ function terrainV2CellPath(ctx, x, y, radius, hex) {
   ctx.closePath();
 }
 
+// Decks follow actual cell-center geometry rather than a shared rotation.
+// Every connected pair therefore meets, including zigzags in offset hex rows.
+function terrainV2BridgeConnections(c,r,cols,rows,hex,values,parity=0) {
+  const pos=(x,y)=>hex?{x:1+1.5*x,y:Math.sqrt(3)*(y+.5*((x-parity)&1)) + Math.sqrt(3)/2}:{x:2*x+1,y:2*y+1};
+  const center=pos(c,r),dirs=!hex?[[1,0],[-1,0],[0,1],[0,-1]]:((c-parity)&1)?[[1,1],[1,0],[0,-1],[-1,0],[-1,1],[0,1]]:[[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[0,1]];
+  const neighbors=dirs.map(([dc,dr])=>({c:c+dc,r:r+dr})).filter(p=>p.c>=0&&p.c<cols&&p.r>=0&&p.r<rows).map(p=>({...p,...pos(p.c,p.r),type:values[p.r*cols+p.c]||'GRASS'}));
+  const connected=neighbors.filter(p=>p.type==='BRIDGE');
+  const result=connected.map(p=>({from:center,to:p}));
+  const bank=angle=>{
+    const candidates=neighbors.filter(p=>!['BRIDGE','WATER','VOID'].includes(p.type));
+    const score=p=>((p.x-center.x)*Math.cos(angle)+(p.y-center.y)*Math.sin(angle))/Math.hypot(p.x-center.x,p.y-center.y);
+    const best=candidates.sort((a,b)=>score(b)-score(a))[0];
+    if(best&&score(best)>.25)result.push({from:center,to:{x:center.x+(best.x-center.x)*.65,y:center.y+(best.y-center.y)*.65}});
+    else result.push({from:center,to:{x:center.x+Math.cos(angle),y:center.y+Math.sin(angle)}});
+  };
+  if(connected.length===1)bank(Math.atan2(center.y-connected[0].y,center.x-connected[0].x));
+  if(!connected.length){const angle=terrainV2BridgeAngle(c,r,cols,rows,hex,values,parity);bank(angle);bank(angle+Math.PI);}
+  return result;
+}
+
+function drawTerrainV2BridgeDecks(ctx,cols,rows,hex,values,parity,radius) {
+  ctx.save();ctx.globalCompositeOperation='source-over';
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    if(values[r*cols+c]!=='BRIDGE')continue;
+    const variant=terrainV2BridgeVariant(c,r,cols,rows,hex,values,parity);
+    const art=TERRAIN_V2.images.BRIDGE[variant]||TERRAIN_V2.images.BRIDGE.find(Boolean);
+    for(const {from,to} of terrainV2BridgeConnections(c,r,cols,rows,hex,values,parity)){
+      const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy)*radius;
+      ctx.save();ctx.translate(from.x*radius,from.y*radius);ctx.rotate(Math.atan2(dy,dx));
+      // Crop only the continuous deck strip; the surrounding water is blended
+      // separately so it cannot paint over a neighboring bridge's endpoints.
+      const deckWidth=radius*.48;
+      const top=variant%2 ? .35 : .36,stripHeight=variant%2 ? .28 : .25;
+      if(art)ctx.drawImage(art,0,art.height*top,art.width,art.height*stripHeight,-deckWidth*.15,-deckWidth/2,length+deckWidth*.3,deckWidth);
+      else {ctx.fillStyle='#9b8057';ctx.fillRect(-deckWidth*.15,-deckWidth/2,length+deckWidth*.3,deckWidth);}
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
 function buildTerrainV2Layer(cols, rows, hex, values, parity = 0) {
   const apothem = Math.sqrt(3) / 2;
   const widthUnits = hex ? 1.5 * (cols - 1) + 2 : cols * 2;
@@ -240,7 +282,8 @@ function buildTerrainV2Layer(cols, rows, hex, values, parity = 0) {
   ctx.globalCompositeOperation = 'lighter';
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const type = terrainV2Type(values[r * cols + c]);
+      const rawType = terrainV2Type(values[r * cols + c]);
+      const type = rawType === 'BRIDGE' ? 'WATER' : rawType;
       const variant = type==='BRIDGE'?terrainV2BridgeVariant(c,r,cols,rows,hex,values,parity):variants[r * cols + c];
       const x = hex ? (1 + 1.5 * c) * radius : (2 * c + 1) * radius;
       const y = hex ? (apothem + Math.sqrt(3) * (r + 0.5 * ((c - parity) & 1))) * radius : (2 * r + 1) * radius;
@@ -262,6 +305,7 @@ function buildTerrainV2Layer(cols, rows, hex, values, parity = 0) {
   // divided each pixel by its total weight. Restore opaque board coverage.
   for (let i = 3; i < pixels.data.length; i += 4) pixels.data[i] = pixels.data[i] ? 255 : 0;
   ctx.putImageData(pixels, 0, 0);
+  drawTerrainV2BridgeDecks(ctx,cols,rows,hex,values,parity,radius);
   // Exact board silhouette. Feathering crosses internal edges only.
   const mask = terrainV2Canvas(width, height);
   const m = mask.getContext('2d');
