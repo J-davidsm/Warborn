@@ -74,3 +74,15 @@ for(const count of [1,2,3,4,5,6])for(const parity of [0,1]){
  const [a,b]=spans[0].points;assert(Math.abs(a.y-b.y)<1e-8,'odd and even horizontal runs stay level');
  assert(Math.abs(b.x-a.x-(count===1?2:1.5*(count-1)+1.5))<1e-7,'endpoints reach the outer hex edges');
 }
+// Terrain backing resolution follows display density without unbounded allocations.
+for (const hex of [false,true]) {
+  const near=ctx.terrainV2Resolution(12,10,hex,0,70);
+  const zoomed=ctx.terrainV2Resolution(12,10,hex,0,220);
+  assert(zoomed.radius>near.radius,'zoom must retain additional terrain pixels');
+  const large=ctx.terrainV2Resolution(50,50,hex,0,1000);
+  const w=Math.ceil(large.widthUnits*large.radius),h=Math.ceil(large.heightUnits*large.radius);
+  assert(w<=4096&&h<=4096,'canvas dimension cap');
+  assert(w*h<=8010000,'backing memory cap including rounding');
+  assert.equal(ctx.terrainV2Resolution(12,10,hex,0,150).radius,ctx.terrainV2Resolution(12,10,hex,0,160).radius,'nearby zoom values share a cache tier');
+}
+console.log('Terrain resolution scales with zoom and bounds large-map memory.');

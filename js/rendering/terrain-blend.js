@@ -175,9 +175,11 @@ function terrainV2BridgeVariant(col,row,cols,rows,hex,values,parity=0){
 function terrainV2Stamp(type, variant, hex, angle = 0) {
   const key = `${type}:${variant}:${hex}:${angle.toFixed(4)}`;
   if (TERRAIN_V2.stamps.has(key)) return TERRAIN_V2.stamps.get(key);
-  const size = 192;
+  const size = 384;
   const stamp = terrainV2Canvas(size, size);
   const ctx = stamp.getContext('2d', { willReadFrequently: true });
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   const images = TERRAIN_V2.images[type] || [];
   const image = images[variant] || images.find(Boolean);
   if (image) {
@@ -306,12 +308,20 @@ function drawTerrainV2BridgeDecks(ctx,cols,rows,hex,values,parity,radius) {
   ctx.restore();
 }
 
-function buildTerrainV2Layer(cols, rows, hex, values, parity = 0) {
-  const apothem = Math.sqrt(3) / 2;
+// Quantized screen-density cache: preserve detail at zoom and on Retina displays.
+// Bound both dimensions and total pixels so large editor maps remain affordable.
+function terrainV2Resolution(cols, rows, hex, parity = 0, requestedRadius = 70) {
   const widthUnits = hex ? 1.5 * (cols - 1) + 2 : cols * 2;
   const heightUnits = hex ? Math.sqrt(3) * (rows + (cols > 1 || parity ? 0.5 : 0)) : rows * 2;
-  // Keep backing-store memory bounded even on 50x50 editor maps.
-  const radius = Math.min(70, 2304 / Math.max(widthUnits, heightUnits));
+  const tier = Math.min(256, 64 * Math.pow(2, Math.max(0, Math.ceil(Math.log2(Math.max(1, requestedRadius) / 64)))));
+  const radius = Math.min(tier, 4095 / Math.max(widthUnits, heightUnits),
+    Math.sqrt(8000000 / (widthUnits * heightUnits)));
+  return {radius, widthUnits, heightUnits};
+}
+
+function buildTerrainV2Layer(cols, rows, hex, values, parity = 0, requestedRadius = 70) {
+  const apothem = Math.sqrt(3) / 2;
+  const {radius, widthUnits, heightUnits} = terrainV2Resolution(cols, rows, hex, parity, requestedRadius);
   const width = Math.ceil(widthUnits * radius);
   const height = Math.ceil(heightUnits * radius);
   const layer = terrainV2Canvas(width, height);
@@ -365,15 +375,25 @@ function drawBlendedTerrainBoard() {
   const parity = useHexGrid ? cameraX & 1 : 0;
   const artRevision = TERRAIN_V2.loaded + TERRAIN_V2.failed === 54 ? TERRAIN_V2.revision : 0;
   const key = `${COLS}:${ROWS}:${useHexGrid}:${parity}:${artRevision}:${terrain.join('|')}`;
-  if (!TERRAIN_V2.layer || TERRAIN_V2.key !== key) {
-    TERRAIN_V2.layer = buildTerrainV2Layer(COLS, ROWS, useHexGrid, terrain, parity);
+  const worldRadius = useHexGrid ? HEX_SIZE : TILE / 2;
+  const transform = drawingContext.getTransform();
+  const screenScale = Math.max(Math.hypot(transform.a, transform.b), Math.hypot(transform.c, transform.d));
+  const requestedRadius = Math.max(70, worldRadius * screenScale);
+  const desired = terrainV2Resolution(COLS, ROWS, useHexGrid, parity, requestedRadius);
+  // Reuse the sharper cache when zooming out; panning never rebuilds it.
+  if (!TERRAIN_V2.layer || TERRAIN_V2.key !== key || desired.radius > TERRAIN_V2.layer.radius + 0.01) {
+    TERRAIN_V2.layer = buildTerrainV2Layer(COLS, ROWS, useHexGrid, terrain, parity, requestedRadius);
     TERRAIN_V2.key = key;
   }
   const layer = TERRAIN_V2.layer;
   const radius = useHexGrid ? HEX_SIZE : TILE / 2;
   const x = useHexGrid ? -HEX_SIZE - cameraX * 1.5 * HEX_SIZE : -cameraX * TILE;
   const y = useHexGrid ? -getHexApothem() - cameraY * Math.sqrt(3) * HEX_SIZE : -cameraY * TILE;
+  drawingContext.save();
+  drawingContext.imageSmoothingEnabled = true;
+  drawingContext.imageSmoothingQuality = 'high';
   drawingContext.drawImage(layer.canvas, x, y, layer.widthUnits * radius, layer.heightUnits * radius);
+  drawingContext.restore();
   return true;
 }
 
