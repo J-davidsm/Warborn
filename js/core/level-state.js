@@ -242,6 +242,7 @@ function wireVictoryEditor() {
 }
 
 function applyLevelData(data) {
+  if(typeof MoveUndo!=='undefined')MoveUndo.clear();
   if(typeof Endless!=='undefined')Endless.stop();
   if (!data) return;
   activeAITurn = null;

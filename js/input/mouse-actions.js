@@ -196,12 +196,14 @@ function handleGridClick(c,r){
         toRow: r
       });
       
+      if(typeof MoveUndo!=='undefined')MoveUndo.begin(selectedUnit);
       ActionEffects.move(selectedUnit,c,r);
       selectedUnit.col = c; selectedUnit.row = r; selectedUnit.hasMoved = true;
       try { SoundManager.playMove(selectedUnit); } catch (e) {}
       
       // NEW: Immediate settlement capture check after movement
       checkSettlementCaptureAfterMove(selectedUnit, c, r);
+      if(typeof MoveUndo!=='undefined')MoveUndo.finish();
       
       updateUI();
       try{ postGameState(actionId); } catch(e){}
@@ -410,6 +412,7 @@ function handleGridClick(c,r){
       });
       
       console.log('DEBUG: Moving unit from', selectedUnit.col, selectedUnit.row, 'to', c, r);
+      if(typeof MoveUndo!=='undefined')MoveUndo.begin(selectedUnit);
       ActionEffects.move(selectedUnit,c,r);
       selectedUnit.col=c; selectedUnit.row=r; selectedUnit.hasMoved=true;
       try { SoundManager.playMove(selectedUnit); } catch (e) {}
@@ -430,6 +433,7 @@ function handleGridClick(c,r){
       console.log('DEBUG: Attempting to claim settlement at', c, r, 'for team', selectedUnit.team);
       console.log('DEBUG: Settlement at position:', s ? `type: ${s.type}, owner: ${s.owner}` : 'none');
       claimSettlementAt(c, r, selectedUnit.team);
+      if(typeof MoveUndo!=='undefined')MoveUndo.finish();
       updateUI();
       try{ postGameState(actionId); } catch(e){}
     } else {

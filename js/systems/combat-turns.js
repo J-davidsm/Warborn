@@ -349,6 +349,7 @@ function endTurn(expectedAITeam = null) {
   if(!expectedAITeam){if(Date.now()-lastHumanEndTurn<350)return;lastHumanEndTurn=Date.now();}
   if (typeof OnlineMatch !== "undefined" && !OnlineMatch.canAct()&&!(expectedAITeam&&OnlineMatch.canRunAI())) return;
   console.log('endTurn called. currentTeam before switch:', currentTeam, 'opponentType:', opponentType);
+  if(typeof MoveUndo!=='undefined')MoveUndo.clear();
   
   // Update communication lockouts (reduce remaining turns)
   Object.keys(communicationLockouts).forEach(target => {

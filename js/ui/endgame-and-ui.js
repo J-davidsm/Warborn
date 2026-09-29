@@ -89,6 +89,9 @@ function showEndScreen(result) {
   if (!endScreen || !title || !explanation) return;
   
   const won = result.outcome === 'victory';
+  let art=document.getElementById('endScreenArtwork');
+  if(!art){art=document.createElement('img');art.id='endScreenArtwork';art.alt='';endScreen.prepend(art);}
+  art.src=won?'assets/victory.jpg':'assets/defeat.jpg';
   endScreen.classList.remove('victory', 'defeat');
   endScreen.classList.add(won ? 'victory' : 'defeat');
   title.textContent = won ? 'Victory' : 'Defeat';

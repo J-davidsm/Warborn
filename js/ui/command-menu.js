@@ -10,6 +10,7 @@ const CommandMenu=(()=>{
  }
  function refresh(){
   if(!$('commandToggle'))return;
+  if($('undoMoveBtn'))$('undoMoveBtn').disabled=!MoveUndo.canUndo();
   const visible=$('mainMenu')?.classList.contains('hidden')&&!gameOver;
   document.body.classList.toggle('commands-available',!!visible);
   if(!visible)close();
@@ -21,6 +22,7 @@ const CommandMenu=(()=>{
   const panel=$('panel'),toolbar=$('battleToolbar');document.body.append(toolbar);
   toolbar.insertAdjacentHTML('afterbegin','<button id="commandToggle" aria-expanded="false" aria-controls="panel">☰ Commands</button>');
   const dock=document.createElement('div');dock.id='turnActions';const unitActions=document.createElement('div');unitActions.id='unitActions';dock.append(unitActions);dock.append($('endTurnBtn'));document.body.append(dock);
+  const undo=document.createElement('button');undo.id='undoMoveBtn';undo.textContent='↶ Undo Move';undo.title='Undo your latest move before another action; restores captured settlements.';undo.disabled=true;undo.onclick=()=>MoveUndo.undo();dock.insertBefore(undo,unitActions);
   document.body.append($('battleNotice'));if($('endlessBar'))document.body.append($('endlessBar'));
   const menu=document.createElement('div');menu.id='commandContents';menu.innerHTML='<header><button id="commandBack">← Back</button><h2 id="commandTitle">Commands</h2><button id="commandClose" aria-label="Close commands">×</button></header><div id="commandActions" class="command-page" data-page="actions"></div><div id="commandSettings" class="command-page" data-page="settings" hidden></div><div id="commandSaves" class="command-page" data-page="saves" hidden></div><div id="commandDiplomacy" class="command-page" data-page="diplomacy" hidden></div><div id="commandEditor" class="command-page" data-page="editor" hidden></div>';panel.append(menu);
   const move=(target,ids)=>ids.forEach(id=>{if($(id))$(target).append($(id));});
