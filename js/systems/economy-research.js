@@ -54,6 +54,7 @@ function hasResources(team, cost) {
 
 function spendResources(team, cost) {
   if (!hasResources(team, cost)) return false;
+  if(typeof markScenarioPlaying==='function')markScenarioPlaying();
   const teamRes = resources[team];
   teamRes.gold -= (cost.gold || 0);
   teamRes.materials -= (cost.materials || 0);
@@ -107,6 +108,7 @@ function canAfford(team, cost) {
 }
 
 function deductResources(team, cost) {
+  if(typeof markScenarioPlaying==='function')markScenarioPlaying();
   if (!resources[team]) {
     resources[team] = { gold: 0, materials: 0 };
   }

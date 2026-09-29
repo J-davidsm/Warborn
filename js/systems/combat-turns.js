@@ -36,6 +36,7 @@ function attackUnit(a, d) {
     }
   }
 
+  if(typeof markScenarioPlaying==='function')markScenarioPlaying();
   // Preserve attacker's original state to prevent position changes during combat
   const origCol = a.col, origRow = a.row;
   const origHasMoved = !!a.hasMoved;
@@ -348,6 +349,7 @@ function endTurn(expectedAITeam = null) {
   if(expectedAITeam && expectedAITeam!==currentTeam)return;
   if(!expectedAITeam){if(Date.now()-lastHumanEndTurn<350)return;lastHumanEndTurn=Date.now();}
   if (typeof OnlineMatch !== "undefined" && !OnlineMatch.canAct()&&!(expectedAITeam&&OnlineMatch.canRunAI())) return;
+  if(typeof markScenarioPlaying==='function')markScenarioPlaying();
   console.log('endTurn called. currentTeam before switch:', currentTeam, 'opponentType:', opponentType);
   if(typeof MoveUndo!=='undefined')MoveUndo.clear();
   

@@ -1004,6 +1004,13 @@ function ensureDiplomacyModal() {
   return modal;
 }
 
+function renderDiplomacyBannerButton(team, personality, unreadCount) {
+  const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const hue = {AI:145,AI2:265,AI3:205,AI4:85}[team] || 0;
+  const label = typeof getTeamDisplayName==='function' ? getTeamDisplayName(team) : team;
+  return `<button class="diplomacy-banner-button" onclick="selectDiplomacyTarget('${escape(team)}')" aria-pressed="${currentDiplomacyTarget===team}" aria-label="${escape(label)} diplomacy" title="${escape(personality)}"><img src="assets/ui/turn-banner.png" alt="" style="filter:hue-rotate(${hue}deg)"><span>${escape(label)}</span>${unreadCount>0?`<b class="diplomacy-banner-unread">${unreadCount}</b>`:''}</button>`;
+}
+
 function openDiplomacyNegotiation() {
   if(typeof Endless!=='undefined'&&Endless.active)return;
   const modal = ensureDiplomacyModal();
@@ -1037,7 +1044,7 @@ function openDiplomacyNegotiation() {
       const notificationBubble = unreadCount > 0 ? 
         `<div style="position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; z-index: 10;">${unreadCount}</div>` : '';
       
-      buttonsHTML += `<button onclick="selectDiplomacyTarget('${team}')" style="padding: 8px 12px; background: ${teamColor}; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s; position: relative;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">${team}<br><span style="font-size: 9px; opacity: 0.8;">${personality}</span>${notificationBubble}</button>`;
+      buttonsHTML += renderDiplomacyBannerButton(team, personality, unreadCount);
     }
   });
   
@@ -1114,7 +1121,7 @@ function updateDiplomacyButtonBubbles() {
       const isSelected = currentDiplomacyTarget === team;
       const border = isSelected ? '2px solid var(--accent)' : '2px solid transparent';
       
-      buttonsHTML += `<button onclick="selectDiplomacyTarget('${team}')" style="padding: 8px 12px; background: ${teamColor}; color: white; border: ${border}; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s; position: relative;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">${team}<br><span style="font-size: 9px; opacity: 0.8;">${personality}</span>${notificationBubble}</button>`;
+      buttonsHTML += renderDiplomacyBannerButton(team, personality, unreadCount);
     }
   });
   
@@ -1803,7 +1810,7 @@ function markAllMessagesRead() {
           const isSelected = currentDiplomacyTarget === team;
           const border = isSelected ? '2px solid var(--accent)' : '2px solid transparent';
           
-          buttonsHTML += `<button onclick="selectDiplomacyTarget('${team}')" style="padding: 8px 12px; background: ${teamColor}; color: white; border: ${border}; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: transform 0.1s; position: relative;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">${team}<br><span style="font-size: 9px; opacity: 0.8;">${personality}</span>${notificationBubble}</button>`;
+          buttonsHTML += renderDiplomacyBannerButton(team, personality, unreadCount);
         }
       });
       

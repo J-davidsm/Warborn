@@ -284,6 +284,7 @@ function wireEditorModeButton() {
 }
 
 function toggleEditorMode() {
+  if (!isEditorMode && typeof scenarioPlayStarted !== 'undefined' && scenarioPlayStarted) return;
   console.log('Toggling editor mode');
   isEditorMode = !isEditorMode;
   if (isEditorMode && hasAIDiplomacy() && !isDiplomacyActive()) {

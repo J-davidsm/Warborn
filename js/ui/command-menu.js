@@ -10,6 +10,11 @@ const CommandMenu=(()=>{
  }
  function refresh(){
   if(!$('commandToggle'))return;
+  const editorButton=$('editorModeBtn');
+  const locked=typeof scenarioPlayStarted!=='undefined'&&scenarioPlayStarted&&!isEditorMode;
+  if(editorButton){editorButton.disabled=locked;editorButton.title=locked?'Cannot edit while playing. You must restart the scenario to edit it':'';}
+  if($('editorModeStatus'))$('editorModeStatus').hidden=!isEditorMode;
+
   if($('undoMoveBtn'))$('undoMoveBtn').disabled=!MoveUndo.canUndo();
   const visible=$('mainMenu')?.classList.contains('hidden')&&!gameOver;
   document.body.classList.toggle('commands-available',!!visible);
@@ -19,6 +24,7 @@ const CommandMenu=(()=>{
  }
  document.addEventListener('DOMContentLoaded',()=>{
   document.body.classList.add('compact-hud');
+  const status=document.createElement('div');status.id='editorModeStatus';status.textContent='In Editor Mode';status.hidden=true;status.setAttribute('role','status');document.body.append(status);
   const panel=$('panel'),toolbar=$('battleToolbar');document.body.append(toolbar);
   toolbar.insertAdjacentHTML('afterbegin','<button id="commandToggle" aria-expanded="false" aria-controls="panel">☰ Commands</button>');
   const dock=document.createElement('div');dock.id='turnActions';const unitActions=document.createElement('div');unitActions.id='unitActions';dock.append(unitActions);dock.append($('endTurnBtn'));document.body.append(dock);

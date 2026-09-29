@@ -6,7 +6,7 @@ const MoveUndo=(()=>{
    research:Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]]))});
  function clear(){entry=null;}
  function begin(u){entry={id:u.id,team:currentTeam,turn:turnNumber,unit:copy(u),settlements:copy(settlements),messages:new Set(diplomacy.aiMessages||[])};}
- function finish(){if(entry){entry.after=signature();entry.captureMessages=(diplomacy.aiMessages||[]).filter(m=>!entry.messages.has(m)).map(m=>JSON.stringify(m));}}
+ function finish(){if(typeof markScenarioPlaying==='function')markScenarioPlaying();if(entry){entry.after=signature();entry.captureMessages=(diplomacy.aiMessages||[]).filter(m=>!entry.messages.has(m)).map(m=>JSON.stringify(m));}}
  function canUndo(){
   if(!entry||gameOver||isEditorMode||currentTeam!==entry.team||turnNumber!==entry.turn)return false;
   if(typeof OnlineMatch!=='undefined'&&!OnlineMatch.canAct())return false;

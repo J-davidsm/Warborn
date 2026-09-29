@@ -902,3 +902,10 @@ body #buildWidget:not(:disabled), body #waterUpgradeWidget:not(:disabled) {curso
   box-sizing:border-box;width:100%!important;height:46px!important;min-height:46px;
   align-self:stretch!important;padding:13px 24px!important;font-size:14px!important;line-height:20px!important;
 }
+
+#editorModeStatus {position:fixed;top:78px;left:14px;z-index:24000;padding:10px 18px;background:#302718;border:2px solid #d1b46e;color:#ffe6a2;font-size:17px;font-weight:bold;box-shadow:0 3px 12px #0008;pointer-events:none;}
+#editorModeStatus[hidden] {display:none;}
+body #diplomacyTargetButtons .diplomacy-banner-button {position:relative;width:100%;height:76px;padding:0;background:none!important;border:0!important;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.diplomacy-banner-button img {position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;}
+.diplomacy-banner-button span {position:relative;max-width:65%;font-size:13px;font-weight:bold;text-shadow:0 2px 3px #000;}
+.diplomacy-banner-unread {position:absolute;right:8px;top:5px;min-width:18px;padding:2px;border-radius:50%;background:#a3342e;color:white;font-size:12px;}

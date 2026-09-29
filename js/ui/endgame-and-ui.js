@@ -346,6 +346,7 @@ function checkCampaignVictory() {
  * Handles: turn indicator, resource display, unit selection panel, health bars
  */
 function updateUI() {
+  if(typeof markScenarioPlaying==='function'&&!isEditorMode&&(turnNumber>1||units.some(u=>u.hasMoved||u.hasActed)))markScenarioPlaying();
   if(typeof BattleGuide!=='undefined')BattleGuide.refresh();
   if(typeof Endless!=='undefined')Endless.refresh();
   const modeSummary=document.getElementById("modeSummary");

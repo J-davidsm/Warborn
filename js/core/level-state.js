@@ -1,3 +1,10 @@
+let scenarioPlayStarted = false;
+function markScenarioPlaying() {
+  if (typeof isEditorMode !== 'undefined' && isEditorMode) return;
+  scenarioPlayStarted = true;
+}
+function resetScenarioPlayLock() { scenarioPlayStarted = false; }
+
 // Warborn source split from the original game.js.
 // Section: js/core/level-state.js
 
@@ -242,6 +249,7 @@ function wireVictoryEditor() {
 }
 
 function applyLevelData(data) {
+  resetScenarioPlayLock();
   if(typeof MoveUndo!=='undefined')MoveUndo.clear();
   if(typeof Endless!=='undefined')Endless.stop();
   if (!data) return;

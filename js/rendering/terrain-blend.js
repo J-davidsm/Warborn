@@ -183,8 +183,8 @@ function terrainV2Stamp(type, variant, hex, angle = 0) {
   const images = TERRAIN_V2.images[type] || [];
   const image = images[variant] || images.find(Boolean);
   if (image) {
-    const rotation = angle - (type === 'BRIDGE' ? TERRAIN_V2_BRIDGE_DECK_ANGLES[variant] * Math.PI / 180 : 0);
-    ctx.save(); ctx.translate(size / 2, size / 2); ctx.rotate(rotation);
+    const rotation = 0;
+    ctx.save(); ctx.translate(size / 2, size / 2);
     // Cover all corners at any rotation without transparent wedges.
     const coverage = Math.abs(Math.cos(rotation)) + Math.abs(Math.sin(rotation));
     const span = size * coverage;
@@ -298,11 +298,14 @@ function drawTerrainV2BridgeDecks(ctx,cols,rows,hex,values,parity,radius) {
     const [from,to]=crossing.points,variant=crossing.variant;
     const art=TERRAIN_V2.images.BRIDGE[variant]||TERRAIN_V2.images.BRIDGE.find(Boolean);
     const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy)*radius,deckWidth=radius*.48;
-    ctx.save();ctx.translate(from.x*radius,from.y*radius);ctx.rotate(Math.atan2(dy,dx));
+    ctx.save();
+    const left=Math.min(from.x,to.x)*radius, topEdge=Math.min(from.y,to.y)*radius;
+    const spanX=Math.max(deckWidth,Math.abs(dx)*radius), spanY=Math.max(deckWidth,Math.abs(dy)*radius);
+    ctx.translate(left-(Math.abs(dx)*radius<deckWidth?deckWidth/2:0),topEdge-(Math.abs(dy)*radius<deckWidth?deckWidth/2:0));
     // Stretch the actual complete bridge artwork once, including both rails.
     // Water beneath it is the very same blended water surface as other tiles.
-    if(art){const top=variant%2?.35:.36,h=variant%2?.28:.25;ctx.drawImage(art,0,art.height*top,art.width,art.height*h,0,-deckWidth/2,length,deckWidth);}
-    else{ctx.fillStyle='#91754f';ctx.fillRect(0,-deckWidth/2,length,deckWidth);}
+    if(art){const top=variant%2?.35:.36,h=variant%2?.28:.25;ctx.drawImage(art,0,art.height*top,art.width,art.height*h,0,0,spanX,spanY);}
+    else{ctx.fillStyle='#91754f';ctx.fillRect(0,0,spanX,spanY);}
     ctx.restore();
   }
   ctx.restore();
@@ -340,11 +343,7 @@ function buildTerrainV2Layer(cols, rows, hex, values, parity = 0, requestedRadiu
       const angle = type === 'BRIDGE' ? terrainV2BridgeAngle(c, r, cols, rows, hex, values, parity) : 0;
       const stamp = terrainV2Stamp(type, variant, hex, angle);
       ctx.save(); ctx.translate(x, y);
-      // Keep bridges and fountains upright; organic textures get stable flips.
-      if (!['BRIDGE', 'FOUNTAIN', 'FARM'].includes(type)) {
-        const orientation = terrainHash(c, r, 9731);
-        ctx.scale(orientation & 1 ? -1 : 1, orientation & 2 ? -1 : 1);
-      }
+      // Preserve the original artwork orientation in every hex.
       const extent = !['BRIDGE', 'FARM', 'FOUNTAIN'].includes(type) ? 1.8 : 1.25;
       ctx.drawImage(stamp, -radius * extent, -radius * extent, radius * extent * 2, radius * extent * 2);
       ctx.restore();

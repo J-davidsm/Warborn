@@ -339,15 +339,15 @@ function getScenarioDifficultyProfile(difficulty) {
     },
     hard: {
       label: 'Hard',
-      targetPressure: 1.55,
-      maxPressure: 2.05,
+      targetPressure: 1.0,
+      maxPressure: 1.1,
       playerUnits: ['Knight', 'Archer', 'Soldier', 'Spearman'],
       playerBonus: ['Soldier'],
-      aiUnits: ['Knight', 'Swordsman', 'Archer', 'Spearman', 'Soldier'],
+      aiUnits: ['Knight', 'Archer', 'Soldier', 'Spearman'],
       aiReinforcements: ['Catapult', 'Swordsman', 'Knight', 'Assassin'],
       playerResources: { gold: 22, materials: 5 },
       aiResources: { gold: 34, materials: 9 },
-      playerSettlement: 'HAMLET',
+      playerSettlement: 'CITY',
       aiSettlement: 'CITY',
       neutralSettlements: 4,
       terrainBlobs: 9,
@@ -355,15 +355,15 @@ function getScenarioDifficultyProfile(difficulty) {
     },
     brutal: {
       label: 'Brutal',
-      targetPressure: 2.25,
-      maxPressure: 3.2,
-      playerUnits: ['Knight', 'Archer', 'Soldier'],
+      targetPressure: 1.15,
+      maxPressure: 1.35,
+      playerUnits: ['Knight', 'Archer', 'Soldier', 'Spearman'],
       playerBonus: ['Soldier'],
-      aiUnits: ['Knight', 'Swordsman', 'Catapult', 'Spearman', 'Archer'],
+      aiUnits: ['Knight', 'Swordsman', 'Archer', 'Spearman'],
       aiReinforcements: ['Dragon', 'Heavy Fortress', 'Catapult', 'Assassin', 'Cleric'],
       playerResources: { gold: 18, materials: 4 },
       aiResources: { gold: 44, materials: 13 },
-      playerSettlement: 'HAMLET',
+      playerSettlement: 'CITY',
       aiSettlement: 'CITY',
       neutralSettlements: 3,
       terrainBlobs: 11,
@@ -525,7 +525,18 @@ function findScenarioOpenTile(cols, rows, terrainGrid, occupied, center, maxRadi
       return { col: pick.col, row: pick.row };
     }
   }
-  return { col: center.col, row: center.row };
+  // Dense small maps still need unique starting positions outside the local ring.
+  const free = [];
+  for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+    const idx=scenarioIndex(cols,col,row);
+    if(!occupied.has(idx))free.push({col,row,idx,distance:Math.abs(col-center.col)+Math.abs(row-center.row)});
+  }
+  free.sort((a,b)=>a.distance-b.distance);
+  const pick=free.find(p=>!avoidWater||terrainGrid[p.idx]!=='WATER')||free[0];
+  if(!pick)throw new Error('Generated scenario has no room for another starting object');
+  occupied.add(pick.idx);
+  if(avoidWater&&terrainGrid[pick.idx]==='WATER')terrainGrid[pick.idx]=null;
+  return {col:pick.col,row:pick.row};
 }
 
 function addGeneratedUnit(startingUnits, team, type, position) {
@@ -648,7 +659,7 @@ function generateScenario(options = {}) {
   addGeneratedUnitGroup(
     startingUnits,
     'PLAYER',
-    [...profile.playerUnits, ...profile.playerBonus.slice(0, Math.max(0, aiCount - 1))],
+    ['Hard','Brutal'].includes(profile.label) ? Array.from({length:aiCount},()=>profile.playerUnits).flat() : [...profile.playerUnits, ...profile.playerBonus.slice(0, Math.max(0, aiCount - 1))],
     anchors.PLAYER,
     cols,
     rows,
@@ -660,18 +671,21 @@ function generateScenario(options = {}) {
 
   aiTeamNames.slice(0, aiCount).forEach((team, index) => {
     const aiUnits = [...profile.aiUnits];
-    if (profile.label === 'Brutal' && index === 0 && cols * rows >= 140) aiUnits.push('Dragon');
     addGeneratedUnitGroup(startingUnits, team, aiUnits, anchors[team], cols, rows, terrainGrid, occupied, rng);
     addGeneratedSettlement(settlementsList, occupied, cols, rows, terrainGrid, anchors[team], profile.aiSettlement, team, rng);
   });
 
-  const neutralCount = Math.max(2, profile.neutralSettlements + Math.floor((cols * rows) / 160));
-  for (let i = 0; i < neutralCount; i++) {
-    const center = {
-      col: Math.floor(cols * (0.25 + rng() * 0.55)),
-      row: Math.floor(rows * (0.15 + rng() * 0.70))
-    };
-    addGeneratedSettlement(settlementsList, occupied, cols, rows, terrainGrid, center, rng() > 0.72 ? 'CITY' : rng() > 0.45 ? 'VILLAGE' : 'HAMLET', null, rng);
+  if (['Hard', 'Brutal'].includes(profile.label)) {
+    // Cities provide both gold and materials: Hard 3:2, Brutal 3:1 per faction.
+    if (profile.label === 'Hard') addGeneratedSettlement(settlementsList, occupied, cols, rows, terrainGrid, anchors.PLAYER, 'CITY', 'PLAYER', rng);
+    for (const team of teams.filter(t=>t!=='PLAYER')) for(let n=0;n<2;n++)
+      addGeneratedSettlement(settlementsList, occupied, cols, rows, terrainGrid, anchors[team], 'CITY', team, rng);
+  } else {
+    const extraCount = Math.max(2, profile.neutralSettlements + Math.floor((cols * rows) / 160));
+    for (let i = 0; i < extraCount; i++) {
+      const owner = teams[i % teams.length];
+      addGeneratedSettlement(settlementsList, occupied, cols, rows, terrainGrid, anchors[owner], rng() > 0.72 ? 'CITY' : rng() > 0.45 ? 'VILLAGE' : 'HAMLET', owner, rng);
+    }
   }
 
   const pressure = balanceGeneratedScenario(startingUnits, teams, profile, rng);
@@ -774,6 +788,7 @@ function startCampaign() {
 }
 
 function loadCurrentScenario() {
+  if(typeof resetScenarioPlayLock==='function')resetScenarioPlayLock();
   const scenario = campaignMode.campaignData.scenarios[campaignMode.currentScenarioIndex];
   currentVictoryCondition = normalizeVictoryCondition(scenario.victoryCondition || inferVictoryConditionFromText(scenario.victory));
   

@@ -2,6 +2,7 @@
 // Section: js/core/game-setup.js
 
 function setupGame(){
+  if(typeof resetScenarioPlayLock==='function')resetScenarioPlayLock();
   if(typeof MoveUndo!=='undefined')MoveUndo.clear();
   if(typeof Endless!=='undefined')Endless.stop();
   activeAITurn=null;
