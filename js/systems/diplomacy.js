@@ -953,6 +953,7 @@ function ensureDiplomacyModal() {
           <button onclick="closeDiplomacyNegotiation()" class="small" style="padding:4px 8px;">Close</button>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Choose a faction</div>
+        <div id="diplomacyTurnBanner"></div>
         <div id="diplomacyTargetButtons" style="display:flex;flex-direction:column;gap:8px;"></div>
         <button onclick="markAllMessagesRead()" class="small" style="width:100%;margin-top:12px;">Mark Read</button>
       </div>

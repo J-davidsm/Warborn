@@ -430,77 +430,54 @@ function updateUI() {
     selHPEl.style('width',"0%"); selNumsEl.html("HP —");
   }
   // Unit list removed per user request
-  // Build widget: show a small circular button at the bottom when it's the player's turn
-  try{
+  // Keep unit actions present so unavailable actions remain discoverable.
+  try {
+    const localTurn = currentTeam === getLocalPlayableTeam();
+    const canAct = localTurn && !gameOver && !isEditorMode &&
+      (typeof OnlineMatch === 'undefined' || OnlineMatch.canAct());
+    const friendlyUnit = selectedUnit && selectedUnit.team === currentTeam && selectedUnit.hp > 0;
+    if (!canAct && buildMode) { buildMode = false; buildModeUnitId = null; }
     let buildWidget = document.getElementById('buildWidget');
-    // Show the widget when it's the player's turn and either buildMode is active or a friendly unit is selected
-    const shouldShowWidget = (currentTeam === getLocalPlayableTeam() && (buildMode || (selectedUnit && selectedUnit.team === currentTeam && selectedUnit.hp > 0 && selectedUnit.morale > 0)));
-    if(shouldShowWidget){
-      if(!buildWidget){
-        buildWidget = document.createElement('div'); buildWidget.id='buildWidget';
-        buildWidget.style.position='fixed'; buildWidget.style.left='50%'; buildWidget.style.bottom='12px';
-        buildWidget.style.transform='translateX(-50%)'; buildWidget.style.width='44px'; buildWidget.style.height='44px';
-        buildWidget.style.borderRadius='50%'; buildWidget.style.background='rgba(24,120,220,0.95)';
-        buildWidget.style.display='flex'; buildWidget.style.alignItems='center'; buildWidget.style.justifyContent='center';
-        buildWidget.style.cursor='pointer'; buildWidget.style.zIndex=9999; buildWidget.title='Build Fortresses & Ships (toggle)';
-        buildWidget.innerText = '🏗️'; buildWidget.style.fontSize='20px';
-        buildWidget.onclick = function(){
-          buildMode = !buildMode;
-          if (buildMode) {
-            buildModeUnitId = selectedUnit ? selectedUnit.id : null;
-            // Deselect any unit so players can't move/select while building
-            selectedUnit = null;
-          } else {
-            buildModeUnitId = null;
-          }
-          this.style.boxShadow = buildMode ? '0 0 0 10px rgba(24,120,220,0.18)' : 'none';
-          try{ updateUI(); } catch(e){}
-        };
-        (document.getElementById('unitActions')||document.body).appendChild(buildWidget);
-      }
-      
-      // Water upgrade widget: show when a friendly unit is selected
-      let waterUpgradeWidget = document.getElementById('waterUpgradeWidget');
-      const shouldShowWaterWidget = selectedUnit && !isFortressUnit(selectedUnit) && selectedUnit.name!=='Dragon' && selectedUnit.team === currentTeam && selectedUnit.hp > 0;
-      if (shouldShowWaterWidget) {
-        if (!waterUpgradeWidget) {
-          waterUpgradeWidget = document.createElement('div'); waterUpgradeWidget.id = 'waterUpgradeWidget';
-          waterUpgradeWidget.style.position = 'fixed'; waterUpgradeWidget.style.left = '12px'; waterUpgradeWidget.style.bottom = '12px';
-          waterUpgradeWidget.style.width = '44px'; waterUpgradeWidget.style.height = '44px';
-          waterUpgradeWidget.style.borderRadius = '50%'; 
-          waterUpgradeWidget.style.display = 'flex'; waterUpgradeWidget.style.alignItems = 'center'; waterUpgradeWidget.style.justifyContent = 'center';
-          waterUpgradeWidget.style.cursor = 'pointer'; waterUpgradeWidget.style.zIndex = 9999; 
-          waterUpgradeWidget.style.fontSize = '20px';
-          waterUpgradeWidget.onclick = function() { upgradeSelectedUnitToWater(); };
-          (document.getElementById('unitActions')||document.body).appendChild(waterUpgradeWidget);
-        }
-        
-        // Update button appearance based on unit and resources
-        if (selectedUnit.isWaterUnit) {
-          waterUpgradeWidget.style.background = 'rgba(74,170,100,0.95)'; // Green for already upgraded
-          waterUpgradeWidget.innerText = '⚓';
-          waterUpgradeWidget.title = 'Water Unit (Already Upgraded)';
-          waterUpgradeWidget.style.cursor = 'default';
-      } else {
-        const canAfford = getGold(currentTeam) >= 2;
-        waterUpgradeWidget.style.background = canAfford ? 'rgba(220,120,24,0.95)' : 'rgba(100,100,100,0.95)';
-        waterUpgradeWidget.innerText = '⚓';
-        waterUpgradeWidget.title = canAfford ? 'Water Upgrade (2 Gold)' : 'Water Upgrade (Need 2 Gold)';
-          waterUpgradeWidget.style.cursor = canAfford ? 'pointer' : 'not-allowed';
-        }
-        waterUpgradeWidget.style.display = 'flex';
-      } else if (waterUpgradeWidget) {
-        waterUpgradeWidget.style.display = 'none';
-      }
-    } else {
-      if(buildWidget) {
-        buildWidget.remove();
-        // If widget removed from UI, cancel build mode
-        buildMode = false; buildModeUnitId = null;
-      }
+    if (!buildWidget) {
+      buildWidget = document.createElement('button');
+      buildWidget.id = 'buildWidget'; buildWidget.type = 'button';
+      buildWidget.innerHTML = '<img src="assets/ui/fortress-button.png" alt="" draggable="false">';
+      buildWidget.setAttribute('aria-label', 'Build fortresses and ships');
+      buildWidget.onclick = function() {
+        if (this.disabled) return;
+        buildMode = !buildMode;
+        buildModeUnitId = buildMode && selectedUnit ? selectedUnit.id : null;
+        if (buildMode) selectedUnit = null;
+        updateUI();
+      };
+      (document.getElementById('unitActions') || document.body).appendChild(buildWidget);
     }
-  }catch(e){/* ignore UI build widget errors */}
-  
+    const canBuyBuilding = ['Stockade', 'Castle', 'Heavy Fortress', 'Sloop', 'Man-of-War', 'Battleship']
+      .some(name => UNIT_TEMPLATES[name] && canAfford(getLocalPlayableTeam(), UNIT_TEMPLATES[name].cost));
+    buildWidget.disabled = !canAct || (!buildMode && (!friendlyUnit || selectedUnit.morale <= 0 || !canBuyBuilding));
+    buildWidget.title = !canAct ? 'Build: wait for your turn' : buildMode ? 'Cancel building' :
+      !friendlyUnit ? 'Build: select a friendly unit' : selectedUnit.morale <= 0 ? 'Build: select a unit with morale' :
+      !canBuyBuilding ? 'Build: insufficient gold or materials' : 'Build fortresses and ships';
+    buildWidget.setAttribute('aria-pressed', String(buildMode));
+
+    let waterUpgradeWidget = document.getElementById('waterUpgradeWidget');
+    if (!waterUpgradeWidget) {
+      waterUpgradeWidget = document.createElement('button');
+      waterUpgradeWidget.id = 'waterUpgradeWidget'; waterUpgradeWidget.type = 'button';
+      waterUpgradeWidget.innerHTML = '<img src="assets/ui/anchor-button.png" alt="" draggable="false">';
+      waterUpgradeWidget.onclick = function() { if (!this.disabled) upgradeSelectedUnitToWater(); };
+      (document.getElementById('unitActions') || document.body).appendChild(waterUpgradeWidget);
+    }
+    const eligible = friendlyUnit && !isFortressUnit(selectedUnit) && selectedUnit.name !== 'Dragon';
+    const upgraded = !!(friendlyUnit && selectedUnit.isWaterUnit);
+    waterUpgradeWidget.disabled = !canAct || !eligible || upgraded || getGold(currentTeam) < 2;
+    waterUpgradeWidget.title = !canAct ? 'Anchor: wait for your turn' : !friendlyUnit ? 'Anchor: select a friendly unit' :
+      !eligible ? 'This unit cannot be anchored' : upgraded ? 'Water unit: already upgraded' :
+      getGold(currentTeam) < 2 ? 'Water Upgrade (Need 2 Gold)' : 'Water Upgrade (2 Gold)';
+    waterUpgradeWidget.setAttribute('aria-label', waterUpgradeWidget.title);
+    waterUpgradeWidget.setAttribute('aria-pressed', String(upgraded));
+  } catch(e) { console.warn('Could not update unit actions', e); }
+
   // Update diplomacy UI if diplomacy system is active
   if (isDiplomacyActive()) {
     updateDiplomacyUI();

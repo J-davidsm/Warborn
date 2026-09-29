@@ -128,6 +128,11 @@ const BattleGuide = (() => {
   if(typeof CommandMenu!=='undefined')CommandMenu.refresh();
   const online=typeof OnlineMatch!=='undefined'&&OnlineMatch.playing,token=`${turnNumber}:${currentTeam}`,inBattle=$('mainMenu')?.classList.contains('hidden')&&!isEditorMode&&!gameOver;
   document.body.classList.toggle('battle-active',!!inBattle);$('battleMenuBtn').hidden=online;
+  const ribbon=$('turnRibbon');
+  const aiTurn=String(currentTeam).startsWith('AI')&&isDiplomacyActive();
+  if(aiTurn)ensureDiplomacyModal();
+  const ribbonParent=aiTurn?$('diplomacyTurnBanner'):document.body;
+  if(ribbonParent&&ribbon.parentElement!==ribbonParent)ribbonParent.append(ribbon);
   $('turnRibbonName').textContent=`${teamName(currentTeam)} · Turn ${turnNumber}`;
   const colors={PLAYER:0,PLAYER2:175,PLAYER3:265,PLAYER4:65,AI:145,AI2:265,AI3:205,AI4:85};$('turnRibbonImage').style.filter=`hue-rotate(${colors[currentTeam]||0}deg)`;
   if(inBattle&&lastTurn&&token!==lastTurn){

@@ -881,3 +881,24 @@ body button[aria-pressed="true"], body button.active, body button.selected {
 }
 #mainMenuActions { gap: 8px; }
 #mainMenuActions button { min-height: 52px; padding: 13px 36px; font-family: Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+/* Square painted unit actions, framed in restrained antique gold. */
+body #buildWidget, body #waterUpgradeWidget {
+  box-sizing:border-box; width:56px!important; height:56px!important; padding:3px;
+  border:1px solid #8d784c!important; border-radius:0!important;
+  background:#211d17!important; overflow:hidden;
+  box-shadow:inset 0 0 0 1px #403727!important;
+}
+#buildWidget img, #waterUpgradeWidget img {width:100%;height:100%;object-fit:cover;pointer-events:none;}
+body #buildWidget[aria-pressed="true"], body #waterUpgradeWidget[aria-pressed="true"] {border-color:#b7a16c!important;outline:1px solid #b7a16c;outline-offset:2px;}
+
+.compact-hud #diplomacyTurnBanner #turnRibbon {position:relative;inset:auto;transform:none;width:100%;height:auto;min-height:64px;margin:0 0 12px;aspect-ratio:3 / 1;}
+.compact-hud #diplomacyTurnBanner #turnRibbon strong {font-size:12px;}
+
+/* Unavailable purchases remain in the action dock. */
+body #buildWidget:disabled, body #waterUpgradeWidget:disabled {filter:grayscale(1);opacity:.45;cursor:not-allowed;}
+body #buildWidget:not(:disabled), body #waterUpgradeWidget:not(:disabled) {cursor:pointer;}
+.compact-hud #turnActions #mapDiplomacyButton > button, .compact-hud #turnActions #endTurnBtn {
+  box-sizing:border-box;width:100%!important;height:46px!important;min-height:46px;
+  align-self:stretch!important;padding:13px 24px!important;font-size:14px!important;line-height:20px!important;
+}
