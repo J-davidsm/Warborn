@@ -245,64 +245,63 @@ function terrainV2BridgeConnections(c,r,cols,rows,hex,values,parity=0) {
   return result;
 }
 
-// Join a whole crossing before drawing it. Narrow straight components are
-// projected onto one axis so staggered hex centers cannot create a sawtooth.
+// One image per connected crossing. Horizontal runs use the midpoint of
+// both staggered rows, including even runs whose endpoint centers differ in Y.
 function terrainV2BridgePaths(cols,rows,hex,values,parity=0) {
   const visited=new Set(),paths=[];
+  const pos=(c,r)=>hex?{x:1+1.5*c,y:Math.sqrt(3)*(r+.5*((c-parity)&1)) + Math.sqrt(3)/2}:{x:2*c+1,y:2*r+1};
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
     const start=r*cols+c;if(values[start]!=='BRIDGE'||visited.has(start))continue;
-    const cells=[[c,r]],edges=[],points=new Map();visited.add(start);
+    const cells=[[c,r]];visited.add(start);
     for(let i=0;i<cells.length;i++){
-      const [x,y]=cells[i],id=y*cols+x;
-      const links=terrainV2BridgeConnections(x,y,cols,rows,hex,values,parity);
-      for(const l of links){
-        points.set(id,l.from);
-        if(l.to.type==='BRIDGE'){
-          const other=l.to.r*cols+l.to.c;
-          if(!visited.has(other)){visited.add(other);cells.push([l.to.c,l.to.r]);edges.push([id,other]);}
-        }else{const bank=`bank:${id}:${edges.length}`;points.set(bank,l.to);edges.push([id,bank]);}
+      const [x,y]=cells[i];
+      for(const l of terrainV2BridgeConnections(x,y,cols,rows,hex,values,parity))if(l.to.type==='BRIDGE'){
+        const id=l.to.r*cols+l.to.c;if(!visited.has(id)){visited.add(id);cells.push([l.to.c,l.to.r]);}
       }
     }
-    if(!edges.length)continue;
-    const centers=cells.map(([x,y])=>points.get(y*cols+x)).filter(Boolean);
-    const cx=centers.reduce((s,p)=>s+p.x,0)/centers.length,cy=centers.reduce((s,p)=>s+p.y,0)/centers.length;
-    let xx=0,yy=0,xy=0;
-    for(const p of centers){xx+=(p.x-cx)**2;yy+=(p.y-cy)**2;xy+=(p.x-cx)*(p.y-cy);}
-    const angle=centers.length>1?.5*Math.atan2(2*xy,xx-yy):Math.atan2(points.get(edges[1]?.[1]||edges[0][1]).y-cy,points.get(edges[1]?.[1]||edges[0][1]).x-cx);
+    const centers=cells.map(([x,y])=>pos(x,y));
+    const cx=centers.reduce((s,p)=>s+p.x,0)/centers.length;
+    // Bounding midpoint avoids an odd run leaning toward its majority row.
+    const cy=(Math.min(...centers.map(p=>p.y))+Math.max(...centers.map(p=>p.y)))/2;
+    let xx=0,yy=0,xy=0;for(const p of centers){xx+=(p.x-cx)**2;yy+=(p.y-cy)**2;xy+=(p.x-cx)*(p.y-cy);}
+    const angle=cells.length===1?terrainV2BridgeAngle(c,r,cols,rows,hex,values,parity)
+      :cells.every(p=>p[1]===r)?0:cells.every(p=>p[0]===c)?Math.PI/2:.5*Math.atan2(2*xy,xx-yy);
     const dx=Math.cos(angle),dy=Math.sin(angle);
-    const straight=centers.every(p=>Math.abs((p.x-cx)*dy-(p.y-cy)*dx)<.65);
-    if(straight){
-      // Bank contacts stay on real land; bridge centers share one centerline.
-      for(const [id,p]of points)if(typeof id==='number'){const t=(p.x-cx)*dx+(p.y-cy)*dy;points.set(id,{x:cx+t*dx,y:cy+t*dy});}
-    }
-    const adjacent=new Map();for(const [a,b]of edges){if(!adjacent.has(a))adjacent.set(a,[]);if(!adjacent.has(b))adjacent.set(b,[]);adjacent.get(a).push(b);adjacent.get(b).push(a);}
-    const used=new Set(),variant=terrainV2BridgeVariant(c,r,cols,rows,hex,values,parity);
-    for(const [id,neighbors]of adjacent){if(neighbors.length===2)continue;
-      for(const next of neighbors){
-        if(used.has(`${id}/${next}`))continue;
-        const line=[points.get(id)];let previous=id,current=next;
-        while(true){used.add(`${previous}/${current}`);used.add(`${current}/${previous}`);line.push(points.get(current));const ns=adjacent.get(current);if(ns.length!==2)break;const n=ns.find(v=>v!==previous);previous=current;current=n;}
-        paths.push({points:line,variant});
+    // Intersect the straight centerline with each tile polygon. This reaches
+    // the exterior tile edges without adding arbitrary dangling extensions.
+    const intervals=[];
+    const normals=hex?[[0,1],[Math.sqrt(3)/2,.5],[Math.sqrt(3)/2,-.5]]:[[1,0],[0,1]];
+    const bound=hex?Math.sqrt(3)/2:1;
+    for(const p of centers){
+      let lo=-Infinity,hi=Infinity;
+      for(const [nx,ny]of normals){
+        const offset=(cx-p.x)*nx+(cy-p.y)*ny,slope=dx*nx+dy*ny;
+        if(Math.abs(slope)<1e-8){if(Math.abs(offset)>bound){lo=1;hi=0;break;}continue;}
+        const a=(-bound-offset)/slope,b=(bound-offset)/slope;lo=Math.max(lo,Math.min(a,b));hi=Math.min(hi,Math.max(a,b));
       }
+      if(lo<=hi)intervals.push([lo,hi]);
     }
+    intervals.sort((a,b)=>a[0]-b[0]);
+    // Never bridge an unrelated stretch of open water in a bent component.
+    const spans=[];for(const range of intervals){const last=spans.at(-1);if(last&&range[0]<=last[1]+1e-6)last[1]=Math.max(last[1],range[1]);else spans.push([...range]);}
+    const variant=terrainV2BridgeVariant(c,r,cols,rows,hex,values,parity);
+    for(const [lo,hi]of spans)paths.push({points:[{x:cx+lo*dx,y:cy+lo*dy},{x:cx+hi*dx,y:cy+hi*dy}],variant});
   }
   return paths;
 }
 
 function drawTerrainV2BridgeDecks(ctx,cols,rows,hex,values,parity,radius) {
-  ctx.save();ctx.globalCompositeOperation='source-over';ctx.lineJoin='round';ctx.lineCap='butt';
+  ctx.save();ctx.globalCompositeOperation='source-over';
   for(const crossing of terrainV2BridgePaths(cols,rows,hex,values,parity)){
-    const ps=crossing.points.map(p=>({x:p.x*radius,y:p.y*radius})),variant=crossing.variant;
+    const [from,to]=crossing.points,variant=crossing.variant;
     const art=TERRAIN_V2.images.BRIDGE[variant]||TERRAIN_V2.images.BRIDGE.find(Boolean);
-    ctx.beginPath();ctx.moveTo(ps[0].x,ps[0].y);
-    for(let i=1;i<ps.length-1;i++)ctx.quadraticCurveTo(ps[i].x,ps[i].y,(ps[i].x+ps[i+1].x)/2,(ps[i].y+ps[i+1].y)/2);
-    ctx.lineTo(ps.at(-1).x,ps.at(-1).y);
-    // Continuous parapets and deck, with no overlapping rail ends at joins.
-    ctx.strokeStyle='rgba(20,28,25,.65)';ctx.lineWidth=radius*.52;ctx.stroke();
-    ctx.strokeStyle=variant%2?'#aaa89b':'#8d7149';ctx.lineWidth=radius*.46;ctx.stroke();
-    let deck=variant%2?'#8c8b80':'#91754f';
-    if(art){const texture=terrainV2Canvas(64,32),t=texture.getContext('2d');t.drawImage(art,0,art.height*.4,art.width,art.height*.18,0,0,64,32);deck=ctx.createPattern(texture,'repeat');}
-    ctx.strokeStyle=deck;ctx.lineWidth=radius*.35;ctx.stroke();
+    const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy)*radius,deckWidth=radius*.48;
+    ctx.save();ctx.translate(from.x*radius,from.y*radius);ctx.rotate(Math.atan2(dy,dx));
+    // Stretch the actual complete bridge artwork once, including both rails.
+    // Water beneath it is the very same blended water surface as other tiles.
+    if(art){const top=variant%2?.35:.36,h=variant%2?.28:.25;ctx.drawImage(art,0,art.height*top,art.width,art.height*h,0,-deckWidth/2,length,deckWidth);}
+    else{ctx.fillStyle='#91754f';ctx.fillRect(0,-deckWidth/2,length,deckWidth);}
+    ctx.restore();
   }
   ctx.restore();
 }

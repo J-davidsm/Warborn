@@ -65,5 +65,12 @@ const straightMap=Array(81).fill('WATER');for(let c=1;c<8;c++)straightMap[4*9+c]
 const paths=ctx.terrainV2BridgePaths(9,9,true,straightMap);
 assert.equal(paths.length,1,'one continuous deck instead of overlapping segments');
 assert(paths[0].points.every(p=>Math.abs(p.y-paths[0].points[0].y)<1e-8),'horizontal crossing stays straight despite staggered centers');
-assert.equal(paths[0].points.length,7,'no invented endpoints in water');
-const solitary=Array(81).fill('WATER');solitary[40]='BRIDGE';assert.equal(ctx.terrainV2BridgePaths(9,9,true,solitary).length,0,'no unsupported span without a bank or neighboring deck');
+assert.equal(paths[0].points.length,2,'one start and end for the stretched image');
+const solitary=Array(81).fill('WATER');solitary[40]='BRIDGE';assert.equal(ctx.terrainV2BridgePaths(9,9,true,solitary).length,1,'single bridge tile spans its water hex');
+
+for(const count of [1,2,3,4,5,6])for(const parity of [0,1]){
+ const map=Array(100).fill('WATER');for(let c=2;c<2+count;c++)map[40+c]='BRIDGE';
+ const spans=ctx.terrainV2BridgePaths(10,10,true,map,parity);assert.equal(spans.length,1);
+ const [a,b]=spans[0].points;assert(Math.abs(a.y-b.y)<1e-8,'odd and even horizontal runs stay level');
+ assert(Math.abs(b.x-a.x-(count===1?2:1.5*(count-1)+1.5))<1e-7,'endpoints reach the outer hex edges');
+}

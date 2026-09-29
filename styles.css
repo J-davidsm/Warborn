@@ -29,7 +29,7 @@ html, body {
 }
 
 #mainMenu {
-  background: url("assets/menu.jpg") center center / cover no-repeat;
+  background: url("assets/ui/menu-painted.png") center center / cover no-repeat;
 }
 
 #endScreen {
