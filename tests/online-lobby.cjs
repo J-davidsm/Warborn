@@ -9,6 +9,9 @@ const equal=()=>assert.equal(JSON.stringify(h.ctx.units),JSON.stringify(g.ctx.un
 assert.deepEqual(h.ctx.resources.PLAYER,{gold:0,materials:0});assert.deepEqual(h.ctx.resources.PLAYER2,{gold:0,materials:0});
 assert.match(h.el('onlineMatchStatus').textContent,/Highlands|Desert Expanse|Island Chain|Ancient Forest|Flooded Marsh|Open Frontier/);
 let current=h.ctx.currentTeam==='PLAYER'?h:g,other=current===h?g:h;
+current.ctx.units[0].personalName='Aldric';current.ctx.units[0].promotionLevel=3;
+current.run('OnlineMatch.publish()');tick();equal();
+assert.equal(other.ctx.units[0].personalName,'Aldric');assert.equal(other.ctx.units[0].promotionLevel,3);
 function checkEffects(actor,observer,tag) {
  actor.run(`ActionEffects.receive([{id:'move-${tag}',type:'move',unitId:'p1-0',path:[{col:2,row:7},{col:3,row:7},{col:3,row:8}]},{id:'damage-${tag}',type:'damage',col:4,row:4,amount:23}]);OnlineMatch.publish()`);tick();
  assert.equal(observer.ctx.window.damagePopups.at(-1).text,'-23');

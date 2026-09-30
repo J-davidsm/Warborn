@@ -31,7 +31,7 @@ function makeUnit(name, team, col, row, opts={}) {
     isWaterUnit: template.isWaterUnit || false
   } : { maxHp: 100, move: 3, atkRange: 1, dmg: 25, cost: 8, isWaterUnit: false }; // fallback for unknown types
   
-  return {
+  const unit = {
     // preserve an explicit id when provided (used during snapshot rehydrate)
     id: opts.id || Math.random().toString(36).slice(2,9),
     name, team, col, row,
@@ -50,8 +50,11 @@ function makeUnit(name, team, col, row, opts={}) {
     morale: (typeof opts.morale !== 'undefined') ? opts.morale : (name === 'Dragon' ? 150 : 100),
     isWaterUnit: opts.isWaterUnit ?? defaultStats.isWaterUnit ?? false,
     experience: opts.experience ?? 0,
-    promotionLevel: opts.promotionLevel ?? 0
+    promotionLevel: opts.promotionLevel ?? 0,
+    personalName: opts.promotionLevel > 0 ? opts.personalName : undefined
   };
+  ensureVeteranName(unit, false, opts.id ? null : `${team}:${col}:${row}:${name}`);
+  return unit;
 }
 
 function clonePlain(value) {
@@ -95,7 +98,7 @@ function getVictoryConditionLabel(condition = currentVictoryCondition) {
       return `Survive until turn ${vc.surviveTurns}`;
     case 'KILL_UNIT_LIMIT': {
       const target = units.find(u => u.id === vc.targetUnitId);
-      return `Kill ${target ? `${getTeamDisplayName(target.team)} ${target.name}` : 'the specified enemy unit'} by turn ${vc.killTurnLimit}`;
+      return `Kill ${target ? `${getTeamDisplayName(target.team)} ${getUnitDisplayName(target)}` : 'the specified enemy unit'} by turn ${vc.killTurnLimit}`;
     }
     case 'ANNIHILATE_ALL':
     default:
@@ -120,7 +123,8 @@ function serializeUnits() {
     aiRecovering: u.aiRecovering === true,
     isWaterUnit: u.isWaterUnit || false,
     experience: u.experience || 0,
-    promotionLevel: u.promotionLevel || 0
+    promotionLevel: u.promotionLevel || 0,
+    personalName: u.personalName
   }));
 }
 
@@ -209,7 +213,7 @@ function refreshVictoryEditorOptions() {
   if (targetUnitEl) {
     const enemyUnits = units.filter(u => u.team !== 'PLAYER' && u.hp > 0);
     targetUnitEl.innerHTML = enemyUnits.map(u => {
-      const label = `${getTeamDisplayName(u.team)} ${u.name} at ${u.col},${u.row}`;
+      const label = `${getTeamDisplayName(u.team)} ${getUnitDisplayName(u)} at ${u.col},${u.row}`;
       return `<option value="${u.id}">${label}</option>`;
     }).join('');
     if (enemyUnits.length && !currentVictoryCondition.targetUnitId) {
@@ -306,7 +310,8 @@ function applyLevelData(data) {
     aiRecovering: u.aiRecovering === true,
     isWaterUnit: u.isWaterUnit || false,
     experience: u.experience || 0,
-    promotionLevel: u.promotionLevel || 0
+    promotionLevel: u.promotionLevel || 0,
+    personalName: u.personalName
   }));
   if (currentVictoryCondition.type === 'KILL_UNIT_LIMIT' &&
       !units.some(u => u.id === currentVictoryCondition.targetUnitId) &&

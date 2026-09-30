@@ -37,7 +37,9 @@ function postGameState(actionId = null, retryCount = 0){
         id: u.id, name: u.name, team: u.team, col: u.col, row: u.row, 
         hp: u.hp, maxHp: u.maxHp, morale: u.morale, 
         hasMoved: u.hasMoved, hasActed: u.hasActed, 
-        cost: u.cost, atkRange: u.atkRange, move: u.move, dmg: u.dmg
+        cost: u.cost, atkRange: u.atkRange, move: u.move, dmg: u.dmg,
+        experience: u.experience, promotionLevel: u.promotionLevel,
+        personalName: u.personalName, isWaterUnit: u.isWaterUnit
       })),
       settlements: settlements,
       terrain: terrain
@@ -216,6 +218,9 @@ window.addEventListener('message', (ev) => {
         const col = (typeof inc.col === 'number') ? inc.col : (typeof inc.x === 'number' ? inc.x : 0);
         const row = (typeof inc.row === 'number') ? inc.row : (typeof inc.y === 'number' ? inc.y : 0);
         const opts = {
+          experience: inc.experience, promotionLevel: inc.promotionLevel,
+          personalName: inc.personalName, isWaterUnit: inc.isWaterUnit,
+          move: inc.move, atkRange: inc.atkRange, dmg: inc.dmg,
           id: ('id' in inc) ? inc.id : undefined,
           hp: (typeof inc.hp !== 'undefined') ? inc.hp : (typeof inc.maxHp !== 'undefined' ? inc.maxHp : 1),
           maxHp: (typeof inc.maxHp !== 'undefined') ? inc.maxHp : ((typeof inc.hp !== 'undefined') ? inc.hp : 1),

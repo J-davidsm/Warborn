@@ -92,6 +92,7 @@ const OnlineMatch = (() => {
   const resized=COLS!==s.cols||ROWS!==s.rows;COLS=s.cols;ROWS=s.rows;mapSize={cols:COLS,rows:ROWS};useHexGrid=true;
   if(resized&&typeof updateHexSize==='function'){TILE=BOARD_SIZE/COLS;updateHexSize();resizeGameCanvas();}
   units=copy(s.units);terrain=copy(s.terrain);settlements=copy(s.settlements);resources=copy(s.resources);startingResources=copy(s.startingResources);
+  if(typeof ensureVeteranName==='function')units.forEach(u=>ensureVeteranName(u));
   currentTeam=s.currentTeam;turnNumber=s.turnNumber;currentTurnIndex=s.currentTurnIndex;turnOrder=copy(s.turnOrder);
   researchedUnits=Object.fromEntries(Object.entries(s.research).map(([k,v])=>[k,new Set(v)]));diplomacy=copy(s.diplomacy);
   currentVictoryCondition=copy(s.victoryCondition);gameOver=s.gameOver;selectedUnit=null;closeSpawnMenu();buildMode=false;buildModeUnitId=null;

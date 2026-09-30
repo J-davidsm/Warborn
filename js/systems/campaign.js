@@ -854,7 +854,7 @@ function loadCurrentScenario() {
   if (scenario.startingUnits) {
     Object.keys(scenario.startingUnits).forEach(team => {
       scenario.startingUnits[team].forEach(unitData => {
-        units.push(makeUnit(unitData.type, team, unitData.col, unitData.row, { id: unitData.id }));
+        units.push(makeUnit(unitData.type, team, unitData.col, unitData.row, unitData));
       });
     });
   }
@@ -1075,11 +1075,12 @@ function captureCurrentGameState(scenarioIndex) {
   // Capture starting units from current game state
   scenario.startingUnits = {};
   if (units && units.length > 0) {
-    units.forEach(unit => {
+    serializeUnits().forEach(unit => {
       if (!scenario.startingUnits[unit.team]) {
         scenario.startingUnits[unit.team] = [];
       }
       scenario.startingUnits[unit.team].push({
+        ...unit,
         id: unit.id,
         type: unit.name,
         col: unit.col,
@@ -1202,7 +1203,7 @@ function loadScenarioForEditing(scenarioIndex) {
     if (scenario.startingUnits) {
       Object.keys(scenario.startingUnits).forEach(team => {
         scenario.startingUnits[team].forEach(unitData => {
-          units.push(makeUnit(unitData.type, team, unitData.col, unitData.row, { id: unitData.id }));
+          units.push(makeUnit(unitData.type, team, unitData.col, unitData.row, unitData));
         });
       });
     }

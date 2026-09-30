@@ -98,7 +98,7 @@ function openTradeProposalInterface(){
     for(const k of ['gold','materials']){const label=document.createElement('label');label.className='trade-resource';label.textContent=k+' · available '+(resources[team]?.[k]||0);const input=document.createElement('input');input.type='number';input.min='0';input.max=String(resources[team]?.[k]||0);input.step='1';input.value='0';input.dataset.resource=k;label.append(input);panel.append(label);}
     for(const kind of ['units','settlements']){
       const heading=document.createElement('h4');heading.textContent=kind==='units'?'Units':'Settlements';panel.append(heading);const list=document.createElement('div');list.className='trade-assets';
-      const assets=kind==='units'?units.filter(u=>u.team===team&&u.hp>0).map(u=>({id:u.id,label:`${u.name} · ${u.hp}/${u.maxHp} HP · (${u.col+1}, ${u.row+1})`,disabled:tradeProtectedUnit(u)})):settlements.flatMap((s,i)=>s?.owner===team?[{id:i,label:`${s.type} · (${i%COLS+1}, ${Math.floor(i/COLS)+1})`}]:[]);
+      const assets=kind==='units'?units.filter(u=>u.team===team&&u.hp>0).map(u=>({id:u.id,label:`${getUnitDisplayName(u)} · ${u.hp}/${u.maxHp} HP · (${u.col+1}, ${u.row+1})`,disabled:tradeProtectedUnit(u)})):settlements.flatMap((s,i)=>s?.owner===team?[{id:i,label:`${s.type} · (${i%COLS+1}, ${Math.floor(i/COLS)+1})`}]:[]);
       for(const asset of assets){const label=document.createElement('label');const input=document.createElement('input');input.type='checkbox';input.value=String(asset.id);input.dataset.asset=kind;input.disabled=!!asset.disabled;label.append(input,document.createTextNode(asset.label+(asset.disabled?' · Protected':'')));list.append(label);}
       if(!assets.length)list.textContent='None owned';panel.append(list);
     }columns.append(panel);

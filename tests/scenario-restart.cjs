@@ -7,10 +7,11 @@ Object.defineProperty(c,'resources',{get:()=>vm.runInContext('resources',c)});
 Object.defineProperty(c,'researchedUnits',{get:()=>vm.runInContext('researchedUnits',c)});
 c.closeSpawnMenu=()=>{};c.normalizeVictoryCondition=x=>structuredClone(x);c.applyVictoryConditionToUI=()=>{};
 vm.runInContext(fs.readFileSync('js/ui/endgame-and-ui.js','utf8').match(/function replayCurrentScenario\(\) \{[\s\S]*?\n\}/)[0],c);
-c.units=[c.makeUnit('Archer','PLAYER',0,0,{id:'archer'}),c.makeUnit('Dragon','AI',2,2,{id:'dragon'})];c.settlements[0]={owner:'PLAYER',type:'CITY'};c.terrain[4]='WOODS';c.captureScenarioSnapshot();const original=JSON.stringify(c.activeScenarioSnapshot);
+c.units=[c.makeUnit('Archer','PLAYER',0,0,{id:'archer',promotionLevel:2,personalName:'Hawkeye'}),c.makeUnit('Dragon','AI',2,2,{id:'dragon'})];c.settlements[0]={owner:'PLAYER',type:'CITY'};c.terrain[4]='WOODS';c.captureScenarioSnapshot();const original=JSON.stringify(c.activeScenarioSnapshot);
 for(let attempt=0;attempt<2;attempt++){
  c.units[0].hp=1;c.units.push(c.makeUnit('Soldier','PLAYER',1,1));c.resources.PLAYER.gold=0;c.resources.AI.materials=99;c.researchedUnits.PLAYER.add('Dragon');c.settlements[0].owner='AI';c.terrain[4]='WATER';c.currentTeam='AI';c.turnNumber=7;c.activeAITurn={};
  c.replayCurrentScenario();assert.equal(c.units.length,2);assert.equal(c.units[0].name,'Archer');assert.equal(c.units[0].hp,50);assert.equal(c.resources.PLAYER.gold,0);assert.equal(c.resources.AI.materials,0);assert(!c.researchedUnits.PLAYER.has('Dragon'));assert(c.researchedUnits.PLAYER.has('Archer'));assert.equal(c.settlements[0].owner,'PLAYER');assert.equal(c.terrain[4],'WOODS');assert.equal(c.currentTeam,'PLAYER');assert.equal(c.turnNumber,1);assert.equal(c.activeAITurn,null);assert.equal(JSON.stringify(c.activeScenarioSnapshot),original,'restarts do not mutate original snapshot');
 }
-const legacy=structuredClone(c.activeScenarioSnapshot);delete legacy.resources;delete legacy.research;c.applyLevelData(legacy);assert.equal(c.resources.PLAYER.gold,0);assert.deepEqual([...c.researchedUnits.PLAYER],['Soldier']);
+assert.equal(c.units[0].personalName,'Hawkeye');assert.equal(c.units[0].promotionLevel,2);
+const legacy=structuredClone(c.activeScenarioSnapshot);delete legacy.resources;delete legacy.research;delete legacy.units[0].personalName;c.applyLevelData(legacy);assert.equal(c.resources.PLAYER.gold,0);assert.deepEqual([...c.researchedUnits.PLAYER],['Soldier']);assert(c.units[0].personalName);
 console.log('Repeated scenario restarts restore armies, health, ownership, terrain, resources, research and turn state; legacy levels also start with zero balances.');

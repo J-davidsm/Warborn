@@ -191,7 +191,7 @@ function evaluateVictoryCondition() {
         return { outcome: 'victory', explanation: `The specified enemy unit was killed by turn ${vc.killTurnLimit}.` };
       }
       if (turnNumber > vc.killTurnLimit) {
-        return { outcome: 'defeat', explanation: `${getTeamDisplayName(target.team)} ${target.name} survived past turn ${vc.killTurnLimit}.` };
+        return { outcome: 'defeat', explanation: `${getTeamDisplayName(target.team)} ${getUnitDisplayName(target)} survived past turn ${vc.killTurnLimit}.` };
       }
       break;
     }
@@ -406,7 +406,7 @@ function updateUI() {
     const xpProgress = getPromotionProgress(selectedUnit);
     const xpDisplay = xpProgress.nextRank !== 'Max Level' ? ` • ⭐ ${xpProgress.current}/${xpProgress.needed}` : ' • Max Level';
     
-    selNameEl.html(unitName);
+    selNameEl.elt.textContent = unitName;
     
     // Format cost display - handle both single cost and multi-resource cost
     let costDisplay;

@@ -83,6 +83,41 @@ const PROMOTION_LEVELS = {
   4: { name: 'Elite', bonuses: { hp: 45, dmg: 12, move: 1 }, xpRequired: 120 }
 };
 
+const VETERAN_NAMES = {
+  Soldier: ['Bram', 'Osric', 'Gareth', 'Tobin', 'Cedric', 'Roland', 'Harlan', 'Wulfric'],
+  Spearman: ['Pikeguard', 'Ashshaft', 'Ronan', 'Eadric', 'Longreach', 'Briarpoint', 'Halberd', 'Thorne'],
+  Archer: ['Rowan', 'Swiftfletch', 'Hawkeye', 'Yewborn', 'Elowen', 'Falcon', 'Briar', 'Windshot'],
+  Swordsman: ['Baldric', 'Steelhand', 'Duncan', 'Alaric', 'Edmund', 'Bladecrest', 'Roderic', 'Tristan'],
+  Knight: ['Arthur', 'Gawain', 'Aldric', 'Galahad', 'Percival', 'Lancel', 'Godfrey', 'Leofric'],
+  Assassin: ['Fangtooth', 'DaggerStabber', 'Nightshade', 'Grimwhisper', 'Venom', 'Blackfang', 'SilentKnife', 'Duskblade'],
+  Dragon: ['FireBreath', 'ScalyTail', 'Ashwing', 'Emberclaw', 'Cindermaw', 'Flamehorn', 'Smokefang', 'Stormscale'],
+  Cleric: ['Anselm', 'Benedict', 'Aurelia', 'Mercy', 'Seraphine', 'Lucian', 'Dawnkeeper', 'Grace'],
+  Catapult: ['StoneSinger', 'Wallbreaker', 'Thunderarm', 'Siegeborn', 'RockHurl', 'IronSling', 'Gatecrasher', 'Boulderfall'],
+  Crown: ['Eleanor', 'Isolde', 'Guinevere', 'Aurelian', 'Valerian', 'Theodora', 'Reginald', 'Ysabel'],
+  Stockade: ['Oakshield', 'Thornwall', 'Timberguard', 'Ironroot', 'Briarhold', 'Pinewatch', 'Woodhaven', 'Stoutpost'],
+  Castle: ['Stonehaven', 'Greywatch', 'Kingsguard', 'Dawnkeep', 'Ravenhold', 'Highwall', 'Winterkeep', 'Goldspire'],
+  'Heavy Fortress': ['Ironmount', 'Dreadwall', 'Titanhold', 'Stormbastion', 'Blackrock', 'Adamant', 'Worldguard', 'Grimkeep'],
+  Sloop: ['Seafox', 'Quickwake', 'Gullwing', 'MistRunner', 'Sprayfin', 'TideDancer', 'SilverSail', 'WaveSkipper'],
+  'Man-of-War': ['Dreadwake', 'IronTide', 'StormSail', 'SeaReaver', 'Corsair', 'Deepfang', 'Wavebreaker', 'BlackSail'],
+  Battleship: ['Leviathan', 'SeaTitan', 'ThunderHull', 'OceanHammer', 'Kraken', 'StormCrown', 'IronLeviathan', 'Dreadnought']
+};
+
+// Roll once on promotion. Old unnamed veterans migrate deterministically so
+// independently loaded copies and multiplayer clients agree on their name.
+function ensureVeteranName(unit, firstPromotion = false, legacyIdentity = null) {
+  if (!unit || !(unit.promotionLevel > 0)) return;
+  const campaign = typeof campaignMode !== 'undefined' && campaignMode.active ? campaignMode.campaignData : null;
+  const key = `${unit.id}:${unit.name}`;
+  const remembered = campaign?.veteranNames?.[key];
+  if (typeof unit.personalName !== 'string' || !unit.personalName.trim()) {
+    const pool = VETERAN_NAMES[unit.name] || VETERAN_NAMES.Soldier;
+    let hash = 2166136261;
+    for (const char of String(legacyIdentity || unit.id || `${unit.team}:${unit.col}:${unit.row}:${unit.name}`)) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
+    unit.personalName = typeof remembered === 'string' && remembered.trim() ? remembered : pool[firstPromotion ? Math.floor(Math.random() * pool.length) : hash % pool.length];
+  }
+  if (campaign) { campaign.veteranNames ||= {}; campaign.veteranNames[key] = unit.personalName; }
+}
+
 const EXPERIENCE_GAINS = {
   KILL_UNIT: 15,
   DAMAGE_DEALT: 1, // 1 XP per 5 damage dealt
@@ -114,6 +149,7 @@ function promoteUnit(unit) {
   
   const promotion = PROMOTION_LEVELS[newLevel];
   unit.promotionLevel = newLevel;
+  ensureVeteranName(unit, oldLevel === 0);
   
   // Apply stat bonuses
   unit.maxHp += promotion.bonuses.hp;
@@ -130,7 +166,7 @@ function promoteUnit(unit) {
     setTimeout(() => {
       showPopup(
         '🌟 Unit Promoted!',
-        `${unit.name} is now ${promotion.name}!\n\n+${promotion.bonuses.hp} HP\n+${promotion.bonuses.dmg} Damage\n+${promotion.bonuses.move} Movement`,
+        `${getUnitDisplayName(unit)} has been promoted!\n\n+${promotion.bonuses.hp} HP\n+${promotion.bonuses.dmg} Damage\n+${promotion.bonuses.move} Movement`,
         'success'
       );
     }, 500);
@@ -142,7 +178,7 @@ function promoteUnit(unit) {
 function getUnitDisplayName(unit) {
   if (!unit.promotionLevel || unit.promotionLevel === 0) return unit.name;
   const promotion = PROMOTION_LEVELS[unit.promotionLevel];
-  return promotion && promotion.name ? `${promotion.name} ${unit.name}` : unit.name;
+  return promotion && promotion.name ? `${promotion.name} ${unit.personalName ? unit.personalName + ' the ' : ''}${unit.name}` : unit.name;
 }
 
 function getPromotionProgress(unit) {
