@@ -15,7 +15,7 @@ function aiGarrisonReplacement(u) {
   if(!home||home.owner!==u.team||aiMobile(u.team).length>=aiAssets(u.team).length*3)return null;
   // Only spend on a legal, already unlocked defender; never rely on future income.
   return allowedUnitsForSettlement(home.type,u.team)
-    .filter(n=>UNIT_TEMPLATES[n].dmg>0&&canAfford(u.team,UNIT_TEMPLATES[n].cost))
+    .filter(n=>UNIT_TEMPLATES[n].dmg>0&&canAfford(u.team,getEffectiveUnitCostForTeam(u.team,n)))
     .sort((a,b)=>UNIT_TEMPLATES[b].hp*UNIT_TEMPLATES[b].dmg-UNIT_TEMPLATES[a].hp*UNIT_TEMPLATES[a].dmg)[0]||null;
 }
 function aiThreat(tile,team) {
@@ -151,7 +151,7 @@ function aiMoveWithGarrison(u,tile) {
   ActionEffects.move(u,tile.col,tile.row);u.col=tile.col;u.row=tile.row;u.hasMoved=true;
   // No await between departure and replacement: the town is never left open for a turn.
   if(replacement){
-    deductResources(u.team,UNIT_TEMPLATES[replacement].cost);
+    deductResources(u.team,getEffectiveUnitCostForTeam(u.team,replacement));
     units.push(makeUnit(replacement,u.team,col,row,{justSpawned:true}));
   }
   checkSettlementCaptureAfterMove(u,u.col,u.row);
@@ -176,43 +176,39 @@ function aiAnchor(u) {
   if(needed){deductResources(u.team,{gold:2});u.isWaterUnit=true;}
 }
 function aiRecruit(team) {
+  // Research has its own budget. Saving RP must never stall gold spending.
+  const research=chooseAIResearch(team);
+  if(research&&canResearchTech(team,research))researchTech(team,research);
   if(typeof AICommander!=='undefined'&&AICommander.spend(team))return;
   const homes=aiAssets(team), cap=homes.length*3;
   let army=aiMobile(team);
   const emergency=homes.some(s=>aiThreat(s,team)>0);
-  const maySave=!emergency&&!(typeof AICommander!=='undefined'&&AICommander.get(team)?.economyRelease);
   // Invest in a city to unlock materials and stronger units.
   if(!emergency&&army.length>=Math.min(2,cap)){
     const home=homes.find(s=>s.type!=='CITY'&&s.type!=='PORT');
     if(home){
-      const data=SETTLEMENTS[home.type];
-      if(data?.upgradeTo && canAfford(team,data.upgradeCost) && getGold(team)>=data.upgradeCost.gold+4){deductResources(team,data.upgradeCost);settlements[home.row*COLS+home.col].type=data.upgradeTo;home.type=data.upgradeTo;}
+      const data=SETTLEMENTS[home.type],upgradeCost=getSettlementUpgradeCost(team,home.type);
+      if(data?.upgradeTo && canAfford(team,upgradeCost) && getGold(team)>=upgradeCost.gold+4&&purchaseSettlementUpgrade(home.col,home.row,team))home.type=data.upgradeTo;
     }
   }
   if(army.length>=cap){aiFortify(team,homes);return;}
+  aiRecruitNaval(team,homes);
   const clerics=army.filter(u=>u.name==='Cleric').length;
   const needHealer=clerics<Math.max(1,Math.floor(army.length/5))&&army.length>=2;
   const enemyArmy=units.filter(e=>e.hp>0&&aiHostile(team,e.team));
   const counter=enemyArmy.some(e=>e.name==='Dragon')?'Knight':enemyArmy.some(isFortressUnit)?'Catapult':null;
   const elite=getGold(team)>=30?'Dragon':'Assassin';
   const priorities=[...new Set([...(needHealer?['Cleric']:[]),...(counter?[counter]:[]),elite,'Dragon','Assassin','Knight','Catapult','Archer','Spearman','Cleric'])];
-  const available=new Set(homes.flatMap(s=>allowedUnitsForSettlement(s.type)));
-  const desired=priorities.find(n=>available.has(n)&&(!hasResearched(team,n)||canAfford(team,UNIT_TEMPLATES[n].cost)));
-  if(maySave&&desired&&!hasResearched(team,desired)){
-    if(canResearch(team,desired))researchUnit(team,desired);
-    else if(maySave&&army.length>=2)return; // Save for the planned research.
-  }
   for(const home of homes){
     if(aiMobile(team).length>=cap)break;
     if(getUnitAt(home.col,home.row))continue;
-    const allowed=allowedUnitsForSettlement(home.type,team).filter(n=>canAfford(team,UNIT_TEMPLATES[n].cost));
+    const allowed=allowedUnitsForSettlement(home.type,team).filter(n=>canAfford(team,getEffectiveUnitCostForTeam(team,n)));
     if(!allowed.length)continue;
     let pick=priorities.find(n=>allowed.includes(n)&&!(n==='Cleric'&&aiMobile(team).some(u=>u.name==='Cleric')));
     if(!pick){
-      if(maySave&&army.length>=2&&desired)return; // Preserve savings for quality.
       pick=allowed.sort((a,b)=>UNIT_TEMPLATES[b].hp*UNIT_TEMPLATES[b].dmg-UNIT_TEMPLATES[a].hp*UNIT_TEMPLATES[a].dmg)[0];
     }
-    deductResources(team,UNIT_TEMPLATES[pick].cost);
+    deductResources(team,getEffectiveUnitCostForTeam(team,pick));
     units.push(makeUnit(pick,team,home.col,home.row,{justSpawned:true}));
   }
 }
@@ -220,15 +216,32 @@ function aiFortify(team,homes) {
   if(getGold(team)<15)return;
   const home=homes.find(s=>aiThreat(s,team)>0&&!units.some(u=>u.hp>0&&u.team===team&&isFortressUnit(u)&&aiDistance(u,s)<=2));
   if(!home)return;
-  const name='Stockade',cost=UNIT_TEMPLATES[name].cost;
-  if(!hasResearched(team,name)&&canResearch(team,name))researchUnit(team,name);
-  if(!hasResearched(team,name)||!canAfford(team,cost))return;
+  if(!hasResearched(team,'Stockade')&&chooseAIResearch(team)==='fieldworks'&&canResearch(team,'Stockade'))researchUnit(team,'Stockade');
+  const name=['Heavy Fortress','Castle','Stockade'].find(n=>isUnitUnlocked(team,n)&&canAfford(team,getEffectiveUnitCostForTeam(team,n)));
+  if(!name)return;
+  const cost=getEffectiveUnitCostForTeam(team,name);
   const dirs=useHexGrid?getHexNeighbors(home.col,home.row):[[1,0],[-1,0],[0,1],[0,-1]];
   for(const [dc,dr]of dirs){
     const col=home.col+dc,row=home.row+dr;
     if(col<0||col>=COLS||row<0||row>=ROWS||terrain[row*COLS+col]||settlements[row*COLS+col]||getUnitAt(col,row))continue;
     deductResources(team,cost);units.push(makeUnit(name,team,col,row,{justSpawned:true}));break;
   }
+}
+function aiRecruitNaval(team,homes) {
+  if(aiMobile(team).length>=homes.length*3)return false;
+  const navalThreat=units.some(u=>u.hp>0&&aiHostile(team,u.team)&&UNIT_TEMPLATES[u.name]?.isWaterUnit);
+  if(!navalThreat&&terrain.filter(t=>t==='WATER').length<terrain.length*.25)return false;
+  const name=['Battleship','Man-of-War','Sloop'].find(n=>isUnitUnlocked(team,n)&&canAfford(team,getEffectiveUnitCostForTeam(team,n)));
+  if(!name)return false;
+  for(const port of homes.filter(h=>h.type==='PORT')){
+    const dirs=useHexGrid?getHexNeighbors(port.col,port.row):[[1,0],[-1,0],[0,1],[0,-1]];
+    for(const [dc,dr]of dirs){
+      const col=port.col+dc,row=port.row+dr;
+      if(col<0||row<0||col>=COLS||row>=ROWS||terrain[row*COLS+col]!=='WATER'||getUnitAt(col,row)||settlements[row*COLS+col])continue;
+      deductResources(team,getEffectiveUnitCostForTeam(team,name));units.push(makeUnit(name,team,col,row,{justSpawned:true}));return true;
+    }
+  }
+  return false;
 }
 async function aiTakeTurn(team='AI') {
   if(gameOver||currentTeam!==team||!isAITeam(team)||(typeof OnlineMatch!=='undefined'&&OnlineMatch.active&&!OnlineMatch.canRunAI()))return;

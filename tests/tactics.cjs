@@ -31,9 +31,9 @@ const anchor=unit('Soldier','AI',2,3);ctx.units=[anchor,enemy];ctx.terrain[3*7+3
 run("resources.AI={gold:10,materials:3};");assert(ctx.canAfford('AI',{food:999,gold:5}));ctx.deductResources('AI',{food:999,gold:5});assert.equal(run('resources.AI.gold'),5);assert.equal(JSON.stringify(ctx.getEffectiveCost({food:999,gold:2,materials:1})),JSON.stringify({gold:2,materials:1}));
 ctx.currentVictoryCondition={type:'ANNIHILATE_ALL'};ctx.terrain.fill(null);ctx.settlements[0]={owner:'AI',type:'CITY'};
 ctx.units=[unit('Soldier','AI',1,0),unit('Soldier','AI',2,0),unit('Soldier','AI',3,0)];run("resources.AI={gold:100,materials:100}");ctx.aiRecruit('AI');assert.equal(ctx.aiMobile('AI').length,3,'army cap is 3 per settlement');
-ctx.units.pop();ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Cleric'),'AI researches and recruits a cleric');assert.equal(ctx.aiMobile('AI').length,3);
-ctx.units=[unit('Soldier','AI',1,0),unit('Cleric','AI',2,0)];run("resources.AI={gold:100,materials:100}");ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Dragon'),'AI researches and purchases high-tier units');
-ctx.settlements.fill(null);ctx.units=[];ctx.aiRecruit('AI');assert.equal(ctx.units.length,0,'no towns means no mobile recruitment');
+ctx.units.pop();run("restoreResearch(null,{AI:['Cleric']})");ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Cleric'),'AI researches and recruits a cleric');assert.equal(ctx.aiMobile('AI').length,3);
+ctx.units=[unit('Soldier','AI',1,0),unit('Cleric','AI',2,0)];run("resources.AI={gold:100,materials:100}");run("restoreResearch(null,{AI:['Cleric','Dragon']})");ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Dragon'),'AI researches and purchases high-tier units');
+ctx.settlements.fill(null);ctx.units=[];ctx.aiRecruit('AI');assert.equal(ctx.units.length,0,'no towns means no mobile recruitment');run("resetResearch(['AI'])");
 // End Turn from the UI must stop before any side effects during an AI turn.
 ctx.settlements[8]={owner:'AI',type:'HAMLET'};
 ctx.settlements[12]={owner:'PLAYER',type:'HAMLET'};

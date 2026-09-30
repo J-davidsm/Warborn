@@ -2,7 +2,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const c={console,clearTimeout,ActionEffects:{reset(){}},closeSpawnMenu(){},buildMode:true,buildModeUnitId:'old',activeAITurn:{},aiTurnTimeoutId:null,BOARD_SIZE:600,mapSize:{cols:3,rows:3},maxAIPlayers:4,currentAIPlayers:1,resources:{PLAYER:{gold:17,materials:4},AI:{gold:12,materials:2}},startingResources:{PLAYER:{gold:17,materials:4},AI:{gold:12,materials:2}},researchedUnits:{PLAYER:new Set(['Soldier','Archer']),AI:new Set(['Soldier'])},terrain:Array(9).fill(null),settlements:Array(9).fill(null),units:[],diplomacy:{},currentVictoryCondition:{type:'ANNIHILATE_ALL'},getActiveTeams:()=>['PLAYER','AI'],readVictoryConditionFromUI(){},hasAIDiplomacy:()=>false,updateHexSize(){},resizeGameCanvas(){},select:()=>null,setAIPlayerCount(){},document:{getElementById:()=>null},calculateTurnOrder(){},updateTeamSelector(){},hideEndScreen(){},updateUI(){},selectedUnit:null,gameOver:false,endScreenShown:false,gameEndResult:null,currentTeam:'PLAYER',currentTurnIndex:0,turnNumber:1,activeScenarioSnapshot:null,campaignMode:{active:false},lastPlayedSavedLevelIndex:null,setupGame(){throw Error('Must not use default Knights');}};
 vm.createContext(c);
 for(const f of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js'])vm.runInContext(fs.readFileSync(f,'utf8'),c);
-vm.runInContext('resources={PLAYER:{gold:17,materials:4},AI:{gold:12,materials:2}};researchedUnits={PLAYER:new Set(["Soldier","Archer"]),AI:new Set(["Soldier"])};',c);
+vm.runInContext('resources={PLAYER:{gold:17,materials:4},AI:{gold:12,materials:2}};restoreResearch(null,{PLAYER:["Soldier","Archer"],AI:["Soldier"]});',c);
 Object.defineProperty(c,'resources',{get:()=>vm.runInContext('resources',c)});
 Object.defineProperty(c,'researchedUnits',{get:()=>vm.runInContext('researchedUnits',c)});
 c.closeSpawnMenu=()=>{};c.normalizeVictoryCondition=x=>structuredClone(x);c.applyVictoryConditionToUI=()=>{};
@@ -13,5 +13,18 @@ for(let attempt=0;attempt<2;attempt++){
  c.replayCurrentScenario();assert.equal(c.units.length,2);assert.equal(c.units[0].name,'Archer');assert.equal(c.units[0].hp,50);assert.equal(c.resources.PLAYER.gold,0);assert.equal(c.resources.AI.materials,0);assert(!c.researchedUnits.PLAYER.has('Dragon'));assert(c.researchedUnits.PLAYER.has('Archer'));assert.equal(c.settlements[0].owner,'PLAYER');assert.equal(c.terrain[4],'WOODS');assert.equal(c.currentTeam,'PLAYER');assert.equal(c.turnNumber,1);assert.equal(c.activeAITurn,null);assert.equal(JSON.stringify(c.activeScenarioSnapshot),original,'restarts do not mutate original snapshot');
 }
 assert.equal(c.units[0].personalName,'Hawkeye');assert.equal(c.units[0].promotionLevel,2);
-const legacy=structuredClone(c.activeScenarioSnapshot);delete legacy.resources;delete legacy.research;delete legacy.units[0].personalName;c.applyLevelData(legacy);assert.equal(c.resources.PLAYER.gold,0);assert.deepEqual([...c.researchedUnits.PLAYER],['Soldier']);assert(c.units[0].personalName);
+const legacy=structuredClone(c.activeScenarioSnapshot);delete legacy.resources;delete legacy.research;delete legacy.researchedTechs;delete legacy.units[0].personalName;c.applyLevelData(legacy);assert.equal(c.resources.PLAYER.gold,0);assert.deepEqual([...c.researchedUnits.PLAYER],['Soldier','Swordsman']);assert(c.units[0].personalName);
 console.log('Repeated scenario restarts restore armies, health, ownership, terrain, resources, research and turn state; legacy levels also start with zero balances.');
+vm.runInContext("resources.PLAYER.gold=20;restoreResearchPoints({PLAYER:10});researchTech('PLAYER','field_training');researchTech('PLAYER','forced_march');",c);
+c.units.push(c.makeUnit('Soldier','PLAYER',1,1,{id:'doctrine-soldier'}));
+let doctrineSave=c.createLevelData();
+doctrineSave.settlements[0].researchCaptureTeams=['PLAYER'];
+for(let i=0;i<4;i++){
+ c.applyLevelData(JSON.parse(JSON.stringify(doctrineSave)));
+ const u=c.units.find(u=>u.id==='doctrine-soldier');assert.equal(u.maxHp,60);assert.equal(u.move,4);assert(c.hasTech('PLAYER','forced_march'));assert.equal(c.getResearchPoints('PLAYER'),5);assert.equal(c.makeUnit('Soldier','PLAYER',2,1).move,4);
+ doctrineSave=c.createLevelData();
+ assert(c.settlements[0].researchCaptureTeams.includes('PLAYER'),'capture history survives save/load');
+}
+const oldLevel=JSON.parse(JSON.stringify(doctrineSave));delete oldLevel.researchPoints;delete oldLevel.researchPointReceipts;c.applyLevelData(oldLevel);assert.equal(c.getResearchPoints('PLAYER'),0);
+oldLevel.startingResearchPoints={PLAYER:7,AI:3};c.applyLevelData(oldLevel);assert.equal(c.getResearchPoints('PLAYER'),7);assert.equal(c.getResearchPoints('AI'),3);
+console.log('Full level save/load preserves doctrine state and bonuses through four cycles without stacking.');

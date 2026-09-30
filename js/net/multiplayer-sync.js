@@ -33,6 +33,10 @@ function postGameState(actionId = null, retryCount = 0){
       diplomacy: diplomacy,
       victoryCondition: currentVictoryCondition,
       gameOver: gameOver,
+      researchPoints:typeof researchPoints!=='undefined'?researchPoints:undefined,
+      researchPointReceipts:typeof researchPointReceipts!=='undefined'?researchPointReceipts:undefined,
+      researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,
+      research:typeof researchedUnits!=='undefined'?Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]])):undefined,
       aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,
       units: units.map(u => ({ 
         id: u.id, name: u.name, team: u.team, col: u.col, row: u.row, 
@@ -212,6 +216,8 @@ window.addEventListener('message', (ev) => {
       currentVictoryCondition = normalizeVictoryCondition(snapshot.victoryCondition);
     }
 
+    if(typeof restoreResearchPoints==='function')restoreResearchPoints(snapshot.researchPoints,snapshot.researchPointReceipts,true);
+    if(typeof restoreResearch==='function')restoreResearch(snapshot.researchedTechs,snapshot.research);
     // Rebuild units array from snapshot; support col/row or x/y naming, preserve id/team
     units = [];
     const unitList = Array.isArray(snapshot && snapshot.units) ? snapshot.units : (Array.isArray(msg.units) ? msg.units : []);

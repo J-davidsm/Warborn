@@ -33,6 +33,15 @@ function computeIncomeForTeam(team){
 }
 
 // Settlement upgrade function
+function purchaseSettlementUpgrade(col,row,team) {
+  const s=settlements[row*COLS+col],next=SETTLEMENTS[s?.type]?.upgradeTo;
+  if(!s||s.owner!==team||!next)return false;
+  const cost=getSettlementUpgradeCost(team,s.type);
+  if(!spendResources(team,cost))return false;
+  s.type=next; // Preserve capture-reward history and authored settlement metadata.
+  if(typeof awardResearchPoints==='function')awardResearchPoints(team,RESEARCH_REWARDS.upgrade,'Settlement upgraded');
+  return true;
+}
 function upgradeSettlement(col, row, team) {
   const idx = row * COLS + col;
   const settlement = settlements[idx];
@@ -52,7 +61,7 @@ function upgradeSettlement(col, row, team) {
     return false;
   }
   
-  const upgradeCost = settlementData.upgradeCost;
+  const upgradeCost = getSettlementUpgradeCost(team,settlement.type);
   if (!hasResources(team, upgradeCost)) {
     const teamResources = getResources(team);
     const needed = [];
@@ -82,8 +91,7 @@ function upgradeSettlement(col, row, team) {
   if (!confirmation) return false;
   
   // Perform upgrade
-  spendResources(team, upgradeCost);
-  settlements[idx] = { type: settlementData.upgradeTo, owner: team };
+  if(!purchaseSettlementUpgrade(col,row,team))return false;
   
   console.log(`${team} upgraded ${settlement.type} to ${settlementData.upgradeTo} at (${col}, ${row})`);
   updateUI();

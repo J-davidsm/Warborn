@@ -366,6 +366,8 @@ function updateUI() {
   const goldBanner = select('#bannerGold'), materialsBanner = select('#bannerMaterials');
   if(goldBanner)goldBanner.html(String(ownResources.gold));
   if(materialsBanner)materialsBanner.html(String(ownResources.materials));
+  const researchBanner=select('#bannerResearchPoints');
+  if(researchBanner)researchBanner.html(String(getResearchPoints(bannerTeam)));
   
   // Update resource counters for all teams (if element exists)
   const resLabel = select('#resourceLabel');
@@ -454,11 +456,11 @@ function updateUI() {
       (document.getElementById('unitActions') || document.body).appendChild(buildWidget);
     }
     const canBuyBuilding = ['Stockade', 'Castle', 'Heavy Fortress', 'Sloop', 'Man-of-War', 'Battleship']
-      .some(name => UNIT_TEMPLATES[name] && canAfford(getLocalPlayableTeam(), UNIT_TEMPLATES[name].cost));
+      .some(name => UNIT_TEMPLATES[name] && isUnitUnlocked(getLocalPlayableTeam(),name) && canAfford(getLocalPlayableTeam(), getEffectiveUnitCostForTeam(getLocalPlayableTeam(),name)));
     buildWidget.disabled = !canAct || (!buildMode && (!friendlyUnit || selectedUnit.morale <= 0 || !canBuyBuilding));
     buildWidget.title = !canAct ? 'Build: wait for your turn' : buildMode ? 'Cancel building' :
       !friendlyUnit ? 'Build: select a friendly unit' : selectedUnit.morale <= 0 ? 'Build: select a unit with morale' :
-      !canBuyBuilding ? 'Build: insufficient gold or materials' : 'Build fortresses and ships';
+      !canBuyBuilding ? 'Build: requires an unlocked doctrine and sufficient resources' : 'Build fortresses and ships';
     buildWidget.setAttribute('aria-pressed', String(buildMode));
 
     let waterUpgradeWidget = document.getElementById('waterUpgradeWidget');

@@ -825,12 +825,15 @@ function loadCurrentScenario() {
     ensureDiplomacyForActiveTeams();
   }
   
+  if(typeof restoreResearch==='function')restoreResearch(scenario.researchedTechs,scenario.research,getActiveTeams());
+  if(typeof restoreResearchPoints==='function')restoreResearchPoints(scenario.researchPoints||scenario.startingResearchPoints,scenario.researchPointReceipts);
   // Restore settlements from scenario
   if (scenario.settlements) {
     scenario.settlements.forEach(settlementData => {
       const index = settlementData.row * COLS + settlementData.col;
       if (index >= 0 && index < settlements.length) {
         settlements[index] = {
+          ...clonePlain(settlementData),
           type: settlementData.type,
           owner: settlementData.owner,
           name: settlementData.name || null
@@ -1064,6 +1067,9 @@ function closeAdvancedScenarioEditor() {
 
 function captureCurrentGameState(scenarioIndex) {
   const scenario = campaignMode.campaignData.scenarios[scenarioIndex];
+  scenario.researchedTechs=serializeResearch();
+  scenario.researchPoints=clonePlain(researchPoints);
+  scenario.researchPointReceipts=clonePlain(researchPointReceipts);
   readVictoryConditionFromUI();
   
   // Capture current map size
@@ -1097,6 +1103,7 @@ function captureCurrentGameState(scenarioIndex) {
         const row = Math.floor(index / COLS);
         const col = index % COLS;
         scenario.settlements.push({
+          ...clonePlain(settlement),
           type: settlement.type,
           owner: settlement.owner,
           col: col,
@@ -1181,6 +1188,7 @@ function loadScenarioForEditing(scenarioIndex) {
         const index = settlementData.row * COLS + settlementData.col;
         if (index >= 0 && index < settlements.length) {
           settlements[index] = {
+            ...clonePlain(settlementData),
             type: settlementData.type,
             owner: settlementData.owner
           };
@@ -1198,6 +1206,8 @@ function loadScenarioForEditing(scenarioIndex) {
       });
     }
     
+    if(typeof restoreResearch==='function')restoreResearch(scenario.researchedTechs,scenario.research,getActiveTeams());
+    if(typeof restoreResearchPoints==='function')restoreResearchPoints(scenario.researchPoints||scenario.startingResearchPoints,scenario.researchPointReceipts);
     // Clear and place units
     units = [];
     if (scenario.startingUnits) {

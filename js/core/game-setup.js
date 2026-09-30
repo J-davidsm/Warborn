@@ -8,6 +8,7 @@ function setupGame(){
   if(typeof Endless!=='undefined')Endless.stop();
   activeAITurn=null;
   resetStartingEconomy();
+  if(typeof resetResearch==='function')resetResearch(getActiveTeams());
   ActionEffects.reset();
   units=[];
   

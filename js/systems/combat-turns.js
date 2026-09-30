@@ -17,6 +17,7 @@ function applyCrownDeath(crown) {
   }
 }
 function attackUnit(a, d) {
+  if(!a||!d||a.hp<=0||d.hp<=0)return {blocked:true};
   if(!a||!d||areFriendlyTeams(a.team,d.team))return {blocked:true};
   if(a.name==='Crown')return {blocked:true,reason:'The Crown cannot attack'};
   // Safety check: prevent units that have already acted from attacking
@@ -147,6 +148,7 @@ function attackUnit(a, d) {
 
   // Store target's previous HP to check for kill
   if(hasCrownAura(d))dmg=floor(dmg*0.75);
+  if(typeof getDoctrineAttackMultiplier==='function')dmg=floor(dmg*getDoctrineAttackMultiplier(a,d));
   const prevHP = d.hp;
 
   try{ console.debug('attackUnit - pre-damage', { attacker: { id: a.id, col: a.col, row: a.row, hp: a.hp }, defender: { id: d.id, col: d.col, row: d.row, hp: d.hp } }); } catch(e){}
@@ -213,6 +215,7 @@ function attackUnit(a, d) {
   let didKill = false;
   if(prevHP > 0 && d.hp === 0) {
     didKill = true;
+    if(typeof awardKillResearch==='function')awardKillResearch(a,d);
     a.morale = min(150, a.morale + 50); // Add 50 morale, capped at 150
     
     // Award experience for kill
@@ -246,6 +249,7 @@ function attackUnit(a, d) {
   const beforeCount = units.length;
   const attackerId = a.id;
   try{ console.debug('attackUnit - about to rebuild units array. beforeCount=', beforeCount, 'attackerId=', attackerId); } catch(e){}
+  if(a.hp<=0&&isFortressUnit(d)&&typeof awardKillResearch==='function')awardKillResearch(d,a);
   units = units.filter(u => u.hp > 0);
   try{ console.debug('attackUnit - after rebuild units length=', units.length, 'expect attackerId present?', !!units.find(u=>u.id===attackerId)); } catch(e){}
   // Find attacker in the new units array by id and restore coords
@@ -299,7 +303,7 @@ function healUnit(healer, target) {
   if (!healer || !target || !areFriendlyTeams(healer.team,target.team)) return { didHeal: false };
   if (target.hp >= target.maxHp) return { didHeal: false };
   
-  const healAmount = 20;
+  const healAmount = typeof hasTech==='function'&&hasTech(healer.team,'battlefield_medicine')?28:20;
   const prevHP = target.hp;
   target.hp = Math.min(target.maxHp, target.hp + healAmount);
   const actualHeal = target.hp - prevHP;
@@ -400,7 +404,7 @@ function endTurn(expectedAITeam = null) {
       
       // Assassin passive healing: heal 5 HP per turn (only on their own team's turn)
       if (u.name === 'Assassin' && u.hp > 0 && u.hp < u.maxHp) {
-        u.hp = Math.min(u.maxHp, u.hp + 5);
+        u.hp = Math.min(u.maxHp, u.hp + (typeof hasTech==='function'&&hasTech(u.team,'master_assassins')?8:5));
       }
       
       // Terrain effects per turn (only for current team)
@@ -694,6 +698,7 @@ function claimSettlementAt(col, row, owner){
   if(s.owner !== owner && !areFriendlyTeams(s.owner,owner)){
     const previousOwner = s.owner;
     s.owner = owner;
+    if(typeof awardCaptureResearch==='function')awardCaptureResearch(s,owner,previousOwner);
     console.log('DEBUG: Settlement ownership changed from', previousOwner, 'to', owner);
     console.log('Settlement at',col,row,'now owned by',owner);
     
@@ -756,6 +761,7 @@ function checkSettlementCaptureAfterMove(unit, newCol, newRow) {
   if (settlement.owner !== unit.team && !areFriendlyTeams(settlement.owner,unit.team)) {
     const previousOwner = settlement.owner;
     settlement.owner = unit.team;
+    if(typeof awardCaptureResearch==='function')awardCaptureResearch(settlement,unit.team,previousOwner);
     console.log(`SUCCESS: ${unit.team} ${unit.name} captured ${settlement.type} from ${previousOwner} at (${newCol},${newRow})`);
     
     // Trigger diplomatic messages for settlement capture
@@ -811,6 +817,7 @@ function captureSettlementsWithUnits(team) {
         if (settlement.owner !== team && !areFriendlyTeams(settlement.owner,team)) {
           const previousOwner = settlement.owner;
           settlement.owner = team;
+          if(typeof awardCaptureResearch==='function')awardCaptureResearch(settlement,team,previousOwner);
           capturedCount++;
           
           console.log(`NUCLEAR: Captured ${settlement.type} at (${col},${row}) from ${previousOwner || 'neutral'} for ${team}`);

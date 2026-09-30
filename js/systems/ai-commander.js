@@ -71,6 +71,7 @@ const AICommander = (() => {
     if(isFortressUnit(e)&&u.name!=='Catapult')d=Math.floor(d*(1-(getFortressPropsByName(e.name)?.damageReduction||0)));
     if(isFortressUnit(e)&&u.name==='Assassin')d=Math.floor(d*.1);
     if(hasCrownAura(e))d=Math.floor(d*.75);
+    if(typeof getDoctrineAttackMultiplier==='function')d=Math.floor(d*getDoctrineAttackMultiplier(a,e));
     return Math.max(0,Math.floor(d));
   }
   // Observe broad force composition and recent losses, without hidden resources.
@@ -169,31 +170,42 @@ const AICommander = (() => {
   }
   function economicGoal(team,plan,old) {
     const homes=aiAssets(team),army=aiMobile(team),emergency=homes.some(h=>aiThreat(h,team)>0);
-    if(emergency||army.length<2||army.length>=homes.length*3)return null;
-    if(old?.economicGoal&&old.economicGoal.age<3)return {...old.economicGoal,age:old.economicGoal.age+1};
-    if(old?.economicGoal)return null; // Spend this turn before considering another savings goal.
+    if(emergency||army.length<2)return null;
+    if(old?.economicGoal&&old.economicGoal.type!=='RESEARCH'&&old.economicGoal.age<3)return {...old.economicGoal,age:old.economicGoal.age+1};
+    if(old?.economicGoal&&old.economicGoal.type!=='RESEARCH')return null; // Spend this turn before considering another savings goal.
+    // Fund unlocked counters with gold/materials. The independent RP goal never
+    // competes for this production budget.
+    const needed=plan.observations.dragons?'Knight':plan.observations.fortresses?'Catapult':army.some(u=>u.hp<u.maxHp*.7)&&!army.some(u=>u.name==='Cleric')?'Cleric':null;
+    if(needed&&isUnitUnlocked(team,needed)&&army.length<homes.length*3&&!army.some(u=>u.name===needed)&&homes.some(h=>allowedUnitsForSettlement(h.type,team).includes(needed)&&!getUnitAt(h.col,h.row))){
+      const cost=getEffectiveUnitCostForTeam(team,needed);
+      if(!canAfford(team,cost)&&(!cost.materials||computeIncomeForTeam(team).materials>0))return {type:'RECRUIT',unit:needed,targetCost:cost,age:0};
+    }
+    if(army.length>=homes.length*3)return null;
     const upgrade=homes.find(h=>SETTLEMENTS[h.type]?.upgradeTo);
-    if(upgrade&&(plan.style==='ECONOMIC'||!computeIncomeForTeam(team).materials))return {type:'UPGRADE',target:key(upgrade),targetCost:getEffectiveCost(SETTLEMENTS[upgrade.type].upgradeCost),age:0};
+    if(upgrade&&(plan.style==='ECONOMIC'||!computeIncomeForTeam(team).materials))return {type:'UPGRADE',target:key(upgrade),targetCost:getSettlementUpgradeCost(team,upgrade.type),age:0};
     const names=[plan.observations.dragons?'Knight':null,plan.observations.fortresses||plan.observations.turtling>3?'Catapult':null,!army.some(u=>u.name==='Cleric')?'Cleric':null,plan.style==='CUNNING'?'Assassin':plan.style==='DEFENSIVE'?'Spearman':plan.observations.ranged>3?'Knight':'Dragon'].filter(Boolean);
-    const name=names.find(n=>homes.some(h=>allowedUnitsForSettlement(h.type).includes(n))&&(!(getEffectiveCost(UNIT_TEMPLATES[n].cost).materials)||computeIncomeForTeam(team).materials>0));
+    const name=names.find(n=>isUnitUnlocked(team,n)&&homes.some(h=>allowedUnitsForSettlement(h.type).includes(n))&&(!(getEffectiveUnitCostForTeam(team,n).materials)||computeIncomeForTeam(team).materials>0));
     if(!name)return null;
-    const cost=getEffectiveCost(UNIT_TEMPLATES[name].cost);
-    return {type:'RECRUIT',unit:name,targetCost:{...cost,gold:(cost.gold||0)+(hasResearched(team,name)?0:RESEARCH_COSTS[name]||0)},age:0};
+    const cost=getEffectiveUnitCostForTeam(team,name);
+    return {type:'RECRUIT',unit:name,targetCost:cost,age:0};
   }
   function spend(team) {
     const p=plans[team],goal=p?.economicGoal;if(!goal)return false;
     const homes=aiAssets(team);
     if(homes.some(h=>aiThreat(h,team)>0)){p.economicGoal=null;return false;}
+    if(goal.type==='RESEARCH'){
+      p.economicGoal=null;return false; // Discard pre-RP saved gold/research goals.
+    }
     if(goal.type==='UPGRADE'){
       const s=settlements[goal.target],data=SETTLEMENTS[s?.type];
       if(s?.owner!==team||!data?.upgradeTo){p.economicGoal=null;return false;}
-      if(canAfford(team,data.upgradeCost)){deductResources(team,data.upgradeCost);s.type=data.upgradeTo;p.economicGoal=null;}return true;
+      if(purchaseSettlementUpgrade(goal.target%COLS,Math.floor(goal.target/COLS),team))p.economicGoal=null;return true;
     }
     const home=homes.find(h=>!getUnitAt(h.col,h.row)&&allowedUnitsForSettlement(h.type).includes(goal.unit));
     if(!home||aiMobile(team).length>=homes.length*3){p.economicGoal=null;return false;}
     if(canAfford(team,goal.targetCost)){
-      if(!hasResearched(team,goal.unit)&&!researchUnit(team,goal.unit))return false;
-      if(hasResearched(team,goal.unit)&&canAfford(team,UNIT_TEMPLATES[goal.unit].cost)){deductResources(team,UNIT_TEMPLATES[goal.unit].cost);units.push(makeUnit(goal.unit,team,home.col,home.row,{justSpawned:true}));p.economicGoal=null;}
+      if(!hasResearched(team,goal.unit)){p.economicGoal=null;return false;}
+      if(hasResearched(team,goal.unit)&&canAfford(team,getEffectiveUnitCostForTeam(team,goal.unit))){deductResources(team,getEffectiveUnitCostForTeam(team,goal.unit));units.push(makeUnit(goal.unit,team,home.col,home.row,{justSpawned:true}));p.economicGoal=null;}
     }
     return true;
   }
@@ -202,6 +214,7 @@ const AICommander = (() => {
     const plan={team,turn:turnNumber,level:difficulty(old),style:raw==='TRADER'?'ECONOMIC':raw==='IDEOLOGICAL'?'CUNNING':raw};
     plan.observations=observe(team,old);plan.objectives=objectives(team,plan,old);plan.groups=groups(team,plan);plans[team]=plan;
     plan.attacks=attackPlan(team,plan);plan.economicGoal=economicGoal(team,plan,old);
+    plan.researchGoal=chooseAIResearch(team);
     plan.economyRelease=!!old?.economicGoal&&old.economicGoal.age>=3;
     if(api.debug)console.log('AI PLAN',team,JSON.stringify(plan,null,2));return plan;
   }

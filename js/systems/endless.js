@@ -60,6 +60,8 @@ const Endless = (() => {
     setupGame();
     active=true;COLS=8*players.length+2;ROWS=20;mapSize={cols:COLS,rows:20};TILE=BOARD_SIZE/COLS;useHexGrid=true;updateHexSize();resizeGameCanvas();
     terrain=Array.from({length:20},(_,row)=>rowTerrain(-row)).flat();settlements=Array(COLS*20).fill(null);units=[];
+    if(typeof restoreResearchPoints==='function')restoreResearchPoints();
+    if(typeof restoreResearch==='function')restoreResearch(null,Object.fromEntries([...players,'AI'].map(t=>[t,t!=='AI'&&difficulty==='easy'?['Soldier','Archer','Cleric']:['Soldier']])),[...players,'AI']);
     const forward=difficulties[difficulty].forward;
     players.forEach((team,lane)=>{
     [['Knight',4,14],['Soldier',3,14],['Spearman',5,14],['Archer',6,15],['Cleric',4,16]].forEach(([name,col,row])=>units.push(makeUnit(name,team,col+lane*8,row-forward)));
@@ -73,7 +75,7 @@ const Endless = (() => {
     for(const u of units)terrain[u.row*COLS+u.col]='GRASS';
     spawnWave();
     if(typeof AICommander!=='undefined')AICommander.reset();
-    resetStartingEconomy();researchedUnits=Object.fromEntries([...players,'AI'].map(t=>[t,new Set(t!=='AI'&&difficulty==='easy'?['Soldier','Archer','Cleric']:['Soldier'])]));
+    resetStartingEconomy();if(typeof restoreResearch!=='function')researchedUnits=Object.fromEntries([...players,'AI'].map(t=>[t,new Set(t!=='AI'&&difficulty==='easy'?['Soldier','Archer','Cleric']:['Soldier'])]));
     diplomacy=createDefaultWarDiplomacy([...players,'AI']);currentVictoryCondition=normalizeVictoryCondition({type:'ANNIHILATE_ALL'});
     currentTeam='PLAYER';turnNumber=1;currentTurnIndex=0;calculateTurnOrder();selectedUnit=null;gameOver=false;
     tradeProposals=[];communicationLockouts={};hideEndScreen();closeSpawnMenu();closeTradeProposalModal();

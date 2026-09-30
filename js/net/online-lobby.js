@@ -75,11 +75,14 @@ const OnlineMatch = (() => {
  }
  function snapshot(){
   return copy({incomeReceipt:typeof BattleGuide!=='undefined'?BattleGuide.incomeReceipt:null,effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
-   aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
+   researchPoints:typeof researchPoints!=='undefined'?researchPoints:undefined,researchPointReceipts:typeof researchPointReceipts!=='undefined'?researchPointReceipts:undefined,
+   researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
  }
  function valid(s){
   const teams=mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity),cols=mode==='coop'?8*capacity+2:capacity===2?20:21,rows=mode==='coop'?20:capacity===2?16:21;
   if(mode==='coop'&&(!s?.endless||s.endless.difficulty!==difficulty||!Number.isInteger(s.endless.seed)||!Number.isInteger(s.endless.wave)||s.endless.wave<1||s.endless.lastAdvance!==s.turnNumber||JSON.stringify(s.endless.players)!==JSON.stringify(TEAMS.slice(0,capacity))||typeof s.endless.lossReason!=='string'))return false;
+  if(s?.researchPoints&&typeof validResearchPoints==='function'&&!validResearchPoints(s.researchPoints))return false;
+  if(s?.researchedTechs&&typeof validResearchState==='function'&&!validResearchState(s.researchedTechs))return false;
   return s&&(s.mode||'competitive')===mode&&s.playerCount===capacity&&(mode==='coop'?s.theme==='Cooperative Endless':FairMap.themes.some(t=>t.name===s.theme))&&s.cols===cols&&s.rows===rows&&
    Array.isArray(s.terrain)&&s.terrain.length===cols*rows&&s.terrain.every(t=>[null,'GRASS','WOODS','MOUNTAIN','SWAMP','DESERT','WATER','BRIDGE','FARM','FOUNTAIN','VOID'].includes(t))&&
    Array.isArray(s.settlements)&&s.settlements.length===cols*rows&&s.settlements.every(t=>t===null||(['HAMLET','VILLAGE','CITY','PORT'].includes(t.type)&&[null,...teams].includes(t.owner)))&&
@@ -95,7 +98,10 @@ const OnlineMatch = (() => {
   if(typeof AICommander!=='undefined')AICommander.restore(s.aiCommander);
   if(typeof ensureVeteranName==='function')units.forEach(u=>ensureVeteranName(u));
   currentTeam=s.currentTeam;turnNumber=s.turnNumber;currentTurnIndex=s.currentTurnIndex;turnOrder=copy(s.turnOrder);
-  researchedUnits=Object.fromEntries(Object.entries(s.research).map(([k,v])=>[k,new Set(v)]));diplomacy=copy(s.diplomacy);
+  if(typeof restoreResearch==='function')restoreResearch(s.researchedTechs,s.research,Object.keys(s.research));
+  else researchedUnits=Object.fromEntries(Object.entries(s.research).map(([k,v])=>[k,new Set(v)]));
+  if(typeof restoreResearchPoints==='function')restoreResearchPoints(s.researchPoints,s.researchPointReceipts,true);
+  diplomacy=copy(s.diplomacy);
   currentVictoryCondition=copy(s.victoryCondition);gameOver=s.gameOver;selectedUnit=null;closeSpawnMenu();buildMode=false;buildModeUnitId=null;
   if(typeof Endless!=='undefined')Endless.restore(mode==='coop'?copy(s.endless):null);
   if(typeof BattleGuide!=='undefined')BattleGuide.receiveIncome(s.incomeReceipt);
@@ -125,6 +131,7 @@ const OnlineMatch = (() => {
   }
   const seed=crypto.randomUUID(),map=FairMap.generateForPlayers(seed,capacity);currentTheme=map.theme.name;
   configure();COLS=map.cols;ROWS=map.rows;mapSize={cols:COLS,rows:ROWS};useHexGrid=true;setupGame();stopHeartbeat();LEARNING_AI.enabled=false;
+  if(typeof resetResearch==='function')resetResearch(TEAMS.slice(0,capacity));
   terrain=map.terrain;settlements=map.settlements;units=map.units.map(u=>makeUnit(u.name,u.team,u.col,u.row,{id:u.id}));
   const teams=TEAMS.slice(0,capacity);resources=map.resources;startingResources=copy(map.resources);researchedUnits=Object.fromEntries(teams.map(t=>[t,new Set(['Soldier'])]));
   diplomacy=createDefaultWarDiplomacy(teams);currentTeam=map.firstTeam;const first=teams.indexOf(currentTeam);turnOrder=[...teams.slice(first),...teams.slice(0,first)];currentTurnIndex=0;turnNumber=1;

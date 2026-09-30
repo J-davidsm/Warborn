@@ -7,7 +7,7 @@ const run=s=>vm.runInContext(s,c);
 c.updateUI=()=>{c.display=JSON.parse(run('JSON.stringify(resources.PLAYER)'));events.push('refresh');};
 run('resources.PLAYER={gold:30,materials:12};');c.spawnUnitAt('Soldier','PLAYER',0,0);
 assert.equal(c.units.length,1);assert.deepEqual(c.display,{gold:28,materials:12});assert.deepEqual(events,['close','refresh','publish'],'UI and multiplayer publish complete even when optional recording throws');
-events.length=0;let recorded;c.recordHumanAction=(type,data)=>{recorded=data;};c.spawnUnitAt('Knight','PLAYER',1,0);
+run("restoreResearch(null,{PLAYER:['Knight']})");events.length=0;let recorded;c.recordHumanAction=(type,data)=>{recorded=data;};c.spawnUnitAt('Knight','PLAYER',1,0);
 assert.deepEqual(c.display,{gold:21,materials:9});assert.equal(recorded.nearSettlement,false);assert.equal(c.units.length,2);
 c.spawnUnitAt('Knight','PLAYER',0,0);assert.deepEqual(c.display,{gold:21,materials:9},'occupied tile does not spend twice');
 run('resources.PLAYER={gold:0,materials:0};');events.length=0;c.spawnUnitAt('Knight','PLAYER',2,0);assert.equal(c.units.length,2);assert.deepEqual(events,[],'unaffordable purchase is rejected');

@@ -233,7 +233,7 @@ function allowedUnitsForSettlement(settlementType, team = null){
   if (team) {
     allowedUnits = allowedUnits.filter(unitType => {
       // Units that don't require research (only 'Soldier' by default) or have been researched
-      return !RESEARCH_COSTS[unitType] || hasResearched(team, unitType);
+      return isUnitUnlocked(team, unitType);
     });
   }
   
@@ -435,6 +435,7 @@ function openSpawnMenu(col, row, settlement){
     });
     
     // Update content
+    menu.className = tabId==='research' ? 'doctrine-menu' : '';
     content.innerHTML = '';
     
     if (tabId === 'build') {
@@ -465,7 +466,7 @@ function openSpawnMenu(col, row, settlement){
     }
     
     researched.forEach(name => {
-      const t = UNIT_TEMPLATES[name];
+      const t = getDoctrineUnitStats(settlement.owner,name);
       const unitRow = document.createElement('div');
       unitRow.style.display = 'flex';
       unitRow.style.alignItems = 'center';
@@ -524,6 +525,7 @@ function openSpawnMenu(col, row, settlement){
       buyBtn.style.fontSize = '11px';
       buyBtn.style.fontWeight = '600';
       buyBtn.textContent = `Buy (${formatCost(t.cost)})`;
+      buyBtn.disabled = !canAfford(settlement.owner,t.cost);
       buyBtn.onclick = () => { 
         try { 
           spawnUnitAt(name, settlement.owner, col, row);
@@ -545,7 +547,7 @@ function openSpawnMenu(col, row, settlement){
     
     const currentType = settlement.type;
     let nextType = null;
-    let upgradeCost = SETTLEMENTS[currentType]?.upgradeCost?.gold || 0;
+    const upgradeCost = getSettlementUpgradeCost(settlement.owner,currentType);
     
     if (currentType === 'HAMLET') nextType = 'VILLAGE';
     else if (currentType === 'VILLAGE') nextType = 'CITY';
@@ -564,19 +566,18 @@ function openSpawnMenu(col, row, settlement){
       
       const upgradeBtn = document.createElement('button');
       upgradeBtn.style.padding = '12px 24px';
-      upgradeBtn.style.background = resources[settlement.owner].gold >= upgradeCost ? '#ffa500' : '#555';
+      upgradeBtn.style.background = canAfford(settlement.owner,upgradeCost) ? '#ffa500' : '#555';
       upgradeBtn.style.color = 'white';
       upgradeBtn.style.border = 'none';
       upgradeBtn.style.borderRadius = '8px';
-      upgradeBtn.style.cursor = resources[settlement.owner].gold >= upgradeCost ? 'pointer' : 'not-allowed';
+      upgradeBtn.style.cursor = canAfford(settlement.owner,upgradeCost) ? 'pointer' : 'not-allowed';
       upgradeBtn.style.fontSize = '14px';
       upgradeBtn.style.fontWeight = '600';
-      upgradeBtn.disabled = resources[settlement.owner].gold < upgradeCost;
-      upgradeBtn.textContent = `Upgrade (${upgradeCost}G)`;
+      upgradeBtn.disabled = !canAfford(settlement.owner,upgradeCost);
+      upgradeBtn.textContent = `Upgrade (${formatCost(upgradeCost)})`;
       upgradeBtn.onclick = () => {
-        if (resources[settlement.owner].gold >= upgradeCost) {
-          resources[settlement.owner].gold -= upgradeCost;
-          settlement.type = nextType;
+        if (canAfford(settlement.owner,upgradeCost)) {
+          if(!purchaseSettlementUpgrade(col,row,settlement.owner))return;
           console.log(`${settlement.owner} upgraded settlement to ${nextType}`);
           postGameState();
           closeSpawnMenu();
@@ -596,113 +597,7 @@ function openSpawnMenu(col, row, settlement){
   }
   
   function showResearchTab() {
-    const researchable = getResearchableUnits(settlement.owner).filter(name => 
-      allowedUnitsForSettlement(settlement.type, null).includes(name)
-    );
-    
-    if (researchable.length === 0) {
-      const noResearch = document.createElement('div');
-      noResearch.style.textAlign = 'center';
-      noResearch.style.color = '#9aa6b2';
-      noResearch.style.padding = '40px 20px';
-      noResearch.innerHTML = `
-        <div style="font-size: 24px; margin-bottom: 12px;">🎓</div>
-        <div>All available units researched</div>
-        <div style="font-size: 12px; margin-top: 8px;">Build higher level settlements to unlock more units</div>
-      `;
-      content.appendChild(noResearch);
-      return;
-    }
-    
-    researchable.forEach(name => {
-      const t = UNIT_TEMPLATES[name];
-      const cost = RESEARCH_COSTS[name];
-      const researchRow = document.createElement('div');
-      researchRow.style.display = 'flex';
-      researchRow.style.alignItems = 'center';
-      researchRow.style.padding = '12px';
-      researchRow.style.marginBottom = '8px';
-      researchRow.style.background = 'rgba(255,165,0,0.1)';
-      researchRow.style.borderRadius = '8px';
-      researchRow.style.border = '1px solid rgba(255,165,0,0.2)';
-      researchRow.style.transition = 'all 0.2s ease';
-      researchRow.style.cursor = 'default';
-      
-      // Hover effect
-      researchRow.addEventListener('mouseenter', () => {
-        researchRow.style.background = 'rgba(255,165,0,0.15)';
-        researchRow.style.border = '1px solid rgba(255,165,0,0.4)';
-      });
-      researchRow.addEventListener('mouseleave', () => {
-        researchRow.style.background = 'rgba(255,165,0,0.1)';
-        researchRow.style.border = '1px solid rgba(255,165,0,0.2)';
-      });
-      
-      // Unit icon (dimmed for unresearched)
-      const iconContainer = document.createElement('div');
-      iconContainer.style.marginRight = '12px';
-      iconContainer.style.minWidth = '32px';
-      iconContainer.style.height = '32px';
-      iconContainer.style.display = 'flex';
-      iconContainer.style.alignItems = 'center';
-      iconContainer.style.justifyContent = 'center';
-      iconContainer.style.background = 'rgba(255,255,255,0.05)';
-      iconContainer.style.borderRadius = '6px';
-      iconContainer.style.border = '1px solid rgba(255,255,255,0.1)';
-      iconContainer.style.opacity = '0.7';
-      const icon = createUnitIcon(name, 28);
-      iconContainer.appendChild(icon);
-      researchRow.appendChild(iconContainer);
-      
-      // Unit info
-      const info = document.createElement('div');
-      info.style.flex = '1';
-      info.innerHTML = `
-        <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">${name}</div>
-        <div style="font-size: 11px; color: #9aa6b2;">
-          HP: ${t.hp} • Range: ${t.atkRange} • DMG: ${t.dmg} • Move: ${t.move}
-        </div>
-      `;
-      researchRow.appendChild(info);
-      
-      // Research button
-      const researchBtn = document.createElement('button');
-      researchBtn.style.padding = '8px 12px';
-      const canDoResearch = canResearch(settlement.owner, name);
-      researchBtn.style.background = canDoResearch ? '#ffa500' : '#555';
-      researchBtn.style.color = 'white';
-      researchBtn.style.border = 'none';
-      researchBtn.style.borderRadius = '6px';
-      researchBtn.style.cursor = canDoResearch ? 'pointer' : 'not-allowed';
-      researchBtn.style.fontSize = '11px';
-      researchBtn.style.fontWeight = '600';
-      researchBtn.disabled = !canDoResearch;
-      researchBtn.textContent = `Research (${cost}G)`;
-      
-      // Use addEventListener instead of onclick to avoid skipNextClick interference
-      researchBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent event bubbling
-        console.log(`Research button clicked for ${name}, owner: ${settlement.owner}, canResearch: ${canResearch(settlement.owner, name)}`);
-        
-        if (researchUnit(settlement.owner, name)) {
-          console.log(`Successfully researched ${name} for ${settlement.owner}`);
-          switchTab('research'); // Clear stale buttons before rebuilding the list.
-          const confirmation = document.createElement('p');
-          confirmation.setAttribute('role', 'status');
-          confirmation.textContent = `${name} researched — available in the Build tab.`;
-          confirmation.style.color = '#8ee0ad';
-          content.prepend(confirmation);
-          updateUI();
-          try { postGameState(); } catch (error) {}
-        } else {
-          console.log(`Failed to research ${name} for ${settlement.owner}`);
-        }
-      });
-      
-      researchRow.appendChild(researchBtn);
-      
-      content.appendChild(researchRow);
-    });
+    renderDoctrineTree(content,settlement.owner,()=>switchTab('research'));
   }
   
   // Ignore the immediate click that triggered opening the menu so it doesn't close instantly
@@ -710,6 +605,39 @@ function openSpawnMenu(col, row, settlement){
 }
 
 function closeSpawnMenu(){ const ex = document.getElementById('spawnMenu'); if(ex) ex.remove(); }
+
+function renderDoctrineTree(container,team,refresh) {
+  const heading=document.createElement('div');heading.className='doctrine-intro';
+  heading.innerHTML=`<h2>Army Doctrines</h2><p>Specialize your army for this war. Research uses battle-earned Research Points and applies to your whole kingdom.</p><strong>📜 Research Points: ${getResearchPoints(team)}</strong>`;
+  container.appendChild(heading);
+  const tree=document.createElement('div');tree.className='doctrine-tree';
+  for(const branch of ['warfare','command','defense','engineering']){
+    const section=document.createElement('section');section.className='doctrine-branch';
+    const title=document.createElement('h3');title.textContent=branch.toUpperCase();section.appendChild(title);
+    for(const tech of Object.values(RESEARCH_TREE).filter(t=>t.branch===branch)){
+      const known=hasTech(team,tech.id),ready=tech.requires.every(id=>hasTech(team,id));
+      const card=document.createElement('article');card.className='doctrine-node '+(known?'researched':ready?'available':'locked');
+      card.setAttribute('data-tech-id',tech.id);
+      const info=document.createElement('div');
+      info.innerHTML=`<h4>${tech.name}<span>${tech.cost} RP</span></h4><p>${tech.description}</p><p class="doctrine-prerequisites">${tech.requires.length?'↳ Requires: '+tech.requires.map(id=>RESEARCH_TREE[id].name).join(' and '):'Starting doctrine'}</p>`;
+      card.appendChild(info);
+      const button=document.createElement('button');button.disabled=!canResearchTech(team,tech.id);button.className='doctrine-research';
+      button.textContent=known?'Researched':!ready?'Locked':getResearchPoints(team)<tech.cost?`Need ${tech.cost-getResearchPoints(team)} more RP`:`Research (${tech.cost} RP)`;
+      button.setAttribute('aria-label',tech.name+' — '+button.textContent);
+      button.addEventListener('click',event=>{
+        event.stopPropagation();
+        if((typeof currentTeam!=='undefined'&&currentTeam!==team)||(typeof OnlineMatch!=='undefined'&&!OnlineMatch.canAct()))return;
+        if(researchTech(team,tech.id)){
+          refresh();const status=document.createElement('p');status.className='doctrine-confirmation';status.setAttribute('role','status');status.textContent=tech.name+' researched.';container.prepend(status);
+          // researchTech refreshes resources and queues the authoritative snapshot.
+        }
+      });
+      card.appendChild(button);section.appendChild(card);
+    }
+    tree.appendChild(section);
+  }
+  container.appendChild(tree);
+}
 
 // Helper function to check if a location is near an owned port
 function isNearOwnedPort(col, row, team) {
@@ -756,7 +684,7 @@ function openBuildMenu(col, row){
   
   const fortressTypes = ['Stockade','Castle','Heavy Fortress'];
   fortressTypes.forEach(ft => {
-    const t = UNIT_TEMPLATES[ft] || { hp:150, atkRange:2, dmg:12, cost:3 };
+    const t = getDoctrineUnitStats(currentTeam,ft);
     const info = document.createElement('div');
     
     // Format cost display properly
@@ -772,10 +700,13 @@ function openBuildMenu(col, row){
     
     info.innerHTML = `<div style="font-weight:700">${ft}</div><div style="font-size:12px;color:#9aa6b2">HP ${t.hp} • Range ${t.atkRange} • DMG ${t.dmg} • Cost ${costDisplay}</div>`;
     const btn = document.createElement('button'); btn.className='small'; btn.textContent = `Build ${ft} (${costDisplay})`;
+    btn.disabled=!isUnitUnlocked(currentTeam,ft)||!canAfford(currentTeam,t.cost);
+    btn.title=isUnitUnlocked(currentTeam,ft)?'':'Requires: '+RESEARCH_TREE[UNIT_DOCTRINES[ft]].name;
     btn.onclick = () => {
       try{
         const team = currentTeam;
-        const cost = t.cost;
+        const cost = getEffectiveUnitCostForTeam(team,ft);
+        if(!isUnitUnlocked(team,ft))return;
         
         // Use proper resource checking
         if (!canAfford(team, cost)) { 
@@ -788,7 +719,7 @@ function openBuildMenu(col, row){
         }
         
         deductResources(team, cost);
-        const u = makeUnit(ft, team, col, row, { maxHp: t.hp, atkRange: t.atkRange, dmg: t.dmg, cost: cost, justSpawned: true });
+        const u = makeUnit(ft, team, col, row, { justSpawned: true });
         units.push(u);
         closeSpawnMenu(); updateUI(); try{ postGameState(); }catch(e){}
       }catch(e){ console.warn('Failed to build fortress', e); }
@@ -808,7 +739,7 @@ function openBuildMenu(col, row){
     
     const shipTypes = ['Sloop','Man-of-War','Battleship'];
     shipTypes.forEach(st => {
-      const t = UNIT_TEMPLATES[st];
+      const t = getDoctrineUnitStats(currentTeam,st);
       if (t && t.isWaterUnit) {
         const info = document.createElement('div');
         
@@ -825,10 +756,13 @@ function openBuildMenu(col, row){
         
         info.innerHTML = `<div style="font-weight:700">${st}</div><div style="font-size:12px;color:#9aa6b2">HP ${t.hp} • Range ${t.atkRange} • DMG ${t.dmg} • Cost ${costDisplay}</div>`;
         const btn = document.createElement('button'); btn.className='small'; btn.textContent = `Build ${st} (${costDisplay})`;
+        btn.disabled=!isUnitUnlocked(currentTeam,st)||!canAfford(currentTeam,t.cost);
+        btn.title=isUnitUnlocked(currentTeam,st)?'':'Requires: '+RESEARCH_TREE[UNIT_DOCTRINES[st]].name;
         btn.onclick = () => {
           try{
             const team = currentTeam;
-            const cost = t.cost;
+            const cost = getEffectiveUnitCostForTeam(team,st);
+            if(!isUnitUnlocked(team,st))return;
             
             // Use proper resource checking
             if (!canAfford(team, cost)) { 
@@ -841,7 +775,7 @@ function openBuildMenu(col, row){
             }
             
             deductResources(team, cost);
-            const u = makeUnit(st, team, col, row, { maxHp: t.hp, atkRange: t.atkRange, dmg: t.dmg, cost: cost, justSpawned: true });
+            const u = makeUnit(st, team, col, row, { justSpawned: true });
             units.push(u);
             closeSpawnMenu(); updateUI(); try{ postGameState(); }catch(e){}
           }catch(e){ console.warn('Failed to build ship', e); }
@@ -865,7 +799,7 @@ function openBuildMenu(col, row){
 }
 
 function spawnUnitAt(name, team, col, row){
-  if(UNIT_TEMPLATES[name]?.editorOnly)return;
+  if(UNIT_TEMPLATES[name]?.editorOnly||!isUnitUnlocked(team,name))return;
   // Prevent rapid-fire unit spawning
   if (!isActionAllowed(col, row)) {
     console.log('Spawn blocked - too soon after last action');
@@ -877,7 +811,7 @@ function spawnUnitAt(name, team, col, row){
   const t = UNIT_TEMPLATES[name]; if(!t) return;
   
   // Check cost and resources using unified system
-  const unitCost = t.cost;
+  const unitCost = getEffectiveUnitCostForTeam(team,name);
   if (!canAfford(team, unitCost)) {
     showPopup('Insufficient Resources', 'Not enough resources!', 'error');
     return;
@@ -887,7 +821,7 @@ function spawnUnitAt(name, team, col, row){
   recordAction(col, row); // Record this as a significant action
   
   // Create unit
-  const u = makeUnit(name, team, col, row, { maxHp: t.hp, atkRange: t.atkRange, dmg: t.dmg, cost: unitCost, justSpawned: true });
+  const u = makeUnit(name, team, col, row, { justSpawned: true });
   units.push(u);
   
   // close menu and update UI

@@ -10,7 +10,7 @@ vm.runInContext(fs.readFileSync('js/ui/popups-and-assets.js','utf8').match(/cons
 for(const f of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js','js/systems/mechanics.js','js/systems/diplomacy.js','js/systems/combat-turns.js','js/systems/settlements.js','js/systems/ai-turn.js','js/systems/ai-commander.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
 const run=s=>vm.runInContext(s,ctx),ai=run('AICommander');let next=0;
 const unit=(name,col,row,team='AI')=>ctx.makeUnit(name,team,col,row,{id:'u'+(++next)});
-const reset=()=>{ctx.COLS=12;ctx.ROWS=8;ctx.units=[];ctx.terrain=Array(96).fill(null);ctx.settlements=Array(96).fill(null);ctx.currentVictoryCondition={type:'ANNIHILATE_ALL'};ctx.turnNumber=1;ctx.useHexGrid=false;ai.reset();run("resources.AI={gold:0,materials:0};researchedUnits.AI=new Set(['Soldier']);hasTreaty=()=>false;isDiplomacyActive=()=>false;");};
+const reset=()=>{ctx.COLS=12;ctx.ROWS=8;ctx.units=[];ctx.terrain=Array(96).fill(null);ctx.settlements=Array(96).fill(null);ctx.currentVictoryCondition={type:'ANNIHILATE_ALL'};ctx.turnNumber=1;ctx.useHexGrid=false;ai.reset();run("resetResearch(['AI']);resources.AI={gold:0,materials:0};hasTreaty=()=>false;isDiplomacyActive=()=>false;");};
 reset();let soldier=unit('Soldier',1,3);ctx.units=[soldier];
 for(let r=0;r<8;r++)ctx.terrain[r*12+4]='WATER';
 assert.equal(ai.pathCost(soldier,{col:6,row:3}),Infinity,'land cannot cross water');
@@ -36,9 +36,12 @@ assert.equal(new Set(plan.attacks.map(a=>a.tile.col+','+a.tile.row)).size,plan.a
 victim.hp=0;assert.equal(ai.order(archer),undefined,'dead targets release orders');
 ctx.campaignMode.campaignData.scenarios[0].difficulty='Easy';assert.equal(ai.build('AI').attacks.length,0);ctx.campaignMode.campaignData.scenarios[0].difficulty='Hard';
 reset();ctx.units=[unit('Soldier',2,2),unit('Soldier',2,3),unit('Castle',10,7,'PLAYER')];ctx.settlements[0]={owner:'AI',type:'CITY'};
-plan=ai.build('AI');assert.equal(plan.economicGoal.unit,'Catapult');assert(ai.spend('AI'));assert.equal(ctx.units.length,3,'save without free recruitment');
-for(let i=0;i<4;i++){ctx.turnNumber++;plan=ai.build('AI');}assert.equal(plan.economicGoal,null,'saving has finite patience');
-ai.reset();run('resources.AI={gold:100,materials:100}');plan=ai.build('AI');assert(ai.spend('AI'));assert(ctx.units.some(u=>u.name==='Catapult'&&u.team==='AI'),'research and recruit planned counter');
+plan=ai.build('AI');assert.equal(plan.researchGoal,'engineering_corps');assert.equal(plan.economicGoal,null,'RP goals never hold gold');
+run('resources.AI={gold:2,materials:0}');ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Soldier'&&u.col===0&&u.row===0),'no RP does not block recruiting');
+reset();ctx.units=[unit('Soldier',2,2),unit('Soldier',2,3),unit('Castle',10,7,'PLAYER')];ctx.settlements[0]={owner:'AI',type:'CITY'};
+run('resources.AI={gold:0,materials:0};restoreResearchPoints({AI:5})');ai.build('AI');ctx.aiRecruit('AI');assert(ctx.hasTech('AI','engineering_corps'));
+ctx.turnNumber++;ai.build('AI');run('resources.AI={gold:100,materials:100}');ctx.aiRecruit('AI');assert(ctx.hasTech('AI','siege_engineering'));assert(ctx.units.some(u=>u.name==='Catapult'&&u.team==='AI'),'research with RP and recruit with gold');
+
 reset();ctx.units=[unit('Soldier',2,2),unit('Soldier',2,3),unit('Dragon',1,0,'PLAYER')];ctx.settlements[0]={owner:'AI',type:'CITY'};assert.equal(ai.build('AI').economicGoal,null,'emergency cancels savings');
 reset();const crown=unit('Crown',2,2);ctx.units=[crown,unit('Soldier',3,2),unit('Soldier',3,3),unit('Soldier',10,2,'PLAYER')];ctx.settlements[0]={owner:'AI',type:'CITY'};ai.build('AI');assert.equal(ai.group(crown).type,'GUARD');
 ctx.diplomacy.personalities.AI='TRADER';assert.equal(ai.build('AI').style,'ECONOMIC');ctx.diplomacy.personalities.AI='IDEOLOGICAL';assert.equal(ai.build('AI').style,'CUNNING');

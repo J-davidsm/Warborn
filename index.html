@@ -5,7 +5,7 @@
   <title>Warborn — Turn-Based Strategy</title>
   <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=commander1">
+  <link rel="stylesheet" href="styles.css?v=research-points1">
   <script src="vendor/p5.min.js"></script>
 </head>
 <body>
@@ -152,6 +152,7 @@
         <strong>Your resources</strong>
         <span>Gold <b id="bannerGold">0</b></span>
         <span>Materials <b id="bannerMaterials">0</b></span>
+        <span>📜 Research Points <b id="bannerResearchPoints">0</b></span>
       </div>
       <!-- Diplomacy Button Overlay -->
       <div id="mapDiplomacyButton" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5000; display: none;">
@@ -441,45 +442,45 @@
   <!-- Modals will be included here -->
   <!-- All the diplomacy, campaign editor and other modal content would continue here but keeping it brief for file size -->
 
-  <script src="js/core/state-and-grid.js?v=commander1"></script>
-  <script src="js/audio/soundManager.js?v=commander1"></script>
-  <script src="js/net/connection-state.js?v=commander1"></script>
-  <script src="js/net/websocket-client.js?v=commander1"></script>
-  <script src="js/systems/economy-research.js?v=commander1"></script>
-  <script src="js/systems/diplomacy-data.js?v=commander1"></script>
-  <script src="js/ui/popups-and-assets.js?v=commander1"></script>
-  <script src="js/core/level-state.js?v=commander1"></script>
-  <script src="js/core/game-setup.js?v=commander1"></script>
-  <script src="js/core/intro-scenarios.js?v=commander1"></script>
-  <script src="js/systems/campaign.js?v=commander1"></script>
-  <script src="js/data/campaign-catalog.js?v=commander1"></script>
-  <script src="js/ui/campaign-browser.js?v=commander1"></script>
-  <script src="js/systems/settlements.js?v=commander1"></script>
-  <script src="js/boot/p5-setup.js?v=commander1"></script>
-  <script src="js/systems/save-editor-teams.js?v=commander1"></script>
-  <script src="js/systems/learning-ai.js?v=commander1"></script>
-  <script src="js/systems/diplomacy.js?v=commander1"></script>
-  <script src="js/systems/trade.js?v=commander1"></script>
-  <script src="js/ui/editor-controls.js?v=commander1"></script>
-  <script src="js/rendering/action-effects.js?v=commander1"></script>
-  <script src="js/rendering/renderer.js?v=commander1"></script>
-  <script src="js/rendering/terrain-blend.js?v=commander1"></script>
-  <script src="js/systems/move-undo.js?v=commander1"></script>
-  <script src="js/input/mouse-actions.js?v=commander1"></script>
-  <script src="js/systems/mechanics.js?v=commander1"></script>
-  <script src="js/data/units-and-build.js?v=commander1"></script>
-  <script src="js/input/global-events.js?v=commander1"></script>
-  <script src="js/systems/combat-turns.js?v=commander1"></script>
-  <script src="js/systems/ai-commander.js?v=commander1"></script>
-  <script src="js/systems/ai-turn.js?v=commander1"></script>
-  <script src="js/ui/endgame-and-ui.js?v=commander1"></script>
-  <script src="js/net/multiplayer-sync.js?v=commander1"></script>
+  <script src="js/core/state-and-grid.js?v=research-points1"></script>
+  <script src="js/audio/soundManager.js?v=research-points1"></script>
+  <script src="js/net/connection-state.js?v=research-points1"></script>
+  <script src="js/net/websocket-client.js?v=research-points1"></script>
+  <script src="js/systems/economy-research.js?v=research-points1"></script>
+  <script src="js/systems/diplomacy-data.js?v=research-points1"></script>
+  <script src="js/ui/popups-and-assets.js?v=research-points1"></script>
+  <script src="js/core/level-state.js?v=research-points1"></script>
+  <script src="js/core/game-setup.js?v=research-points1"></script>
+  <script src="js/core/intro-scenarios.js?v=research-points1"></script>
+  <script src="js/systems/campaign.js?v=research-points1"></script>
+  <script src="js/data/campaign-catalog.js?v=research-points1"></script>
+  <script src="js/ui/campaign-browser.js?v=research-points1"></script>
+  <script src="js/systems/settlements.js?v=research-points1"></script>
+  <script src="js/boot/p5-setup.js?v=research-points1"></script>
+  <script src="js/systems/save-editor-teams.js?v=research-points1"></script>
+  <script src="js/systems/learning-ai.js?v=research-points1"></script>
+  <script src="js/systems/diplomacy.js?v=research-points1"></script>
+  <script src="js/systems/trade.js?v=research-points1"></script>
+  <script src="js/ui/editor-controls.js?v=research-points1"></script>
+  <script src="js/rendering/action-effects.js?v=research-points1"></script>
+  <script src="js/rendering/renderer.js?v=research-points1"></script>
+  <script src="js/rendering/terrain-blend.js?v=research-points1"></script>
+  <script src="js/systems/move-undo.js?v=research-points1"></script>
+  <script src="js/input/mouse-actions.js?v=research-points1"></script>
+  <script src="js/systems/mechanics.js?v=research-points1"></script>
+  <script src="js/data/units-and-build.js?v=research-points1"></script>
+  <script src="js/input/global-events.js?v=research-points1"></script>
+  <script src="js/systems/combat-turns.js?v=research-points1"></script>
+  <script src="js/systems/ai-commander.js?v=research-points1"></script>
+  <script src="js/systems/ai-turn.js?v=research-points1"></script>
+  <script src="js/ui/endgame-and-ui.js?v=research-points1"></script>
+  <script src="js/net/multiplayer-sync.js?v=research-points1"></script>
   <script src="vendor/peerjs-1.5.5.min.js"></script>
-  <script src="js/net/fair-map.js?v=commander1"></script>
-  <script src="js/net/online-lobby.js?v=commander1"></script>
-  <script src="js/net/public-lobby.js?v=commander1"></script>
-  <script src="js/systems/endless.js?v=commander1"></script>
-  <script src="js/ui/battle-guide.js?v=commander1"></script>
-<script src="js/ui/command-menu.js?v=commander1"></script>
+  <script src="js/net/fair-map.js?v=research-points1"></script>
+  <script src="js/net/online-lobby.js?v=research-points1"></script>
+  <script src="js/net/public-lobby.js?v=research-points1"></script>
+  <script src="js/systems/endless.js?v=research-points1"></script>
+  <script src="js/ui/battle-guide.js?v=research-points1"></script>
+<script src="js/ui/command-menu.js?v=research-points1"></script>
 </body>
 </html>

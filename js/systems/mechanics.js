@@ -1271,6 +1271,8 @@ function getDefenseModifiers(attacker, defender) {
     else if (t === 'CITY') totalDefense += SETTLEMENTS.CITY.defense;
   }
 
+  if(settlements[idx]?.owner===defender.team&&typeof hasTech==='function'&&hasTech(defender.team,'garrison_training'))totalDefense+=0.1;
+
   // Check for terrain defense - handle all terrain types
   if (terrain[idx]) {
     const terrainType = terrain[idx];
