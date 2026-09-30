@@ -12,7 +12,7 @@ vm.runInContext('resources.PLAYER={gold:9,materials:0};restoreResearchPoints({PL
 body.querySelectorAll('button').find(e=>e.textContent.includes('Research')).click();const content=c.document.getElementById('tabContent');assert.equal(content.querySelectorAll('button').length,60);
 const card=id=>content.querySelectorAll('article').find(e=>e['data-tech-id']===id);
 assert(card('archery').children[1].disabled);
-card('steel_arms').children[1].click();assert.equal(c.getResources('PLAYER').gold,9);assert.equal(c.getResearchPoints('PLAYER'),2);assert(!card('archery').children[1].disabled);
+card('spear_doctrine').children[1].click();assert.equal(c.getResources('PLAYER').gold,9);assert.equal(c.getResearchPoints('PLAYER'),2);assert(!card('archery').children[1].disabled);
 card('archery').children[1].click();assert.equal(c.getResources('PLAYER').gold,9);assert.equal(c.getResearchPoints('PLAYER'),0);assert(c.isUnitUnlocked('PLAYER','Archer'));
 assert.equal(content.querySelectorAll('button').length,60,'cards persist without duplicates');
 assert.equal(card('archery').children[1].textContent,'Researched');assert(card('archery').children[1].disabled);

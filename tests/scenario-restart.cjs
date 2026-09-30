@@ -17,7 +17,7 @@ const legacy=structuredClone(c.activeScenarioSnapshot);delete legacy.resources;d
 console.log('Repeated scenario restarts restore armies, health, ownership, terrain, resources, research and turn state; legacy levels also start with zero balances.');
 vm.runInContext("resources.PLAYER.gold=20;restoreResearchPoints({PLAYER:10});researchTech('PLAYER','field_training');researchTech('PLAYER','forced_march');",c);
 c.units.push(c.makeUnit('Soldier','PLAYER',1,1,{id:'doctrine-soldier'}));
-c.startDoctrineResearch('PLAYER','steel_arms');c.advanceDoctrineResearch('PLAYER');
+c.startDoctrineResearch('PLAYER','reconnaissance');c.advanceDoctrineResearch('PLAYER');
 let doctrineSave=c.createLevelData();
 doctrineSave.settlements[0].researchCaptureTeams=['PLAYER'];
 for(let i=0;i<4;i++){

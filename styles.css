@@ -968,3 +968,16 @@ body #diplomacyTargetButtons .diplomacy-banner-button {position:relative;width:1
 .doctrine-defense::before {background-image:url("assets/doctrines/defense.svg");}
 .doctrine-engineering::before {background-image:url("assets/doctrines/engineering.svg");}
 .doctrine-paths {position:sticky;top:-18px;z-index:3;background:#0b111b;padding:8px 0;}
+
+/* Original painted artwork for each research path. */
+body .doctrine-paths .doctrine-path-button {height:82px;padding:12px 8px 12px 35%;padding-left:90px;min-width:220px;background-size:100% 100%!important;font-size:14px;font-weight:bold;transition:filter .15s;}
+body .doctrine-paths .doctrine-path-button[aria-pressed="true"] {filter:brightness(1.22);outline:1px solid #d2b574;outline-offset:2px;}
+.doctrine-branch::before {inset:0;background-size:100% 100%;background-repeat:no-repeat;opacity:.85;}
+body .doctrine-paths .doctrine-path-warfare {background-image:url("assets/doctrines/warfare-button.png")!important;}
+.doctrine-warfare::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/warfare-background.png");}
+body .doctrine-paths .doctrine-path-command {background-image:url("assets/doctrines/command-button.png")!important;}
+.doctrine-command::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/command-background.png");}
+body .doctrine-paths .doctrine-path-defense {background-image:url("assets/doctrines/defense-button.png")!important;}
+.doctrine-defense::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/defense-background.png");}
+body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/doctrines/engineering-button.png")!important;}
+.doctrine-engineering::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/engineering-background.png");}

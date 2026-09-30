@@ -36,7 +36,7 @@ undo.begin(u);u.col=1;c.checkSettlementCaptureAfterMove(u,1,0);undo.finish();ass
 c.awardResearchPoints('PLAYER',1);assert(!undo.undo(),'later RP event invalidates undo');
 const before=c.getResearchPoints('PLAYER');c.computeIncomeForTeam('PLAYER');c.addResources('PLAYER',{gold:5,materials:5});make('Archer','PLAYER');assert.equal(c.getResearchPoints('PLAYER'),before,'income and spawning earn no RP');
 const healer=make('Cleric','PLAYER');u.hp=1;c.healUnit(healer,u);assert.equal(c.getResearchPoints('PLAYER'),before,'healing earns no RP');
-reset();assert(!c.canResearchTech('PLAYER','steel_arms'),'gold cannot buy research');c.awardResearchPoints('PLAYER',2);assert(c.researchTech('PLAYER','steel_arms'));assert.equal(c.getGold('PLAYER'),100);assert.equal(c.getResearchPoints('PLAYER'),0);
+reset();assert(!c.canResearchTech('PLAYER','spear_doctrine'),'gold cannot buy research');c.awardResearchPoints('PLAYER',2);assert(c.researchTech('PLAYER','spear_doctrine'));assert.equal(c.getGold('PLAYER'),100);assert.equal(c.getResearchPoints('PLAYER'),0);
 c.isEditorMode=true;assert(!c.awardResearchPoints('PLAYER',2));assert(!c.researchTech('PLAYER','archery'));c.isEditorMode=false;
 for(const team of ['NEUTRAL','__proto__',null])assert(!c.awardResearchPoints(team,1));for(const n of [-1,0,.5,Infinity])assert(!c.awardResearchPoints('PLAYER',n));
 c.restoreResearchPoints({PLAYER:5,AI:2,PLAYER2:-1,AI2:1.5});assert.equal(c.getResearchPoints('PLAYER'),5);assert.equal(c.getResearchPoints('AI'),2);assert.equal(c.getResearchPoints('PLAYER2'),0);c.restoreResearchPoints();assert.equal(c.getResearchPoints('PLAYER'),0,'old saves default zero');
@@ -45,7 +45,7 @@ console.log('RP combat/fortress retaliation, all three capture paths, anti-farmi
 reset();assert(!c.startDoctrineResearch('PLAYER','longbows'));assert(c.startDoctrineResearch('PLAYER','field_training'));
 c.turnNumber=1;c.advanceDoctrineResearch('PLAYER');c.advanceDoctrineResearch('PLAYER');assert.equal(run('activeResearch.PLAYER.progress'),1);
 const job=JSON.parse(run('JSON.stringify(activeResearch)'));c.restoreActiveResearch(job);assert.equal(run('activeResearch.PLAYER.progress'),1);
-assert(c.startDoctrineResearch('PLAYER','steel_arms'));assert.equal(run('activeResearch.PLAYER.progress'),0);
+assert(c.startDoctrineResearch('PLAYER','spear_doctrine'));assert.equal(run('activeResearch.PLAYER.progress'),0);
 assert(c.startDoctrineResearch('PLAYER','field_training'));assert.equal(run('activeResearch.PLAYER.progress'),0);
 c.turnNumber=2;c.advanceDoctrineResearch('AI');assert.equal(run('activeResearch.PLAYER.progress'),0);c.advanceDoctrineResearch('PLAYER');
 c.turnNumber=3;c.advanceDoctrineResearch('PLAYER');assert(c.hasTech('PLAYER','field_training'));assert.equal(c.getResearchPoints('PLAYER'),0);assert.equal(c.getGold('PLAYER'),100);assert(!run('activeResearch.PLAYER'));

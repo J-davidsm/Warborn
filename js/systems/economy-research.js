@@ -103,10 +103,10 @@ function awardCaptureResearch(settlement,team,previousOwner) {
   settlement.researchCaptureTeams=[...rewarded,team];return true;
 }
 const RESEARCH_TREE = Object.fromEntries([
-  ['steel_arms','Steel Arms','warfare',2,[],'Soldiers and Swordsmen gain +2 damage.',null,{units:['Soldier','Swordsman'],dmg:2}],
-  ['spear_doctrine','Spear Doctrine','warfare',2,['steel_arms'],'Unlock Spearman.','Spearman'],
-  ['archery','Archery','warfare',2,['steel_arms'],'Unlock Archer.','Archer'],
-  ['cavalry_training','Cavalry Training','warfare',4,['spear_doctrine'],'Unlock Knight.','Knight'],
+  ['spear_doctrine','Spear Doctrine','warfare',2,[],'Unlock Spearman.','Spearman'],
+  ['steel_arms','Steel Arms','warfare',2,['spear_doctrine'],'Soldiers and Swordsmen gain +2 damage.',null,{units:['Soldier','Swordsman'],dmg:2}],
+  ['archery','Archery','warfare',2,['spear_doctrine'],'Unlock Archer.','Archer'],
+  ['cavalry_training','Cavalry Training','warfare',4,['steel_arms'],'Unlock Knight.','Knight'],
   ['longbows','Longbows','warfare',3,['archery'],'Archer range increases to 3. Shots at distance 3 deal 25% less damage.',null,{units:['Archer'],atkRange:1}],
   ['heavy_cavalry','Heavy Cavalry','warfare',4,['cavalry_training'],'Knight movement becomes 3; does not stack with Maneuver Warfare.',null,{units:['Knight'],moveFloor:3}],
   ['volley_fire','Volley Fire','warfare',4,['longbows'],'Archers gain +4 damage (base 20).',null,{units:['Archer'],dmg:4}],
@@ -128,9 +128,9 @@ const RESEARCH_TREE = Object.fromEntries([
   ['siege_mobility','Siege Mobility','engineering',2,['siege_engineering'],'Catapult movement becomes 2 permanently.',null,{units:['Catapult'],moveFloor:2}],
   ['artillery','Artillery','engineering',4,['siege_engineering'],'Catapults gain +5 damage (base 40).',null,{units:['Catapult'],dmg:5}],
   ['mass_production','Mass Production','engineering',4,['logistics'],'Unit production costs 1 fewer material (minimum 0).'],
-  ['counterweight_engines','Counterweight Engines','engineering',4,['siege_mobility'],'Catapult attack range becomes 4.',null,{units:['Catapult'],atkRange:1}],
+  ['reinforced_carriages','Reinforced Carriages','engineering',6,['siege_mobility'],'Catapults gain +30 maximum and current HP.',null,{units:['Catapult'],maxHp:30}],
   ['dragon_corps','Dragon Corps','engineering',6,['artillery','mass_production'],'Unlock Dragon. Requires both parent doctrines.','Dragon'],
-  ['reinforced_carriages','Reinforced Carriages','engineering',6,['counterweight_engines'],'Catapults gain +30 maximum and current HP.',null,{units:['Catapult'],maxHp:30}]
+  ['counterweight_engines','Counterweight Engines','engineering',4,['reinforced_carriages'],'Catapult attack range becomes 4.',null,{units:['Catapult'],atkRange:1}]
 ].map(([id,name,branch,cost,requires,description,unlockUnit,effect])=>[id,{id,name,branch,cost,requires,description,unlockUnit,effect}]));
 const UNIT_DOCTRINES = Object.fromEntries(Object.values(RESEARCH_TREE).filter(t=>t.unlockUnit).map(t=>[t.unlockUnit,t.id]));
 // Legacy callers request a unit; they now buy one prerequisite at a time.

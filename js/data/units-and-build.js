@@ -618,7 +618,7 @@ function renderDoctrineTree(container,team,refresh) {
   for(const branch of ['warfare','command','defense','engineering']){
     const section=document.createElement('section');section.className='doctrine-branch doctrine-'+branch;
     section.hidden=branch!==selectedBranch;
-    const pathButton=document.createElement('button');pathButton.textContent=({warfare:'⚔ Warfare',command:'⚑ Command',defense:'⛨ Defense',engineering:'⚙ Engineering'})[branch];pathButton.setAttribute('aria-pressed',String(branch===selectedBranch));
+    const pathButton=document.createElement('button');pathButton.className='doctrine-path-button doctrine-path-'+branch;pathButton.textContent=({warfare:'Warfare',command:'Command',defense:'Defense',engineering:'Engineering'})[branch];pathButton.setAttribute('aria-pressed',String(branch===selectedBranch));
     pathButton.addEventListener('click',()=>{for(const sibling of tree.children)sibling.hidden=sibling!==section;for(const button of paths.children)button.setAttribute('aria-pressed',String(button===pathButton));});paths.appendChild(pathButton);
     const title=document.createElement('h3');title.textContent=branch.toUpperCase();section.appendChild(title);
     const nodes=Object.values(RESEARCH_TREE).filter(t=>t.branch===branch);
