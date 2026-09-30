@@ -76,6 +76,7 @@ const OnlineMatch = (() => {
  function snapshot(){
   return copy({incomeReceipt:typeof BattleGuide!=='undefined'?BattleGuide.incomeReceipt:null,effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
    researchPoints:typeof researchPoints!=='undefined'?researchPoints:undefined,researchPointReceipts:typeof researchPointReceipts!=='undefined'?researchPointReceipts:undefined,
+    activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
    researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
  }
  function valid(s){
@@ -99,6 +100,7 @@ const OnlineMatch = (() => {
   if(typeof ensureVeteranName==='function')units.forEach(u=>ensureVeteranName(u));
   currentTeam=s.currentTeam;turnNumber=s.turnNumber;currentTurnIndex=s.currentTurnIndex;turnOrder=copy(s.turnOrder);
   if(typeof restoreResearch==='function')restoreResearch(s.researchedTechs,s.research,Object.keys(s.research));
+  if(typeof restoreActiveResearch==='function')restoreActiveResearch(s.activeResearch);
   else researchedUnits=Object.fromEntries(Object.entries(s.research).map(([k,v])=>[k,new Set(v)]));
   if(typeof restoreResearchPoints==='function')restoreResearchPoints(s.researchPoints,s.researchPointReceipts,true);
   diplomacy=copy(s.diplomacy);

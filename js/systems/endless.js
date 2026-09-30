@@ -61,6 +61,7 @@ const Endless = (() => {
     active=true;COLS=8*players.length+2;ROWS=20;mapSize={cols:COLS,rows:20};TILE=BOARD_SIZE/COLS;useHexGrid=true;updateHexSize();resizeGameCanvas();
     terrain=Array.from({length:20},(_,row)=>rowTerrain(-row)).flat();settlements=Array(COLS*20).fill(null);units=[];
     if(typeof restoreResearchPoints==='function')restoreResearchPoints();
+    if(typeof restoreActiveResearch==='function')restoreActiveResearch();
     if(typeof restoreResearch==='function')restoreResearch(null,Object.fromEntries([...players,'AI'].map(t=>[t,t!=='AI'&&difficulty==='easy'?['Soldier','Archer','Cleric']:['Soldier']])),[...players,'AI']);
     const forward=difficulties[difficulty].forward;
     players.forEach((team,lane)=>{

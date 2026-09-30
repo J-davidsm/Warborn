@@ -35,6 +35,7 @@ function postGameState(actionId = null, retryCount = 0){
       gameOver: gameOver,
       researchPoints:typeof researchPoints!=='undefined'?researchPoints:undefined,
       researchPointReceipts:typeof researchPointReceipts!=='undefined'?researchPointReceipts:undefined,
+    activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
       researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,
       research:typeof researchedUnits!=='undefined'?Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]])):undefined,
       aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,
@@ -218,6 +219,7 @@ window.addEventListener('message', (ev) => {
 
     if(typeof restoreResearchPoints==='function')restoreResearchPoints(snapshot.researchPoints,snapshot.researchPointReceipts,true);
     if(typeof restoreResearch==='function')restoreResearch(snapshot.researchedTechs,snapshot.research);
+  if(typeof restoreActiveResearch==='function')restoreActiveResearch(snapshot.activeResearch);
     // Rebuild units array from snapshot; support col/row or x/y naming, preserve id/team
     units = [];
     const unitList = Array.isArray(snapshot && snapshot.units) ? snapshot.units : (Array.isArray(msg.units) ? msg.units : []);

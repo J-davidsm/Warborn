@@ -935,3 +935,36 @@ body #diplomacyTargetButtons .diplomacy-banner-button {position:relative;width:1
 .researched .doctrine-research:disabled, .doctrine-confirmation { color: #a0d8b1; }
 @media (max-width: 850px) { .doctrine-tree { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .doctrine-tree { grid-template-columns: minmax(0, 1fr); } }
+/* Each doctrine path is a branching map; arrows follow actual prerequisites. */
+.doctrine-tree {display:flex;gap:24px;align-items:flex-start;width:max-content;}
+.doctrine-branch {position:relative;border:1px solid #685b40;border-radius:12px;overflow:hidden;background:radial-gradient(ellipse at top,#293444dd,#0c121deb 70%);}
+.doctrine-branch::before {position:absolute;inset:70px 0 0;content:'⚔';font-size:270px;line-height:1.8;text-align:center;color:#c59b6520;pointer-events:none;text-shadow:0 440px #c59b6518,0 880px #c59b6518;}
+.doctrine-command::before {content:'⚑';color:#779fc528;}
+.doctrine-defense::before {content:'⛨';color:#86ae9828;}
+.doctrine-engineering::before {content:'⚙';color:#c6a87d30;text-shadow:100px 340px #c6a87d22,-90px 720px #c6a87d22;}
+.doctrine-branch h3 {position:relative;text-align:center;padding:18px;margin:0;background:#080c1499;border-bottom:1px solid #685b40;}
+.doctrine-map {position:relative;}
+.doctrine-wires {position:absolute;inset:0;pointer-events:none;}
+.doctrine-node {position:absolute;box-sizing:border-box;width:220px;min-height:222px;padding:12px;margin:0;background:#17212df5;box-shadow:0 5px 18px #0008;}
+.doctrine-node p {font-size:11px;line-height:1.3;}
+.doctrine-node h4 {min-height:30px;}
+.doctrine-node .doctrine-prerequisites {min-height:28px;}
+.doctrine-study {width:100%;margin-top:6px;padding:7px 3px;border:1px solid #697f9a;border-radius:4px;background:#27374b;color:#dce7f5;cursor:pointer;font-size:11px;}
+.doctrine-study:disabled {opacity:.55;cursor:default;}
+.doctrine-active {padding:10px;border-left:3px solid #d2b574;background:#283448;}
+.doctrine-tree {width:100%;justify-content:center;}
+.doctrine-branch {flex-shrink:0;}
+.doctrine-branch[hidden] {display:none;}
+.doctrine-node {height:240px;display:flex;flex-direction:column;}
+.doctrine-node > div {flex:1;}
+.doctrine-paths {display:flex;gap:10px;margin:0 0 16px;flex-wrap:wrap;}
+.doctrine-paths button {flex:1;min-width:120px;padding:12px;background:#17212d;border:1px solid #685b40;color:#d4c297;cursor:pointer;}
+.doctrine-paths button[aria-pressed="true"] {background:#3a3425;border-color:#d2b574;color:#fff0cd;}
+@media(max-width:850px){.doctrine-tree{justify-content:flex-start;}}
+
+.doctrine-branch::before {content:"";inset:52px 0 0;background-size:180px 180px;opacity:.8;}
+.doctrine-warfare::before {background-image:url("assets/doctrines/warfare.svg");}
+.doctrine-command::before {background-image:url("assets/doctrines/command.svg");}
+.doctrine-defense::before {background-image:url("assets/doctrines/defense.svg");}
+.doctrine-engineering::before {background-image:url("assets/doctrines/engineering.svg");}
+.doctrine-paths {position:sticky;top:-18px;z-index:3;background:#0b111b;padding:8px 0;}

@@ -109,7 +109,7 @@ Tests cover 550 map seeds, all six terrain themes, 3–5 reachable settlements, 
 
 ## Army doctrines
 
-Research is a 28-node battlefield doctrine tree funded exclusively by Research Points (RP), with Warfare, Command, Defense, and Engineering branches. Gold and materials still fund units and settlement upgrades. `RESEARCH_TREE`, `researchedTechs`, `researchPoints`, and `RESEARCH_REWARDS` in `js/systems/economy-research.js` centralize costs, prerequisite paths, unlocks, stat effects, purchases, and rewards. The settlement Research tab shows the whole tree, including locked and unaffordable doctrines, and the main resource banner shows unspent RP.
+Research is a 28-node battlefield doctrine tree available through Research Points (RP) or timed study, with Warfare, Command, Defense, and Engineering branches. Gold and materials still fund units and settlement upgrades. `RESEARCH_TREE`, `researchedTechs`, `researchPoints`, and `RESEARCH_REWARDS` in `js/systems/economy-research.js` centralize costs, prerequisite paths, unlocks, stat effects, purchases, and rewards. The settlement Research tab shows the whole tree, including locked and unaffordable doctrines, and the main resource banner shows unspent RP.
 
 Enemy kills earn 1 RP; Stockade/ Castle/ Heavy Fortress destruction earns 1/2/3 RP total (legacy Fortress earns 2). Neutral/enemy settlement captures earn 1/2 RP, only once per team per settlement. Successful upgrades earn 1 RP. Capture history travels with settlements through upgrades, saves, synchronization, and Endless scrolling. Move Undo restores both points and history. Ordinary damage, healing, movement, income, recruitment, allied kills and own losses earn nothing. Nonblocking battle notices show rewards to the local player.
 
@@ -136,3 +136,11 @@ Set `AICommander.debug = true` in the developer console to print each kingdom's 
 Includes six distinct images for each of nine terrain families: grass, woods, mountains, swamp, desert, water, fountain, bridge, and farm. Terrain blends across tile boundaries, adjacent tiles use different variants, and bridges orient across surrounding water. Images are optimized for web delivery at the renderer's working resolution.
 
 The browser source and bundled assets are derived from the Warborn desktop application. p5.js is bundled locally; its license notice remains in `vendor/p5.min.js`.
+
+### Timed doctrine study and Retaliation
+
+Choose one legal doctrine to study per kingdom. Its RP cost is also its duration in your own turns (2 RP = 2 turns); progress advances when you end your turn. Switching discards all progress. Instant research still costs the full RP price. Active study and progress persist in saves, scenarios and multiplayer, and the AI uses study while retaining its RP priorities.
+
+Fieldworks now only unlocks Stockades (new Stockades have base 50 HP). Retaliation replaces Garrison Training’s settlement defense bonus while retaining its stable saved ID. Only surviving fortresses with this doctrine counterattack, within their actual attack range; both sides show floating damage numbers. Explicit stats in older saves are preserved, including previously earned Stockade HP.
+
+The research menu displays one selectable themed path at a time with actual prerequisite arrows, including both Dragon Corps prerequisites.

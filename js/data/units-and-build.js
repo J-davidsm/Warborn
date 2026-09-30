@@ -608,16 +608,36 @@ function closeSpawnMenu(){ const ex = document.getElementById('spawnMenu'); if(e
 
 function renderDoctrineTree(container,team,refresh) {
   const heading=document.createElement('div');heading.className='doctrine-intro';
-  heading.innerHTML=`<h2>Army Doctrines</h2><p>Specialize your army for this war. Research uses battle-earned Research Points and applies to your whole kingdom.</p><strong>📜 Research Points: ${getResearchPoints(team)}</strong>`;
+  heading.innerHTML=`<h2>Army Doctrines</h2><p>Choose one doctrine to study for free: its RP price is also its number of your turns. Switching loses all progress. Spend RP for instant research.</p><strong>📜 Research Points: ${getResearchPoints(team)}</strong>`;
+  const job=activeResearch[team];
+  if(job){const status=document.createElement('p');status.className='doctrine-active';status.textContent=`Studying ${RESEARCH_TREE[job.id].name}: ${job.progress} / ${RESEARCH_TREE[job.id].cost} turns`;heading.appendChild(status);}
   container.appendChild(heading);
   const tree=document.createElement('div');tree.className='doctrine-tree';
+  const paths=document.createElement('nav');paths.className='doctrine-paths';paths.setAttribute('aria-label','Doctrine branches');container.appendChild(paths);
+  const selectedBranch=job?RESEARCH_TREE[job.id].branch:'warfare';
   for(const branch of ['warfare','command','defense','engineering']){
-    const section=document.createElement('section');section.className='doctrine-branch';
+    const section=document.createElement('section');section.className='doctrine-branch doctrine-'+branch;
+    section.hidden=branch!==selectedBranch;
+    const pathButton=document.createElement('button');pathButton.textContent=({warfare:'⚔ Warfare',command:'⚑ Command',defense:'⛨ Defense',engineering:'⚙ Engineering'})[branch];pathButton.setAttribute('aria-pressed',String(branch===selectedBranch));
+    pathButton.addEventListener('click',()=>{for(const sibling of tree.children)sibling.hidden=sibling!==section;for(const button of paths.children)button.setAttribute('aria-pressed',String(button===pathButton));});paths.appendChild(pathButton);
     const title=document.createElement('h3');title.textContent=branch.toUpperCase();section.appendChild(title);
-    for(const tech of Object.values(RESEARCH_TREE).filter(t=>t.branch===branch)){
+    const nodes=Object.values(RESEARCH_TREE).filter(t=>t.branch===branch);
+    const depth=id=>RESEARCH_TREE[id].requires.length?1+Math.max(...RESEARCH_TREE[id].requires.map(depth)):0;
+    const canvas=document.createElement('div');canvas.className='doctrine-map';
+    const positions={};
+    for(const tech of nodes){const row=depth(tech.id),siblings=nodes.filter(t=>depth(t.id)===row);positions[tech.id]={x:120+siblings.indexOf(tech)*250,y:40+row*290};}
+    const width=Math.max(...Object.values(positions).map(p=>p.x))+150;
+    for(const tech of nodes){const siblings=nodes.filter(t=>depth(t.id)===depth(tech.id));positions[tech.id].x+=(width-30-siblings.length*250+10)/2;}
+    const height=Math.max(...Object.values(positions).map(p=>p.y))+250;
+    canvas.style.width=width+'px';canvas.style.height=height+'px';
+    const wires=document.createElement('div');wires.className='doctrine-wires';
+    wires.innerHTML=`<svg width="${width}" height="${height}" aria-hidden="true"><defs><marker id="arrow-${branch}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#bba16c"/></marker></defs>${nodes.flatMap(t=>t.requires.map(id=>{const a=positions[id],b=positions[t.id];const route=b.y-a.y>290?`M ${a.x+110} ${a.y+110} H ${width-15} V ${b.y-20} H ${b.x} V ${b.y-3}`:`M ${a.x} ${a.y+240} V ${b.y-20} H ${b.x} V ${b.y-3}`;return `<path d="${route}" fill="none" stroke="${hasTech(team,id)?'#bba16c':'#536071'}" stroke-width="2" marker-end="url(#arrow-${branch})"/>`;})).join('')}</svg>`;canvas.appendChild(wires);
+    section.appendChild(canvas);
+    for(const tech of nodes){
       const known=hasTech(team,tech.id),ready=tech.requires.every(id=>hasTech(team,id));
       const card=document.createElement('article');card.className='doctrine-node '+(known?'researched':ready?'available':'locked');
       card.setAttribute('data-tech-id',tech.id);
+      card.style.left=(positions[tech.id].x-110)+'px';card.style.top=positions[tech.id].y+'px';
       const info=document.createElement('div');
       info.innerHTML=`<h4>${tech.name}<span>${tech.cost} RP</span></h4><p>${tech.description}</p><p class="doctrine-prerequisites">${tech.requires.length?'↳ Requires: '+tech.requires.map(id=>RESEARCH_TREE[id].name).join(' and '):'Starting doctrine'}</p>`;
       card.appendChild(info);
@@ -632,7 +652,14 @@ function renderDoctrineTree(container,team,refresh) {
           // researchTech refreshes resources and queues the authoritative snapshot.
         }
       });
-      card.appendChild(button);section.appendChild(card);
+      card.appendChild(button);
+      const study=document.createElement('button');study.className='doctrine-study';
+      const studying=activeResearch[team]?.id===tech.id;
+      study.disabled=known||!ready||studying;
+      study.textContent=known?'Completed':!ready?'Prerequisites required':studying?`Studying: ${activeResearch[team].progress}/${tech.cost} turns`:`${job?'Switch study':'Study'} (${tech.cost} turns)`;
+      study.setAttribute('aria-label',tech.name+' — '+study.textContent);
+      study.addEventListener('click',event=>{event.stopPropagation();if((typeof currentTeam!=='undefined'&&currentTeam!==team)||(typeof OnlineMatch!=='undefined'&&!OnlineMatch.canAct()))return;if(startDoctrineResearch(team,tech.id))refresh();});
+      card.appendChild(study);canvas.appendChild(card);
     }
     tree.appendChild(section);
   }

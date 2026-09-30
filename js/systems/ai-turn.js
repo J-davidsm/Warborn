@@ -179,6 +179,7 @@ function aiRecruit(team) {
   // Research has its own budget. Saving RP must never stall gold spending.
   const research=chooseAIResearch(team);
   if(research&&canResearchTech(team,research))researchTech(team,research);
+  if(!activeResearch[team]){const next=chooseAIResearch(team);if(next)startDoctrineResearch(team,next);}
   if(typeof AICommander!=='undefined'&&AICommander.spend(team))return;
   const homes=aiAssets(team), cap=homes.length*3;
   let army=aiMobile(team);

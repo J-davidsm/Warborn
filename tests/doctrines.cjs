@@ -12,12 +12,12 @@ buy('field_training');assert.equal(soldier.maxHp,60);assert.equal(soldier.hp,60)
 buy('volley_fire');const archer=make('Archer');assert.equal(archer.atkRange,3);assert.equal(archer.dmg,20);
 const knight=make('Knight');buy('heavy_cavalry');assert.equal(knight.move,3);buy('maneuver_warfare');assert.equal(knight.move,3);assert.equal(c.makeUnit('Knight','PLAYER',1,1).move,3);assert.equal(c.makeUnit('Assassin','PLAYER',1,1).move,5);
 const assassin=make('Assassin');buy('master_assassins');assert.equal(assassin.maxHp,60);
-const stockade=make('Stockade');buy('fieldworks');assert.equal(stockade.maxHp,70);assert.equal(c.makeUnit('Stockade','PLAYER',1,1).maxHp,70);
+const stockade=make('Stockade');buy('fieldworks');assert.equal(stockade.maxHp,50);assert.equal(c.makeUnit('Stockade','PLAYER',1,1).maxHp,50);
 buy('artillery');assert.equal(c.makeUnit('Catapult','PLAYER',1,1).dmg,40);assert(!c.researchTech('PLAYER','dragon_corps'),'both prerequisites required');buy('mass_production');assert(c.researchTech('PLAYER','dragon_corps'));assert(c.isUnitUnlocked('PLAYER','Dragon'));
 buy('reinforced_carriages');const cat=c.makeUnit('Catapult','PLAYER',1,1);assert.equal(cat.move,2);assert.equal(cat.atkRange,4);assert.equal(cat.maxHp,190);for(const n of ['Sloop','Man-of-War','Battleship'])assert(c.isUnitUnlocked('PLAYER',n));
 assert.deepEqual(JSON.parse(JSON.stringify(c.getEffectiveUnitCostForTeam('PLAYER','Knight'))),{gold:6,materials:2});assert.equal(c.getEffectiveUnitCostForTeam('PLAYER','Soldier').gold,1);assert.equal(c.getEffectiveUnitCostForTeam('PLAYER','Soldier').materials,0);assert.equal(run('UNIT_TEMPLATES.Knight.cost.gold'),7,'templates unchanged');
 const gold=c.getGold('PLAYER'),rp=c.getResearchPoints('PLAYER');buy('garrison_training');assert.equal(gold,c.getGold('PLAYER'),'Research never costs gold');assert.equal(rp-c.getResearchPoints('PLAYER'),3,'Logistics never discounts RP research');
-c.settlements[0]={owner:'PLAYER',type:'CITY'};const defense=c.getDefenseModifiers(archer,soldier);c.settlements[0].owner='AI';assert(Math.abs(defense-c.getDefenseModifiers(archer,soldier)-.1)<1e-8);c.settlements[0]=null;assert.equal(c.getDefenseModifiers(archer,soldier),0);
+c.settlements[0]={owner:'PLAYER',type:'CITY'};const defense=c.getDefenseModifiers(archer,soldier);c.settlements[0].owner='AI';assert.equal(defense,c.getDefenseModifiers(archer,soldier));c.settlements[0]=null;assert.equal(c.getDefenseModifiers(archer,soldier),0);
 buy('battlefield_medicine');soldier.hp=10;c.healUnit(make('Cleric'),soldier);assert.equal(soldier.hp,38);
 // Promotion changes stay in the serialized stats. Rehydrate repeatedly without
 // buying anything: doctrine bonuses and names must never accumulate.

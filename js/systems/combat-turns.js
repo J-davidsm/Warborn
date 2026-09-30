@@ -177,11 +177,8 @@ function attackUnit(a, d) {
   }
   if(d.hp < 0) d.hp = 0;
 
-  // If defender is a Fortress and still alive, it retaliates immediately.
-  // Ensure fortresses always retaliate out to at least 2 tiles (two spaces away).
-  const FORTRESS_MIN_RETALIATE = 2;
-  const fortRetRange = Math.max(FORTRESS_MIN_RETALIATE, (d.atkRange || 0));
-  if (isFortressUnit(d) && d.hp > 0 && a.hp > 0 && manhattan(d.col, d.row, a.col, a.row) <= fortRetRange) {
+  // Retaliation is a fortress-only doctrine and respects actual attack range.
+  if (isFortressUnit(d) && typeof hasTech==='function' && hasTech(d.team,'garrison_training') && d.hp > 0 && a.hp > 0 && manhattan(d.col, d.row, a.col, a.row) <= d.atkRange) {
     // Calculate counter damage from fortress: scale by fortress health (with same 40% floor)
     let counterDmg = d.dmg;
     if(terrain[d.row*COLS+d.col]==='SWAMP')counterDmg*=0.5;
@@ -202,6 +199,7 @@ function attackUnit(a, d) {
   if(hasCrownAura(d))counterDmg=floor(counterDmg*1.10);
   if(hasCrownAura(a))counterDmg=floor(counterDmg*0.75);
   a.hp -= counterDmg;
+  if(counterDmg>0&&typeof ActionEffects!=='undefined'&&ActionEffects.damage)ActionEffects.damage(a.col,a.row,counterDmg);
   if (a.hp < 0) a.hp = 0;
   // Attacker morale penalty from being hit (Dragons are immune)
   if (a.name !== 'Dragon') a.morale -= 15;
@@ -380,6 +378,7 @@ function endTurn(expectedAITeam = null) {
   }
   // For LOCAL_2P mode, no role validation needed - the device is passed between players
   
+  if(typeof advanceDoctrineResearch==='function')advanceDoctrineResearch(currentTeam);
   // Process team-specific healing and effects for the team that just finished
   units.forEach(u => {
     if (u.team === currentTeam) {

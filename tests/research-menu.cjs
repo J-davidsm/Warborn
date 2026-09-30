@@ -9,12 +9,12 @@ const body=new Element('body');const c={console,document:{body,createElement:t=>
 for(const file of ['js/systems/economy-research.js','js/data/units-and-build.js'])vm.runInContext(fs.readFileSync(file,'utf8'),c);
 c.createUnitIcon=()=>new Element('img');c.allowedUnitsForSettlement=()=>['Soldier','Archer','Spearman'];
 vm.runInContext('resources.PLAYER={gold:9,materials:0};restoreResearchPoints({PLAYER:4})',c);c.openSpawnMenu(0,0,{type:'CITY',owner:'PLAYER'});
-body.querySelectorAll('button').find(e=>e.textContent.includes('Research')).click();const content=c.document.getElementById('tabContent');assert.equal(content.querySelectorAll('button').length,28);
+body.querySelectorAll('button').find(e=>e.textContent.includes('Research')).click();const content=c.document.getElementById('tabContent');assert.equal(content.querySelectorAll('button').length,60);
 const card=id=>content.querySelectorAll('article').find(e=>e['data-tech-id']===id);
 assert(card('archery').children[1].disabled);
 card('steel_arms').children[1].click();assert.equal(c.getResources('PLAYER').gold,9);assert.equal(c.getResearchPoints('PLAYER'),2);assert(!card('archery').children[1].disabled);
 card('archery').children[1].click();assert.equal(c.getResources('PLAYER').gold,9);assert.equal(c.getResearchPoints('PLAYER'),0);assert(c.isUnitUnlocked('PLAYER','Archer'));
-assert.equal(content.querySelectorAll('button').length,28,'cards persist without duplicates');
+assert.equal(content.querySelectorAll('button').length,60,'cards persist without duplicates');
 assert.equal(card('archery').children[1].textContent,'Researched');assert(card('archery').children[1].disabled);
 assert.equal(card('field_training').children[1].textContent,'Need 2 more RP');assert(card('field_training').children[1].disabled);
 assert(card('field_training').children[0].innerHTML.includes('2 RP'));

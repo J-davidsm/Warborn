@@ -826,6 +826,7 @@ function loadCurrentScenario() {
   }
   
   if(typeof restoreResearch==='function')restoreResearch(scenario.researchedTechs,scenario.research,getActiveTeams());
+  if(typeof restoreActiveResearch==='function')restoreActiveResearch(scenario.activeResearch);
   if(typeof restoreResearchPoints==='function')restoreResearchPoints(scenario.researchPoints||scenario.startingResearchPoints,scenario.researchPointReceipts);
   // Restore settlements from scenario
   if (scenario.settlements) {
@@ -1070,6 +1071,7 @@ function captureCurrentGameState(scenarioIndex) {
   scenario.researchedTechs=serializeResearch();
   scenario.researchPoints=clonePlain(researchPoints);
   scenario.researchPointReceipts=clonePlain(researchPointReceipts);
+  scenario.activeResearch=clonePlain(activeResearch);
   readVictoryConditionFromUI();
   
   // Capture current map size
@@ -1207,6 +1209,7 @@ function loadScenarioForEditing(scenarioIndex) {
     }
     
     if(typeof restoreResearch==='function')restoreResearch(scenario.researchedTechs,scenario.research,getActiveTeams());
+  if(typeof restoreActiveResearch==='function')restoreActiveResearch(scenario.activeResearch);
     if(typeof restoreResearchPoints==='function')restoreResearchPoints(scenario.researchPoints||scenario.startingResearchPoints,scenario.researchPointReceipts);
     // Clear and place units
     units = [];

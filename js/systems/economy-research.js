@@ -17,6 +17,32 @@ let researchedUnits = {
 };
 
 let researchedTechs = {};
+let activeResearch = {};
+function restoreActiveResearch(state={}) {
+  activeResearch={};
+  for(const [team,job] of Object.entries(state||{})){
+    const tech=Object.hasOwn(RESEARCH_TREE,job?.id)?RESEARCH_TREE[job.id]:null;
+    if(validResearchTeam(team)&&tech&&!hasTech(team,job.id)&&tech.requires.every(id=>hasTech(team,id))&&Number.isInteger(job.progress)&&job.progress>=0&&job.progress<tech.cost)activeResearch[team]={id:job.id,progress:job.progress,lastTurn:Number.isInteger(job.lastTurn)?job.lastTurn:null};
+  }
+}
+function startDoctrineResearch(team,id) {
+  const tech=Object.hasOwn(RESEARCH_TREE,id)?RESEARCH_TREE[id]:null;
+  if(!validResearchTeam(team)||!tech||hasTech(team,id)||!tech.requires.every(p=>hasTech(team,p))||!canMutateResearch()||(typeof currentTeam!=='undefined'&&currentTeam!==team))return false;
+  if(activeResearch[team]?.id===id)return true;
+  activeResearch[team]={id,progress:0,lastTurn:null};
+  if(typeof markScenarioPlaying==='function')markScenarioPlaying();
+  refreshResearchState();return true;
+}
+function advanceDoctrineResearch(team) {
+  const job=activeResearch[team];
+  if(!job||!canMutateResearch()||job.lastTurn===turnNumber)return;
+  job.lastTurn=turnNumber;job.progress++;
+  if(job.progress>=RESEARCH_TREE[job.id].cost){
+    const name=RESEARCH_TREE[job.id].name;completeDoctrine(team,job.id);
+    if(typeof BattleGuide!=='undefined'&&team===getLocalPlayableTeam())BattleGuide.notify(name+' research completed.');
+  }
+  refreshResearchState();
+}
 // A separate battlefield ledger: never included in production/trade resources.
 let researchPoints = {};
 let researchPointReceipts = {};
@@ -90,8 +116,8 @@ const RESEARCH_TREE = Object.fromEntries([
   ['maneuver_warfare','Maneuver Warfare','command',4,['forced_march'],'Assassin movement becomes 5; Knight movement becomes 3.',null,{moveFloors:{Assassin:5,Knight:3}}],
   ['shadow_warfare','Shadow Warfare','command',4,['reconnaissance'],'Unlock Assassin.','Assassin'],
   ['master_assassins','Master Assassins','command',5,['shadow_warfare'],'Assassins gain +10 HP and heal 8 HP per turn instead of 5.',null,{units:['Assassin'],maxHp:10}],
-  ['fieldworks','Fieldworks','defense',2,[],'Unlock Stockade; Stockades gain +20 HP (base 70).','Stockade',{units:['Stockade'],maxHp:20}],
-  ['garrison_training','Garrison Training','defense',3,['fieldworks'],'Units on their own settlements gain an additional 10% defense.'],
+  ['fieldworks','Fieldworks','defense',2,[],'Unlock Stockade.','Stockade'],
+  ['garrison_training','Retaliation','defense',3,['fieldworks'],'Surviving fortresses retaliate when their attacker is within attack range. Only fortresses can retaliate.'],
   ['healing_orders','Healing Orders','defense',3,['fieldworks'],'Unlock Cleric.','Cleric'],
   ['stone_fortifications','Stone Fortifications','defense',4,['fieldworks'],'Unlock Castle.','Castle'],
   ['battlefield_medicine','Battlefield Medicine','defense',4,['healing_orders'],'Clerics heal 28 HP instead of 20.'],
@@ -137,7 +163,7 @@ function restoreResearch(techs,legacy={},teams=[]) {
     researchedTechs[team]=known;refreshResearchMirror(team);
   }
 }
-function resetResearch(teams=[]) { restoreResearch({}, {}, teams);restoreResearchPoints(); }
+function resetResearch(teams=[]) { restoreResearch({}, {}, teams);restoreResearchPoints();restoreActiveResearch(); }
 function getResearchPath(team,id,seen=new Set()) {
   const t=Object.hasOwn(RESEARCH_TREE,id)?RESEARCH_TREE[id]:null;if(!t||hasTech(team,id)||seen.has(id))return [];
   seen.add(id);return [...t.requires.flatMap(p=>getResearchPath(team,p,seen)),id];
@@ -192,6 +218,11 @@ function researchTech(team,id) {
   if(!canResearchTech(team,id)||!canMutateResearch())return false;
   if(typeof markScenarioPlaying==='function')markScenarioPlaying();
   researchPoints[team]=getResearchPoints(team)-RESEARCH_TREE[id].cost;
+  return completeDoctrine(team,id);
+}
+function completeDoctrine(team,id) {
+  if(hasTech(team,id))return false;
+  if(activeResearch[team]?.id===id)delete activeResearch[team];
   (researchedTechs[team]??=new Set()).add(id);refreshResearchMirror(team);
   // Saved units already carry their stats. Apply only this new purchase, never
   // replay this loop during restoration. Promotions retain their existing bonuses.

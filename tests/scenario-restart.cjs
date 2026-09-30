@@ -17,12 +17,14 @@ const legacy=structuredClone(c.activeScenarioSnapshot);delete legacy.resources;d
 console.log('Repeated scenario restarts restore armies, health, ownership, terrain, resources, research and turn state; legacy levels also start with zero balances.');
 vm.runInContext("resources.PLAYER.gold=20;restoreResearchPoints({PLAYER:10});researchTech('PLAYER','field_training');researchTech('PLAYER','forced_march');",c);
 c.units.push(c.makeUnit('Soldier','PLAYER',1,1,{id:'doctrine-soldier'}));
+c.startDoctrineResearch('PLAYER','steel_arms');c.advanceDoctrineResearch('PLAYER');
 let doctrineSave=c.createLevelData();
 doctrineSave.settlements[0].researchCaptureTeams=['PLAYER'];
 for(let i=0;i<4;i++){
  c.applyLevelData(JSON.parse(JSON.stringify(doctrineSave)));
  const u=c.units.find(u=>u.id==='doctrine-soldier');assert.equal(u.maxHp,60);assert.equal(u.move,4);assert(c.hasTech('PLAYER','forced_march'));assert.equal(c.getResearchPoints('PLAYER'),5);assert.equal(c.makeUnit('Soldier','PLAYER',2,1).move,4);
  doctrineSave=c.createLevelData();
+ assert.equal(vm.runInContext('activeResearch.PLAYER.progress',c),1);
  assert(c.settlements[0].researchCaptureTeams.includes('PLAYER'),'capture history survives save/load');
 }
 const oldLevel=JSON.parse(JSON.stringify(doctrineSave));delete oldLevel.researchPoints;delete oldLevel.researchPointReceipts;c.applyLevelData(oldLevel);assert.equal(c.getResearchPoints('PLAYER'),0);

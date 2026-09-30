@@ -142,6 +142,7 @@ function createLevelData(name = null) {
     units: serializeUnits(),
     researchPoints:typeof researchPoints!=='undefined'?clonePlain(researchPoints):undefined,
     researchPointReceipts:typeof researchPointReceipts!=='undefined'?clonePlain(researchPointReceipts):undefined,
+    activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
     researchedTechs: typeof serializeResearch==='function'?serializeResearch():undefined,
     research: Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]])),
     aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined
@@ -298,6 +299,7 @@ function applyLevelData(data) {
   }
   resetStartingEconomy();
   if(typeof restoreResearch==='function')restoreResearch(data.researchedTechs,data.research,getActiveTeams());
+  if(typeof restoreActiveResearch==='function')restoreActiveResearch(data.activeResearch);
   else researchedUnits = Object.fromEntries(getActiveTeams().map(team => [team, new Set(data.research?.[team] || ['Soldier'])]));
   if(typeof restoreResearchPoints==='function')restoreResearchPoints(data.researchPoints||data.startingResearchPoints,data.researchPointReceipts);
   if (data.diplomacy) diplomacy = clonePlain(data.diplomacy);

@@ -4,6 +4,7 @@ const MoveUndo=(()=>{
  const copy=x=>JSON.parse(JSON.stringify(x));
  const signature=()=>JSON.stringify({units,settlements,resources,terrain,turnNumber,currentTeam,
    researchPoints:typeof researchPoints!=='undefined'?researchPoints:undefined,
+   activeResearch:typeof activeResearch!=='undefined'?activeResearch:undefined,
    researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,
    research:Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]]))});
  function clear(){entry=null;}
