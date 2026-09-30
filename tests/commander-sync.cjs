@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {client,tick}=require('./multiplayer-harness.cjs');
+const host=client('Host',true),guest=client('Guest',true);
+for(const p of [host,guest])vm.runInContext(fs.readFileSync('js/systems/ai-commander.js','utf8'),p.ctx);
+host.el('lobbyCapacity').value='2';host.el('lobbyMode').value='coop';host.el('lobbyDifficulty').value='hard';host.el('menuOnlineBtn').onclick();host.el('lobbyCreate').onclick();tick();
+guest.run(`OnlineMatch.join('${host.el('lobbyRoom').textContent}')`);tick();host.el('lobbyReady').onclick();guest.el('lobbyReady').onclick();tick();host.el('lobbyStart').onclick();tick();
+const state={AI:{team:'AI',turn:1,level:2,style:'BALANCED',objectives:[{id:'test',target:{col:1,row:1}}],groups:[{type:'RESERVE',target:{col:1,row:1},unitIds:['test']}],attacks:[],economicGoal:{type:'RECRUIT',unit:'Knight',targetCost:{gold:20},age:1}}};
+host.run(`AICommander.restore(${JSON.stringify(state)});OnlineMatch.publish()`);tick();assert.equal(guest.run('JSON.stringify(AICommander.snapshot())'),JSON.stringify(state),'host orders replicate');
+host.ctx.currentTurnIndex=1;host.ctx.currentTeam='PLAYER2';host.run('OnlineMatch.publish()');tick();
+guest.run('AICommander.reset();OnlineMatch.publish()');tick();assert.equal(host.run('JSON.stringify(AICommander.snapshot())'),JSON.stringify(state),'guest cannot alter host planning');assert.equal(guest.run('JSON.stringify(AICommander.snapshot())'),JSON.stringify(state),'guest rolls back invalid orders');
+host.el('lobbyLeave').onclick();tick();console.log('Commander plans replicate in cooperative multiplayer and reject guest edits.');

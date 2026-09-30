@@ -107,6 +107,14 @@ node tests/terrain.cjs
 
 Tests cover 550 map seeds, all six terrain themes, 3–5 reachable settlements, geometry and resource symmetry, zero-resource multiplayer starts, movement terrain and occupancy restrictions, public discovery and invitations, directory takeover, 2–4-player readiness, state/research synchronization, turn locking, stale revisions, disconnects, and fresh rematches. PeerJS's MIT license is included in `vendor/peerjs-LICENSE`.
 
+## Commander AI
+
+`js/systems/ai-commander.js` builds persistent objectives, task groups, territorial reserves, coordinated firing orders, and short-lived economic goals before the existing tactical turn executes. It uses cached terrain route fields for strategy and the existing movement checks for every actual move. Economic goals expire after three saving turns and are abandoned under immediate settlement threat. No new resource or combat bonuses are applied.
+
+Diplomacy personalities also affect military behavior: Aggressive favors assaults and smaller reserves, Defensive holds more territory, Trader uses the Economic style, and Ideological uses the Cunning style. Campaign and Endless difficulty control target valuation and coordination; Easy omits planned focus fire, Normal coordinates lethal attacks, and Hard/Brutal also coordinate crippling attacks across more candidates. Composition observations track Dragons, fortresses, ranged armies, defensive concentration, and recent settlement losses.
+
+Set `AICommander.debug = true` in the developer console to print each kingdom's objectives, assigned unit IDs, firing orders, observations, and economic goal. `AICommander.snapshot()` returns the same plain data saved and synchronized with the game. Route caches are not serialized. Old saves rebuild orders on the next AI turn. Run `node tests/ai-commander.cjs` for planning and large-map regression checks.
+
 ## Artwork
 
 Includes six distinct images for each of nine terrain families: grass, woods, mountains, swamp, desert, water, fountain, bridge, and farm. Terrain blends across tile boundaries, adjacent tiles use different variants, and bridges orient across surrounding water. Images are optimized for web delivery at the renderer's working resolution.

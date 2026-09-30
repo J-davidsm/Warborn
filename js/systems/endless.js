@@ -72,6 +72,7 @@ const Endless = (() => {
     for(let i=0;i<settlements.length;i++)if(settlements[i])terrain[i]='GRASS';
     for(const u of units)terrain[u.row*COLS+u.col]='GRASS';
     spawnWave();
+    if(typeof AICommander!=='undefined')AICommander.reset();
     resetStartingEconomy();researchedUnits=Object.fromEntries([...players,'AI'].map(t=>[t,new Set(t!=='AI'&&difficulty==='easy'?['Soldier','Archer','Cleric']:['Soldier'])]));
     diplomacy=createDefaultWarDiplomacy([...players,'AI']);currentVictoryCondition=normalizeVictoryCondition({type:'ANNIHILATE_ALL'});
     currentTeam='PLAYER';turnNumber=1;currentTurnIndex=0;calculateTurnOrder();selectedUnit=null;gameOver=false;

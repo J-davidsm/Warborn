@@ -139,7 +139,8 @@ function createLevelData(name = null) {
     aiPlayerCount: currentAIPlayers,
     diplomacy: clonePlain(diplomacy || {}),
     victoryCondition: normalizeVictoryCondition(currentVictoryCondition),
-    units: serializeUnits()
+    units: serializeUnits(),
+    aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined
   };
   if (name) data.name = name;
   return data;
@@ -257,6 +258,7 @@ function applyLevelData(data) {
   if(typeof MoveUndo!=='undefined')MoveUndo.clear();
   if(typeof Endless!=='undefined')Endless.stop();
   if (!data) return;
+  if(typeof AICommander!=='undefined')AICommander.restore(data.aiCommander);
   activeAITurn = null;
   clearTimeout(aiTurnTimeoutId);
   aiTurnTimeoutId = null;

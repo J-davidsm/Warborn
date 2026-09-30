@@ -33,6 +33,7 @@ function postGameState(actionId = null, retryCount = 0){
       diplomacy: diplomacy,
       victoryCondition: currentVictoryCondition,
       gameOver: gameOver,
+      aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,
       units: units.map(u => ({ 
         id: u.id, name: u.name, team: u.team, col: u.col, row: u.row, 
         hp: u.hp, maxHp: u.maxHp, morale: u.morale, 
@@ -188,6 +189,7 @@ window.addEventListener('message', (ev) => {
     }
 
     // Apply settlements
+    if(typeof AICommander!=='undefined')AICommander.restore(snapshot?.aiCommander);
     if(snapshot && Array.isArray(snapshot.settlements)){
       settlements = snapshot.settlements.slice();
     } else {

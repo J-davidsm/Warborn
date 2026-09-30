@@ -75,7 +75,7 @@ const OnlineMatch = (() => {
  }
  function snapshot(){
   return copy({incomeReceipt:typeof BattleGuide!=='undefined'?BattleGuide.incomeReceipt:null,effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
-   research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
+   aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
  }
  function valid(s){
   const teams=mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity),cols=mode==='coop'?8*capacity+2:capacity===2?20:21,rows=mode==='coop'?20:capacity===2?16:21;
@@ -92,6 +92,7 @@ const OnlineMatch = (() => {
   const resized=COLS!==s.cols||ROWS!==s.rows;COLS=s.cols;ROWS=s.rows;mapSize={cols:COLS,rows:ROWS};useHexGrid=true;
   if(resized&&typeof updateHexSize==='function'){TILE=BOARD_SIZE/COLS;updateHexSize();resizeGameCanvas();}
   units=copy(s.units);terrain=copy(s.terrain);settlements=copy(s.settlements);resources=copy(s.resources);startingResources=copy(s.startingResources);
+  if(typeof AICommander!=='undefined')AICommander.restore(s.aiCommander);
   if(typeof ensureVeteranName==='function')units.forEach(u=>ensureVeteranName(u));
   currentTeam=s.currentTeam;turnNumber=s.turnNumber;currentTurnIndex=s.currentTurnIndex;turnOrder=copy(s.turnOrder);
   researchedUnits=Object.fromEntries(Object.entries(s.research).map(([k,v])=>[k,new Set(v)]));diplomacy=copy(s.diplomacy);
@@ -161,6 +162,8 @@ const OnlineMatch = (() => {
   if(msg.type==='ready'&&host&&!playing){const m=members.find(m=>m.team===slot);if(m)m.ready=!!msg.ready;roster();return;}
   if(msg.type==='start'&&!host&&!playing&&allReady()&&valid(msg.state)){configure();playing=true;suspended=false;revision=0;apply(msg.state);fitBoard();return;}
   if(msg.type==='proposal'&&host&&playing){
+   // Only the authoritative AI host may change strategic orders.
+   if(JSON.stringify(msg.state?.aiCommander)!==JSON.stringify(accepted.aiCommander)){tx(c,{type:'state',state:accepted,revision});return;}
    if(suspended||msg.base!==revision||accepted.currentTeam!==slot||!valid(msg.state)||JSON.stringify(msg.state.terrain)!==JSON.stringify(accepted.terrain)||JSON.stringify(msg.state.turnOrder)!==JSON.stringify(accepted.turnOrder)||(mode==='coop'&&(JSON.stringify({...msg.state.endless,lossReason:''})!==JSON.stringify({...accepted.endless,lossReason:''})||msg.state.turnNumber!==accepted.turnNumber))){tx(c,{type:'state',state:accepted,revision});return;}
    apply(msg.state);commit(msg.state);return;
   }

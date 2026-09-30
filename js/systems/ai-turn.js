@@ -49,6 +49,10 @@ function aiTargets(u) {
     .sort((a,b)=>aiAttackValue(u,b)-aiAttackValue(u,a));
 }
 function aiAttackValue(u,e) {
+  if(typeof AICommander!=='undefined'&&AICommander.get(u.team)){
+    const damage=AICommander.damage(u,e),plan=AICommander.get(u.team);
+    return Math.min(damage,e.hp)+(damage>=e.hp?75:0)+AICommander.value(e)*(plan.level===0?.15:.65)+(AICommander.order(u)?.targetId===e.id?180:0);
+  }
   const damage=u.dmg*Math.max(.4,u.hp/u.maxHp)*(u.name==='Knight'&&e.name==='Dragon'||u.name==='Assassin'&&e.name==='Crown'||u.name==='Catapult'&&isFortressUnit(e)?2:1)*(hasCrownAura(u)?1.1:1)*(hasCrownAura(e)?0.75:1);
   return Math.min(damage*(terrain[u.row*COLS+u.col]==='SWAMP'?0.5:1),e.hp)+(damage>=e.hp?75:0)+(e.name==='Crown'?120:e.name==='Cleric'?25:0)+e.dmg*.5;
 }
@@ -61,6 +65,8 @@ function aiMoveOptions(u) {
   return result;
 }
 function aiObjectives(u) {
+  const group=typeof AICommander!=='undefined'&&AICommander.group(u);
+  if(group)return [{...group.target,weight:group.priority,capture:['CAPTURE','SIEGE'].includes(group.type)}];
   const protectedUnit=aiProtectedUnit(u.team);
   const captureWeight=aiExpansionMode(u.team)?320:240;
   const objectives=[];
@@ -85,6 +91,8 @@ function aiRecoveryClerics(u) {
   return u.aiRecovering?units.filter(a=>a!==u&&a.hp>0&&a.name==='Cleric'&&areFriendlyTeams(a.team,u.team)):[];
 }
 function aiChoosePosition(u) {
+  const group=typeof AICommander!=='undefined'&&AICommander.group(u);
+  const order=typeof AICommander!=='undefined'&&AICommander.order(u);
   const enemies=units.filter(e=>e.hp>0&&aiHostile(u.team,e.team));
   const patients=units.filter(a=>a!==u&&a.hp>0&&areFriendlyTeams(a.team,u.team)&&a.hp<a.maxHp);
   const objectives=aiObjectives(u), vip=u.name==='Crown'||aiProtectedUnit(u.team)===u;
@@ -116,11 +124,11 @@ function aiChoosePosition(u) {
       score-=80*distance;
       if(distance===0)score+=100;
     }else if(!vip){
-      for(const objective of objectives)score+=objective.weight/(1+aiDistance(tile,objective));
+      if(!group)for(const objective of objectives)score+=objective.weight/(1+aiDistance(tile,objective));
       // Keep advancing toward a settlement even before it is within one move.
-      if(captures.length)score-=35*Math.min(...captures.map(o=>aiDistance(tile,o)));
+      if(!group&&captures.length)score-=35*Math.min(...captures.map(o=>aiDistance(tile,o)));
       // Close to attack range instead of waiting for enemies to approach.
-      if(enemies.length)score-=24*Math.min(...enemies.map(e=>Math.max(0,aiDistance(tile,e)-u.atkRange)));
+      if(!group&&enemies.length)score-=24*Math.min(...enemies.map(e=>Math.max(0,aiDistance(tile,e)-u.atkRange)));
       if(!u.hasActed&&aiCanFire(u,tile)){
         const targets=enemies.filter(e=>aiDistance(tile,e)<=u.atkRange);
         if(targets.length)score+=1.8*Math.max(...targets.map(e=>aiAttackValue(u,e)));
@@ -128,6 +136,8 @@ function aiChoosePosition(u) {
     }else{
       for(const home of aiAssets(u.team))score+=20/(1+aiDistance(tile,home));
     }
+    if(group)score+=AICommander.positionScore(u,tile);
+    if(order&&!u.hasActed&&order.tile.col===tile.col&&order.tile.row===tile.row)score+=600;
     if(tile.col===u.col&&tile.row===u.row)score+=1;
     if(score>bestScore){bestScore=score;best=tile;}
   }
@@ -166,9 +176,11 @@ function aiAnchor(u) {
   if(needed){deductResources(u.team,{gold:2});u.isWaterUnit=true;}
 }
 function aiRecruit(team) {
+  if(typeof AICommander!=='undefined'&&AICommander.spend(team))return;
   const homes=aiAssets(team), cap=homes.length*3;
   let army=aiMobile(team);
   const emergency=homes.some(s=>aiThreat(s,team)>0);
+  const maySave=!emergency&&!(typeof AICommander!=='undefined'&&AICommander.get(team)?.economyRelease);
   // Invest in a city to unlock materials and stronger units.
   if(!emergency&&army.length>=Math.min(2,cap)){
     const home=homes.find(s=>s.type!=='CITY'&&s.type!=='PORT');
@@ -186,9 +198,9 @@ function aiRecruit(team) {
   const priorities=[...new Set([...(needHealer?['Cleric']:[]),...(counter?[counter]:[]),elite,'Dragon','Assassin','Knight','Catapult','Archer','Spearman','Cleric'])];
   const available=new Set(homes.flatMap(s=>allowedUnitsForSettlement(s.type)));
   const desired=priorities.find(n=>available.has(n)&&(!hasResearched(team,n)||canAfford(team,UNIT_TEMPLATES[n].cost)));
-  if(desired&&!hasResearched(team,desired)){
+  if(maySave&&desired&&!hasResearched(team,desired)){
     if(canResearch(team,desired))researchUnit(team,desired);
-    else if(!emergency&&army.length>=2)return; // Save for the planned research.
+    else if(maySave&&army.length>=2)return; // Save for the planned research.
   }
   for(const home of homes){
     if(aiMobile(team).length>=cap)break;
@@ -197,7 +209,7 @@ function aiRecruit(team) {
     if(!allowed.length)continue;
     let pick=priorities.find(n=>allowed.includes(n)&&!(n==='Cleric'&&aiMobile(team).some(u=>u.name==='Cleric')));
     if(!pick){
-      if(!emergency&&army.length>=2&&desired)return; // Preserve savings for quality.
+      if(maySave&&army.length>=2&&desired)return; // Preserve savings for quality.
       pick=allowed.sort((a,b)=>UNIT_TEMPLATES[b].hp*UNIT_TEMPLATES[b].dmg-UNIT_TEMPLATES[a].hp*UNIT_TEMPLATES[a].dmg)[0];
     }
     deductResources(team,UNIT_TEMPLATES[pick].cost);
@@ -225,13 +237,17 @@ async function aiTakeTurn(team='AI') {
   const valid=()=>activeAITurn===token&&currentTeam===team&&turnNumber===token.turn&&!gameOver&&(typeof OnlineMatch==='undefined'||!OnlineMatch.active||OnlineMatch.canRunAI());
   clearTimeout(aiTurnTimeoutId);
   try{
-    const army=units.filter(u=>u.team===team&&u.hp>0).sort((a,b)=>(b.name==='Cleric')-(a.name==='Cleric'));
+    // Plan once under the same host authority and cancellation token as tactics.
+    const plan=typeof AICommander!=='undefined'?AICommander.build(team):null;
+    const orderIndex=u=>{const i=plan?.attacks.findIndex(a=>a.unitId===u.id);return i>=0?i:1000+(u.name==='Cleric'?0:1);};
+    const army=units.filter(u=>u.team===team&&u.hp>0).sort((a,b)=>plan?orderIndex(a)-orderIndex(b):(b.name==='Cleric')-(a.name==='Cleric'));
     for(const u of army){
       if(!valid())return;
       if(u.hp<=0||u.morale<=0)continue;
       aiHeal(u);aiAnchor(u);
       if(u.name!=='Cleric'&&!aiRecoveryClerics(u).length&&!u.hasActed&&aiCanFire(u,u)){
-        const target=aiTargets(u)[0];if(target)attackUnit(u,target);
+        const order=typeof AICommander!=='undefined'&&AICommander.order(u);
+        const target=aiTargets(u).find(e=>!order||e.id===order.targetId);if(target){attackUnit(u,target);if(target.hp<=0&&plan)AICommander.invalidateRoutes();}
       }
       if(u.hp<=0)continue;
       const tile=aiChoosePosition(u);
@@ -240,7 +256,7 @@ async function aiTakeTurn(team='AI') {
       }
       if(typeof Endless!=='undefined'&&Endless.active){Endless.check();if(gameOver)return;}
       aiHeal(u);
-      if(u.name!=='Cleric'&&!aiRecoveryClerics(u).length&&!u.hasActed&&aiCanFire(u,u)){const target=aiTargets(u)[0];if(target)attackUnit(u,target);}
+      if(u.name!=='Cleric'&&!aiRecoveryClerics(u).length&&!u.hasActed&&aiCanFire(u,u)){const target=aiTargets(u)[0];if(target){attackUnit(u,target);if(target.hp<=0&&plan)AICommander.invalidateRoutes();}}
       updateUI();checkEndGame();
       await new Promise(resolve=>setTimeout(resolve,180));
     }
