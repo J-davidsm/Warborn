@@ -90,7 +90,9 @@ const AICommander = (() => {
       else if(s.owner&&s.owner!==team&&areFriendlyTeams(team,s.owner)&&threat>0)add('ally:'+i,'REINFORCE',p,150+threat);
       else if(s.owner!==team&&(!s.owner||aiHostile(team,s.owner)))add('capture:'+i,threat>90?'SIEGE':'CAPTURE',p,170+(s.type==='CITY'?40:0)+(!s.owner&&plan.style==='ECONOMIC'?75:0)+(plan.style==='AGGRESSIVE'?40:0),{neutral:!s.owner});
     }
-    const vip=aiProtectedUnit(team);if(vip)add('guard:'+vip.id,'GUARD',vip,aiThreat(vip,team)>0?400:95,{unitId:vip.id});
+    // The Crown already has a protective group and towns retain garrisons.
+    // Do not consume a tiny starting army with extra escorts unless danger warrants it.
+    const vip=aiProtectedUnit(team);if(vip&&(aiThreat(vip,team)>0||army.filter(u=>u.dmg>0).length>=4))add('guard:'+vip.id,'GUARD',vip,aiThreat(vip,team)>0?400:95,{unitId:vip.id});
     for(const ally of units.filter(u=>u.hp>0&&u.team!==team&&areFriendlyTeams(team,u.team)&&aiThreat(u,team)>0).slice(0,4))add('ally-unit:'+ally.id,'REINFORCE',ally,130+aiThreat(ally,team),{unitId:ally.id});
     const mission=currentVictoryCondition;
     if(['CAPTURE_TOWN','HOLD_TILE'].includes(mission.type)&&Number.isInteger(mission.holdCol)&&Number.isInteger(mission.holdRow)){

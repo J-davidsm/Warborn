@@ -90,7 +90,18 @@ function aiRecoveryClerics(u) {
   if(u.hp>=u.maxHp)u.aiRecovering=false;
   return u.aiRecovering?units.filter(a=>a!==u&&a.hp>0&&a.name==='Cleric'&&areFriendlyTeams(a.team,u.team)):[];
 }
+// Free a recruitment tile without sacrificing Crown safety or leaving an empty town.
+// The normal move executor purchases the replacement atomically with this move.
+function aiCrownDeployment(u) {
+  if(u.name!=='Crown'||u.hasMoved||!aiGarrisonReplacement(u))return null;
+  return aiMoveOptions(u).filter(tile=>aiDistance(u,tile)===1&&
+    !settlements[tile.row*COLS+tile.col]&&aiThreat(tile,u.team)===0)
+    .sort((a,b)=>units.filter(e=>e.hp>0&&aiHostile(u.team,e.team)).reduce((score,e)=>
+      score+1/(1+aiDistance(a,e))-1/(1+aiDistance(b,e)),0))[0]||null;
+}
 function aiChoosePosition(u) {
+  const deployment=aiCrownDeployment(u);
+  if(deployment)return deployment;
   const group=typeof AICommander!=='undefined'&&AICommander.group(u);
   const order=typeof AICommander!=='undefined'&&AICommander.order(u);
   const enemies=units.filter(e=>e.hp>0&&aiHostile(u.team,e.team));
