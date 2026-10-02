@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict');
 const {client,tick,peers}=require('./multiplayer-harness.cjs');
 for(const count of [3,4]){
+ const firstPeer=peers.length;
  const players=Array.from({length:count},(_,i)=>client('Commander '+(i+1))),h=players[0];
  h.el('lobbyCapacity').value=String(count);h.el('menuOnlineBtn').onclick();h.el('lobbyCreate').onclick();tick();
  for(const g of players.slice(1)){g.run(`OnlineMatch.join('${h.el('lobbyRoom').textContent}')`);tick();}
@@ -9,7 +10,7 @@ for(const count of [3,4]){
  for(const p of players){assert(p.run('OnlineMatch.playing'));assert.equal(p.ctx.units.length,count*5);assert.equal(p.ctx.COLS,21);}
  // Signaling reconnection must retain established game connections.
  const connections=peers.map(p=>p.connections.length);
- peers.filter(p=>!p.destroyed).forEach(p=>p.emit('open',p.id));tick();
+ peers.slice(firstPeer).filter(p=>!p.destroyed).forEach(p=>p.emit('open',p.id));tick();
  assert.deepEqual(peers.map(p=>p.connections.length),connections);
  assert(players.every(p=>p.run('OnlineMatch.playing')));
  for(let step=0;step<count*2;step++){

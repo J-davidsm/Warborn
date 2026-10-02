@@ -343,4 +343,7 @@ window.addEventListener('message',(ev)=>{
     // Update join-code modal visibility when players change
     try{ updateGameIdModal(); } catch(e){}
   }
+  // Restore online checkpoints only after the canvas and default setup exist.
+  window.warbornReady=true;
+  document.dispatchEvent(new Event('warborn:ready'));
 });
