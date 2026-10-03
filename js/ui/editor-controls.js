@@ -823,6 +823,11 @@ function handleEditorClick(c, r, shiftKey = false) {
         // Clear mode: remove any existing settlement
         settlements[idx] = null;
       } else {
+        // All settlement types and teams need a clear neighboring tile ring.
+        if(!SettlementSpacing.canPlace(settlements,COLS,ROWS,c,r,useHexGrid)){
+          showPopup('Settlements need space','Leave at least one tile between settlements.','info');
+          return;
+        }
         // Place new settlement for the currently selected editor team.
         settlements[idx] = { type: placingSettlement, owner: selectedTeam || 'PLAYER' };
       }

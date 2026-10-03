@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const ctx={console,Math,Date,aiTeamNames:['AI','AI2','AI3','AI4'],isAITeam:t=>t.startsWith('AI'),units:[],currentVictoryCondition:{},getActiveTeams:()=>['PLAYER','AI','AI2'],DEFAULT_VICTORY_CONDITION:{type:'ANNIHILATE_ALL'},getTeamDisplayName:t=>t};vm.createContext(ctx);
+const ctx={SettlementSpacing:require('../js/core/settlement-spacing.js'),console,Math,Date,aiTeamNames:['AI','AI2','AI3','AI4'],isAITeam:t=>t.startsWith('AI'),units:[],currentVictoryCondition:{},getActiveTeams:()=>['PLAYER','AI','AI2'],DEFAULT_VICTORY_CONDITION:{type:'ANNIHILATE_ALL'},getTeamDisplayName:t=>t};vm.createContext(ctx);
 for(const f of ['js/systems/campaign.js','js/data/campaign-catalog.js','js/core/level-state.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
 const catalog=ctx.buildCampaignCatalog();assert.equal(catalog.length,3);assert.equal(JSON.stringify(catalog),JSON.stringify(ctx.buildCampaignCatalog()),'retries reproduce authored maps');
 const signatures=new Set();

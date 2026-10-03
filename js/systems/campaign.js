@@ -512,7 +512,7 @@ function findScenarioOpenTile(cols, rows, terrainGrid, occupied, center, maxRadi
       for (let col = center.col - radius; col <= center.col + radius; col++) {
         if (!isScenarioInBounds(cols, rows, col, row)) continue;
         const idx = scenarioIndex(cols, col, row);
-        if (occupied.has(idx)) continue;
+        if (occupied.has(idx)||options.accept&&!options.accept(col,row)) continue;
         if (avoidWater && terrainGrid[idx] === 'WATER') continue;
         const distance = Math.abs(col - center.col) + Math.abs(row - center.row);
         if (distance <= radius) candidates.push({ col, row, idx, distance });
@@ -529,7 +529,7 @@ function findScenarioOpenTile(cols, rows, terrainGrid, occupied, center, maxRadi
   const free = [];
   for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
     const idx=scenarioIndex(cols,col,row);
-    if(!occupied.has(idx))free.push({col,row,idx,distance:Math.abs(col-center.col)+Math.abs(row-center.row)});
+    if(!occupied.has(idx)&&(!options.accept||options.accept(col,row)))free.push({col,row,idx,distance:Math.abs(col-center.col)+Math.abs(row-center.row)});
   }
   free.sort((a,b)=>a.distance-b.distance);
   const pick=free.find(p=>!avoidWater||terrainGrid[p.idx]!=='WATER')||free[0];
@@ -562,7 +562,12 @@ function addGeneratedUnitGroup(startingUnits, team, unitTypes, anchor, cols, row
 }
 
 function addGeneratedSettlement(settlementsList, occupied, cols, rows, terrainGrid, center, type, owner, rng) {
-  const position = findScenarioOpenTile(cols, rows, terrainGrid, occupied, center, 4, rng);
+  // A spaced lattice guarantees enough sites even on the smallest 8×8 maps.
+  // Units are placed afterwards, so they cannot crowd out required holdings.
+  const board=Array(cols*rows).fill(null);
+  for(const s of settlementsList)board[s.row*cols+s.col]=s;
+  const position = findScenarioOpenTile(cols, rows, terrainGrid, occupied, center, 4, rng,
+    {accept:(col,row)=>col%2===0&&row%2===0&&SettlementSpacing.canPlace(board,cols,rows,col,row,false)});
   settlementsList.push({
     type,
     owner,
@@ -655,8 +660,10 @@ function generateScenario(options = {}) {
   const occupied = new Set();
   const startingUnits = {};
   const settlementsList = [];
+  const deployments=[];
+  const queueDeployment=(...args)=>deployments.push(args);
 
-  addGeneratedUnitGroup(
+  queueDeployment(
     startingUnits,
     'PLAYER',
     ['Hard','Brutal'].includes(profile.label) ? Array.from({length:aiCount},()=>profile.playerUnits).flat() : [...profile.playerUnits, ...profile.playerBonus.slice(0, Math.max(0, aiCount - 1))],
@@ -671,7 +678,7 @@ function generateScenario(options = {}) {
 
   aiTeamNames.slice(0, aiCount).forEach((team, index) => {
     const aiUnits = [...profile.aiUnits];
-    addGeneratedUnitGroup(startingUnits, team, aiUnits, anchors[team], cols, rows, terrainGrid, occupied, rng);
+    queueDeployment(startingUnits, team, aiUnits, anchors[team], cols, rows, terrainGrid, occupied, rng);
     addGeneratedSettlement(settlementsList, occupied, cols, rows, terrainGrid, anchors[team], profile.aiSettlement, team, rng);
   });
 
@@ -688,6 +695,7 @@ function generateScenario(options = {}) {
     }
   }
 
+  deployments.forEach(args=>addGeneratedUnitGroup(...args));
   const pressure = balanceGeneratedScenario(startingUnits, teams, profile, rng);
   // Reposition any reinforcement units that were added at their team's anchor.
   teams.filter(team => team !== 'PLAYER').forEach(team => {
