@@ -7,7 +7,7 @@ const ctx={console:{log(){},warn(){},debug(){}},Math,Date,COLS:7,ROWS:5,terrain:
 };
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('js/ui/popups-and-assets.js','utf8').match(/const SETTLEMENTS = \{[\s\S]*?\n\};/)[0],ctx);
-for(const file of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js','js/systems/mechanics.js','js/systems/diplomacy.js','js/systems/combat-turns.js','js/systems/settlements.js','js/systems/ai-turn.js'])vm.runInContext(fs.readFileSync(file,'utf8'),ctx);
+for(const file of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js','js/systems/mechanics.js','js/systems/diplomacy.js','js/systems/combat-turns.js','js/systems/settlements.js','js/systems/ai-logistics.js','js/systems/ai-turn.js'])vm.runInContext(fs.readFileSync(file,'utf8'),ctx);
 const run=s=>vm.runInContext(s,ctx);
 // Use a defensive alliance with no active war; other teams remain hostile.
 run("hasTreaty=(a,b)=>a!==b&&[a,b].includes('AI')&&[a,b].includes('PLAYER');isDiplomacyActive=()=>false;addAIMessage=()=>{};");
@@ -30,8 +30,8 @@ const anchor=unit('Soldier','AI',2,3);ctx.units=[anchor,enemy];ctx.terrain[3*7+3
 // Legacy food values neither gate purchases nor get retained by normalized costs.
 run("resources.AI={gold:10,materials:3};");assert(ctx.canAfford('AI',{food:999,gold:5}));ctx.deductResources('AI',{food:999,gold:5});assert.equal(run('resources.AI.gold'),5);assert.equal(JSON.stringify(ctx.getEffectiveCost({food:999,gold:2,materials:1})),JSON.stringify({gold:2,materials:1}));
 ctx.currentVictoryCondition={type:'ANNIHILATE_ALL'};ctx.terrain.fill(null);ctx.settlements[0]={owner:'AI',type:'CITY'};
-ctx.units=[unit('Soldier','AI',1,0),unit('Soldier','AI',2,0),unit('Soldier','AI',3,0)];run("resources.AI={gold:100,materials:100}");ctx.aiRecruit('AI');assert.equal(ctx.aiMobile('AI').length,3,'army cap is 3 per settlement');
-ctx.units.pop();run("restoreResearch(null,{AI:['Cleric']})");ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Cleric'),'AI researches and recruits a cleric');assert.equal(ctx.aiMobile('AI').length,3);
+ctx.units=[unit('Soldier','AI',1,0),unit('Soldier','AI',2,0),unit('Soldier','AI',3,0)];run("resources.AI={gold:100,materials:100}");ctx.aiRecruit('AI');assert.equal(ctx.aiMobile('AI').length,4,'recruitment continues beyond the former cap');
+ctx.units.pop();ctx.units.pop();run("restoreResearch(null,{AI:['Cleric']})");ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Cleric'),'AI researches and recruits a cleric');assert.equal(ctx.aiMobile('AI').length,3);
 ctx.units=[unit('Soldier','AI',1,0),unit('Cleric','AI',2,0)];run("resources.AI={gold:100,materials:100}");run("restoreResearch(null,{AI:['Cleric','Dragon']})");ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Dragon'),'AI researches and purchases high-tier units');
 ctx.settlements.fill(null);ctx.units=[];ctx.aiRecruit('AI');assert.equal(ctx.units.length,0,'no towns means no mobile recruitment');run("resetResearch(['AI'])");
 // End Turn from the UI must stop before any side effects during an AI turn.
@@ -50,7 +50,7 @@ assert(replacement&&replacement.team==='AI'&&replacement.dmg>0,'replacement is i
 assert(replacement.hasMoved&&replacement.hasActed,'replacement cannot act on its recruitment turn');
 assert.equal(run('resources.AI.gold'),0,'replacement cost deducted');
 ctx.units.push(unit('Soldier','AI',0,0));run('resources.AI={gold:100,materials:100}');
-assert.equal(ctx.aiGarrisonReplacement(replacement),null,'replacement honors army cap');
+assert(ctx.aiGarrisonReplacement(replacement),'replacement remains available beyond the former cap');
 ctx.units=[unit('Soldier','AI',2,1)];ctx.settlements[12]={owner:'AI2',type:'HAMLET'};ctx.settlements[34]={owner:'PLAYER',type:'CITY'};
 const chosen=ctx.aiChoosePosition(ctx.units[0]);
 assert.equal(chosen.col,5);assert.equal(chosen.row,1,'expansion unit prioritizes capturing reachable enemy settlement');
@@ -70,7 +70,7 @@ run("hasTreaty=(a,b)=>a!==b&&[a,b].includes('AI')&&[a,b].includes('PLAYER');");
 ctx.settlements[12]={owner:'PLAYER',type:'HAMLET'};
 assert(!ctx.aiObjectives(ctx.units[0]).some(o=>o.capture&&o.col===5&&o.row===1),'aggression still excludes allied settlements');
 assert(!ctx.aiHostile('AI','PLAYER'),'allied players are not hostile');
-console.log('Aggression against human and AI enemies, alliance protection, and immediate capped garrison replacements pass.');
+console.log('Aggression against human and AI enemies, alliance protection, and immediate garrison replacements pass.');
 // Retreat below half health, remain in care past half health, then rejoin combat.
 ctx.settlements.fill(null);ctx.terrain.fill(null);
 const medic=unit('Cleric','AI',0,2),wounded=unit('Soldier','AI',4,2),foe=unit('Soldier','AI2',6,2);
@@ -93,7 +93,7 @@ assert(ctx.makeUnit('Soldier','AI',0,0,{aiRecovering:true}).aiRecovering,'recove
 console.log('Cleric rear positioning, retreat threshold, continued healing, and return to combat pass.');
 ctx.settlements.fill(null);ctx.units=[];
 ctx.currentTeam='AI';ctx.endTurn();ctx.endTurn();assert.equal(ctx.currentTeam,'AI');
-console.log('Alliance capture protection, defense and support, clerics, VIP protection, recruitment caps, elite spending, anchoring, flight, fortresses, food removal and turn guards pass.');
+console.log('Alliance capture protection, defense and support, clerics, VIP protection, uncapped recruitment, elite spending, anchoring, flight, fortresses, food removal and turn guards pass.');
 (async()=>{
   ctx.terrain.fill(null);ctx.settlements.fill(null);ctx.units=[unit('Cleric','AI',1,1)];ctx.currentTeam='AI';
   let ended=0;ctx.endTurn=()=>{ended++;};

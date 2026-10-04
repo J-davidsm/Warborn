@@ -7,7 +7,7 @@ const ctx={console:{log(){},warn(){},debug(){}},Math,Date,COLS:12,ROWS:8,terrain
  campaignMode:{campaignData:{scenarios:[{difficulty:'Hard'}]},currentScenarioIndex:0}};
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('js/ui/popups-and-assets.js','utf8').match(/const SETTLEMENTS = \{[\s\S]*?\n\};/)[0],ctx);
-for(const f of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js','js/systems/mechanics.js','js/systems/diplomacy.js','js/systems/combat-turns.js','js/systems/settlements.js','js/systems/ai-turn.js','js/systems/ai-commander.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
+for(const f of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js','js/systems/mechanics.js','js/systems/diplomacy.js','js/systems/combat-turns.js','js/systems/settlements.js','js/systems/ai-logistics.js','js/systems/ai-turn.js','js/systems/ai-commander.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
 const run=s=>vm.runInContext(s,ctx),ai=run('AICommander');let next=0;
 const unit=(name,col,row,team='AI')=>ctx.makeUnit(name,team,col,row,{id:'u'+(++next)});
 const reset=()=>{ctx.COLS=12;ctx.ROWS=8;ctx.units=[];ctx.terrain=Array(96).fill(null);ctx.settlements=Array(96).fill(null);ctx.currentVictoryCondition={type:'ANNIHILATE_ALL'};ctx.turnNumber=1;ctx.useHexGrid=false;ai.reset();run("resetResearch(['AI']);resources.AI={gold:0,materials:0};hasTreaty=()=>false;isDiplomacyActive=()=>false;");};
@@ -40,7 +40,7 @@ plan=ai.build('AI');assert.equal(plan.researchGoal,'engineering_corps');assert.e
 run('resources.AI={gold:2,materials:0}');ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Soldier'&&u.col===0&&u.row===0),'no RP does not block recruiting');
 reset();ctx.units=[unit('Soldier',2,2),unit('Soldier',2,3),unit('Castle',10,7,'PLAYER')];ctx.settlements[0]={owner:'AI',type:'CITY'};
 run('resources.AI={gold:0,materials:0};restoreResearchPoints({AI:5})');ai.build('AI');ctx.aiRecruit('AI');assert(ctx.hasTech('AI','engineering_corps'));
-ctx.turnNumber++;ai.build('AI');run('resources.AI={gold:100,materials:100}');ctx.aiRecruit('AI');assert(ctx.hasTech('AI','siege_engineering'));assert(ctx.units.some(u=>u.name==='Catapult'&&u.team==='AI'),'research with RP and recruit with gold');
+ctx.turnNumber++;ai.build('AI');run('resources.AI={gold:100,materials:100}');ctx.aiRecruit('AI');assert(ctx.hasTech('AI','siege_engineering'));const garrison=ctx.getUnitAt(0,0);if(garrison){garrison.col=3;garrison.row=4;}ctx.turnNumber++;ctx.aiRecruit('AI');assert(ctx.units.some(u=>u.name==='Catapult'&&u.team==='AI'),'researched siege units are recruited on the next production turn');
 
 reset();ctx.units=[unit('Soldier',2,2),unit('Soldier',2,3),unit('Dragon',1,0,'PLAYER')];ctx.settlements[0]={owner:'AI',type:'CITY'};assert.equal(ai.build('AI').economicGoal,null,'emergency cancels savings');
 reset();const crown=unit('Crown',2,2);ctx.units=[crown,unit('Soldier',3,2),unit('Soldier',3,3),unit('Soldier',10,2,'PLAYER')];ctx.settlements[0]={owner:'AI',type:'CITY'};ai.build('AI');assert.equal(ai.group(crown).type,'GUARD');

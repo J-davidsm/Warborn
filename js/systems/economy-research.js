@@ -36,7 +36,7 @@ function startDoctrineResearch(team,id) {
 function advanceDoctrineResearch(team) {
   const job=activeResearch[team];
   if(!job||!canMutateResearch()||job.lastTurn===turnNumber)return;
-  job.lastTurn=turnNumber;job.progress++;
+  job.lastTurn=turnNumber;job.progress+=/^AI\d*$/.test(team)?2:1;
   if(job.progress>=RESEARCH_TREE[job.id].cost){
     const name=RESEARCH_TREE[job.id].name;completeDoctrine(team,job.id);
     if(typeof BattleGuide!=='undefined'&&team===getLocalPlayableTeam())BattleGuide.notify(name+' research completed.');
@@ -172,22 +172,30 @@ function getUnitResearchCost(team,name) { return getResearchPath(team,UNIT_DOCTR
 
 // A weighted destination chooses an army specialization; only the first legal
 // prerequisite is purchased. No AI-only unlocks, discounts, or movement rules.
+function aiDoctrineFocus(team) {
+  const personality=diplomacy.personalities?.[team]||'BALANCED';
+  if(personality==='DEFENSIVE')return 'defense';
+  if(['TRADER','AGGRESSIVE','IDEOLOGICAL','ECONOMIC','CUNNING'].includes(personality))return 'engineering';
+  return [...team].reduce((sum,c)=>sum+c.charCodeAt(0),0)%2?'defense':'engineering';
+}
 function chooseAIResearch(team) {
   const foes=units.filter(u=>u.hp>0&&aiHostile(team,u.team)),army=units.filter(u=>u.hp>0&&u.team===team);
   const personality=diplomacy.personalities?.[team]||'BALANCED';
   const preferences={AGGRESSIVE:['cavalry_training','heavy_cavalry','volley_fire','forced_march'],DEFENSIVE:['fieldworks','garrison_training','healing_orders','stone_fortifications','battlefield_medicine','citadel_engineering'],TRADER:['engineering_corps','logistics','mass_production','forced_march'],IDEOLOGICAL:['forced_march','shadow_warfare','maneuver_warfare','dragon_corps'],BALANCED:['field_training','archery','healing_orders','logistics']};
+  const focus=aiDoctrineFocus(team);
   const weights=new Map(Object.values(RESEARCH_TREE).map(t=>[t.id,5]));
   (preferences[personality]||preferences.BALANCED).forEach((id,i)=>weights.set(id,65-i*5));
   const prefer=(id,score)=>weights.set(id,Math.max(weights.get(id),score));
-  if(foes.some(u=>u.name==='Knight'))prefer('spear_doctrine',110);
-  if(foes.some(u=>u.name==='Dragon'))prefer('cavalry_training',120);
-  if(foes.some(isFortressUnit))prefer('siege_engineering',115);
+  if(foes.some(u=>u.name==='Knight'))prefer('spear_doctrine',170);
+  if(foes.some(u=>u.name==='Dragon'))prefer('cavalry_training',180);
+  if(foes.some(isFortressUnit))prefer('siege_engineering',175);
   if(army.filter(u=>u.hp<u.maxHp*.7).length>=2)prefer('healing_orders',125);
   if(army.some(u=>u.name==='Cleric')&&army.filter(u=>u.hp<u.maxHp*.7).length>=3)prefer('battlefield_medicine',115);
   if(army.some(u=>u.name==='Catapult')){
     prefer('siege_mobility',80);prefer('counterweight_engines',85);
     if(army.some(u=>u.name==='Catapult'&&u.hp<u.maxHp*.7))prefer('reinforced_carriages',90);
   }
+  for(const tech of Object.values(RESEARCH_TREE))if(tech.branch===focus&&!hasTech(team,tech.id))prefer(tech.id,140);
   const target=[...weights].filter(([id])=>!hasTech(team,id)).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0]?.[0];
   return getResearchPath(team,target)[0]||null;
 }

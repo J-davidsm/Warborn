@@ -110,7 +110,11 @@ const AICommander = (() => {
       if(prior&&o.stalled<4)o.priority+=65; // Keep useful orders through several turns.
       if(o.stalled>=4)o.priority-=100;
     }
-    return candidates.filter(o=>Number.isFinite(o.distance)).sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id)).slice(0,plan.level===0?1:plan.level===3?4:3);
+    const ranked=candidates.filter(o=>Number.isFinite(o.distance)).sort((a,b)=>b.priority-a.priority||a.id.localeCompare(b.id));
+    const selected=ranked.slice(0,plan.level===0?1:plan.level===3?4:3);
+    const attack=ranked.find(o=>['CAPTURE','SIEGE','HUNT','BREACH'].includes(o.type));
+    if(attack&&!selected.includes(attack))selected.push(attack);
+    return selected;
   }
   function groups(team,plan) {
     const army=live(team).filter(u=>!isFortressUnit(u)),free=new Set(army.map(u=>u.id)),result=[];
@@ -121,6 +125,15 @@ const AICommander = (() => {
       const safe=homes.slice().sort((a,b)=>aiThreat(a,team)-aiThreat(b,team)||pathCost(u,a)-pathCost(u,b))[0]||u;
       add('GUARD',safe,400,'protect:'+u.id,[u]);
     }
+    // Fund actual local defense before assigning the rest of the army to attacks.
+    const defenseSites=[...homes,...army.filter(u=>['Cleric','Catapult'].includes(u.name)||u===vip)];
+    for(const home of defenseSites){
+      const threat=aiThreat(home,team);if(!threat)continue;
+      const defenders=army.filter(u=>free.has(u.id)&&u.dmg>0).sort((a,b)=>pathCost(a,home)-pathCost(b,home)||aiStrength(b)-aiStrength(a));
+      const chosen=[];let strength=0;
+      for(const u of defenders){chosen.push(u);strength+=aiStrength(u);if(strength>=threat*1.25)break;}
+      add('DEFEND',home,600+threat,'defense:'+key(home),chosen);
+    }
     // A small territorial reserve also guards against fast breakthroughs.
     const fraction=plan.style==='DEFENSIVE'?.32:plan.style==='AGGRESSIVE'?.12:.22;
     let count=homes.length>1||army.length>=7?Math.max(1,Math.floor(army.length*fraction)+Math.min(2,Math.ceil(plan.observations.raids))):0;
@@ -128,7 +141,17 @@ const AICommander = (() => {
       const chosen=army.filter(u=>free.has(u.id)&&u.dmg>0).sort((a,b)=>pathCost(a,home)-pathCost(b,home)).slice(0,count>0?1:0);
       add('RESERVE',home,200,'reserve:'+key(home),chosen);count-=chosen.length;if(count<=0)break;
     }
+    // Four mobile troops per holding is a deployment trigger, never a cap.
+    // Send expendable weak troops forward after defense; preserve Crowns/healers.
+    const surplus=Math.max(0,aiMilitary(team).length-homes.length*4);
+    const assault=plan.objectives.find(o=>['CAPTURE','SIEGE','HUNT','BREACH'].includes(o.type));
+    if(surplus&&assault){
+      const weak=army.filter(u=>free.has(u.id)&&['Soldier','Spearman','Swordsman','Archer'].includes(u.name)&&(u.promotionLevel||0)<2&&Number.isFinite(pathCost(u,assault.target)))
+        .sort((a,b)=>aiStrength(a)-aiStrength(b)).slice(0,surplus);
+      add('VANGUARD',assault.target,assault.priority+40,assault.id,weak);
+    }
     for(const o of plan.objectives){
+      if(o.type==='DEFEND')continue;
       const available=army.filter(u=>free.has(u.id)&&Number.isFinite(pathCost(u,o.target))).sort((a,b)=>{
         const bonus=u=>o.type==='SIEGE'&&role(u)==='siege'?-8:o.type==='HUNT'&&role(u)==='raider'?-4:0;
         return pathCost(a,o.target)+bonus(a)-pathCost(b,o.target)-bonus(b);
@@ -148,7 +171,7 @@ const AICommander = (() => {
   function group(u){return plans[u.team]?.groups.find(g=>g.unitIds.includes(u.id));}
   function attackPlan(team,plan) {
     if(plan.level===0)return [];
-    const attackers=live(team).filter(u=>u.dmg>0&&!u.hasActed&&u.morale>0&&u.hp>=u.maxHp*.5);
+    const attackers=live(team).filter(u=>u.dmg>0&&!u.hasActed&&u.morale>0&&(u.hp>=u.maxHp*.5||group(u)?.type==='VANGUARD'));
     const options=new Map(attackers.map(u=>[u.id,aiMoveOptions(u)])),used=new Set(),orders=[],occupied=new Set();
     for(const e of enemy(team).sort((a,b)=>value(b)-value(a)).slice(0,plan.level===3?32:plan.level===2?24:10)){
       const choices=[];
@@ -158,7 +181,7 @@ const AICommander = (() => {
         const tiles=options.get(u.id).filter(p=>aiDistance(p,e)<=u.atkRange&&!occupied.has(key(p))&&(!g||!['RESERVE','GUARD','DEFEND'].includes(g.type)||aiDistance(p,g.target)<=3));
         tiles.sort((a,b)=>aiThreat(a,team)-aiThreat(b,team)||aiDistance(u,a)-aiDistance(u,b));
         const tile=tiles[0];if(!tile)continue;
-        if(aiThreat(tile,team)>u.hp*(plan.style==='AGGRESSIVE'?1.5:1)&&value(e)<200)continue;
+        if(g?.type!=='VANGUARD'&&aiThreat(tile,team)>u.hp*(plan.style==='AGGRESSIVE'?1.5:1)&&value(e)<200)continue;
         choices.push({unitId:u.id,targetId:e.id,tile,damage:damage(u,e,tile),order:u.name==='Catapult'?0:u.atkRange>1?1:role(u)==='raider'?3:2});
       }
       choices.sort((a,b)=>a.order-b.order||b.damage-a.damage);
@@ -170,47 +193,15 @@ const AICommander = (() => {
     }
     return orders;
   }
-  function economicGoal(team,plan,old) {
-    const homes=aiAssets(team),army=aiMobile(team),emergency=homes.some(h=>aiThreat(h,team)>0);
-    if(emergency||army.length<2)return null;
-    if(old?.economicGoal&&old.economicGoal.type!=='RESEARCH'&&old.economicGoal.age<3)return {...old.economicGoal,age:old.economicGoal.age+1};
-    if(old?.economicGoal&&old.economicGoal.type!=='RESEARCH')return null; // Spend this turn before considering another savings goal.
-    // Fund unlocked counters with gold/materials. The independent RP goal never
-    // competes for this production budget.
-    const needed=plan.observations.dragons?'Knight':plan.observations.fortresses?'Catapult':army.some(u=>u.hp<u.maxHp*.7)&&!army.some(u=>u.name==='Cleric')?'Cleric':null;
-    if(needed&&isUnitUnlocked(team,needed)&&army.length<homes.length*3&&!army.some(u=>u.name===needed)&&homes.some(h=>allowedUnitsForSettlement(h.type,team).includes(needed)&&!getUnitAt(h.col,h.row))){
-      const cost=getEffectiveUnitCostForTeam(team,needed);
-      if(!canAfford(team,cost)&&(!cost.materials||computeIncomeForTeam(team).materials>0))return {type:'RECRUIT',unit:needed,targetCost:cost,age:0};
-    }
-    if(army.length>=homes.length*3)return null;
-    const upgrade=homes.find(h=>SETTLEMENTS[h.type]?.upgradeTo);
-    if(upgrade&&(plan.style==='ECONOMIC'||!computeIncomeForTeam(team).materials))return {type:'UPGRADE',target:key(upgrade),targetCost:getSettlementUpgradeCost(team,upgrade.type),age:0};
-    const names=[plan.observations.dragons?'Knight':null,plan.observations.fortresses||plan.observations.turtling>3?'Catapult':null,!army.some(u=>u.name==='Cleric')?'Cleric':null,plan.style==='CUNNING'?'Assassin':plan.style==='DEFENSIVE'?'Spearman':plan.observations.ranged>3?'Knight':'Dragon'].filter(Boolean);
-    const name=names.find(n=>isUnitUnlocked(team,n)&&homes.some(h=>allowedUnitsForSettlement(h.type).includes(n))&&(!(getEffectiveUnitCostForTeam(team,n).materials)||computeIncomeForTeam(team).materials>0));
-    if(!name)return null;
-    const cost=getEffectiveUnitCostForTeam(team,name);
-    return {type:'RECRUIT',unit:name,targetCost:cost,age:0};
+  function economicGoal(team) {
+    const needs=aiMilitaryNeeds(team);
+    if(needs.power>=needs.defense)return null;
+    const home=aiAssets(team).find(h=>!getUnitAt(h.col,h.row));
+    const name=home&&aiRecruitChoice(team,home.type);
+    return name?{type:'RECRUIT',unit:name,targetCost:getEffectiveUnitCostForTeam(team,name),age:0}:null;
   }
-  function spend(team) {
-    const p=plans[team],goal=p?.economicGoal;if(!goal)return false;
-    const homes=aiAssets(team);
-    if(homes.some(h=>aiThreat(h,team)>0)){p.economicGoal=null;return false;}
-    if(goal.type==='RESEARCH'){
-      p.economicGoal=null;return false; // Discard pre-RP saved gold/research goals.
-    }
-    if(goal.type==='UPGRADE'){
-      const s=settlements[goal.target],data=SETTLEMENTS[s?.type];
-      if(s?.owner!==team||!data?.upgradeTo){p.economicGoal=null;return false;}
-      if(purchaseSettlementUpgrade(goal.target%COLS,Math.floor(goal.target/COLS),team))p.economicGoal=null;return true;
-    }
-    const home=homes.find(h=>!getUnitAt(h.col,h.row)&&allowedUnitsForSettlement(h.type).includes(goal.unit));
-    if(!home||aiMobile(team).length>=homes.length*3){p.economicGoal=null;return false;}
-    if(canAfford(team,goal.targetCost)){
-      if(!hasResearched(team,goal.unit)){p.economicGoal=null;return false;}
-      if(hasResearched(team,goal.unit)&&canAfford(team,getEffectiveUnitCostForTeam(team,goal.unit))){deductResources(team,getEffectiveUnitCostForTeam(team,goal.unit));units.push(makeUnit(goal.unit,team,home.col,home.row,{justSpawned:true}));p.economicGoal=null;}
-    }
-    return true;
-  }
+  // Procurement executes all affordable priority stages, never a turn-wide hold.
+  function spend(){return false;}
   function build(team) {
     fields.clear();const old=plans[team],raw=diplomacy.personalities?.[team]||'BALANCED';
     const plan={team,turn:turnNumber,level:difficulty(old),style:raw==='TRADER'?'ECONOMIC':raw==='IDEOLOGICAL'?'CUNNING':raw};
@@ -227,7 +218,7 @@ const AICommander = (() => {
     const foes=enemy(u.team),nearest=p=>Math.min(100,...foes.map(e=>aiDistance(p,e)));
     const danger=aiThreat(tile,u.team),risk=plans[u.team]?.style==='AGGRESSIVE'?1.35:1;
     const decisive=foes.some(e=>value(e)>=200&&aiDistance(tile,e)<=u.atkRange&&damage(u,e,tile)>=e.hp);
-    if(danger>=u.hp*risk&&!decisive)score-=700;
+    if(danger>=u.hp*risk&&!decisive&&g.type!=='VANGUARD')score-=700;
     if(['ranged','siege','healer','crown'].includes(role(u))){
       if(front.length){score-=12*Math.max(0,Math.min(...front.map(a=>aiDistance(tile,a)))-2);score-=65*Math.max(0,Math.min(...front.map(nearest))+1-nearest(tile));}
       score-=aiThreat(tile,u.team)*(role(u)==='siege'?2:1);
@@ -243,12 +234,12 @@ const AICommander = (() => {
       const supports=mates.filter(a=>['ranged','siege','healer'].includes(role(a)));
       if(supports.length&&nearest(tile)<=3)score+=Math.max(0,18-6*Math.min(...supports.map(a=>aiDistance(tile,a))));
     }
-    if(u.hp<u.maxHp*.5){const retreats=[...aiAssets(u.team),...live(u.team).filter(a=>a.name==='Cleric')];if(retreats.length)score-=45*Math.min(...retreats.map(p=>aiDistance(tile,p)));score-=aiThreat(tile,u.team)*3;}
+    if(u.hp<u.maxHp*.5&&g.type!=='VANGUARD'){const retreats=[...aiAssets(u.team),...live(u.team).filter(a=>a.name==='Cleric')];if(retreats.length)score-=45*Math.min(...retreats.map(p=>aiDistance(tile,p)));score-=aiThreat(tile,u.team)*3;}
     if(role(u)==='raider')score+=Math.min(20,Math.max(0,...foes.map(e=>aiDistance(tile,e)<=u.atkRange?value(e)/8:0)));
     return score;
   }
   function order(u){return plans[u.team]?.attacks?.find(a=>a.unitId===u.id&&units.some(e=>e.id===a.targetId&&e.hp>0&&aiHostile(u.team,e.team)));}
-  const api={debug:false,build,pathCost,role,value,damage,group,order,positionScore,spend,invalidateRoutes(){fields.clear();},
+  const api={debug:false,build,pathCost,canEnter:passable,role,value,damage,group,order,positionScore,spend,invalidateRoutes(){fields.clear();},
     get:team=>plans[team],reset(){plans={};fields.clear();},snapshot:()=>JSON.parse(JSON.stringify(plans)),
     restore(data){
       plans={};fields.clear();if(!data||typeof data!=='object')return;

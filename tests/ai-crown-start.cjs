@@ -7,7 +7,7 @@ const ctx={console:{log(){},warn(){},debug(){}},Math,Date,COLS:12,ROWS:8,terrain
  campaignMode:{campaignData:{scenarios:[{difficulty:'Hard'}]},currentScenarioIndex:0}};
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync('js/ui/popups-and-assets.js','utf8').match(/const SETTLEMENTS = \{[\s\S]*?\n\};/)[0],ctx);
-for(const f of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js','js/systems/mechanics.js','js/systems/diplomacy.js','js/systems/combat-turns.js','js/systems/settlements.js','js/systems/ai-turn.js','js/systems/ai-commander.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
+for(const f of ['js/systems/economy-research.js','js/data/units-and-build.js','js/core/level-state.js','js/systems/mechanics.js','js/systems/diplomacy.js','js/systems/combat-turns.js','js/systems/settlements.js','js/systems/ai-logistics.js','js/systems/ai-turn.js','js/systems/ai-commander.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
 const run=s=>vm.runInContext(s,ctx),ai=run('AICommander');let next=0;
 const grid=fs.readFileSync('js/core/state-and-grid.js','utf8');
 for(const name of ['hexDistance','getHexNeighbors'])run(grid.match(new RegExp('function '+name+'\\([\\s\\S]*?\\n}'))[0]);
