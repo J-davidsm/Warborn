@@ -729,6 +729,8 @@ function drawGrid(){
     }
   }
 
+  if(typeof TerritoryOverlay!=='undefined')TerritoryOverlay.draw();
+
   for(let r = startRow; r < endRow; r++) {
     for(let c = startCol; c < endCol; c++) {
       const idx = r * COLS + c;

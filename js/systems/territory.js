@@ -52,7 +52,11 @@ const Territory=(()=>{
   const menu=document.getElementById('mainMenu');box.hidden=!!(menu&&!menu.classList.contains('hidden'));
   const team=typeof getLocalPlayableTeam==='function'?getLocalPlayableTeam():currentTeam,s=stats(team),over=s.used>s.capacity;
   box.className=over?'over-capacity':'';
-  box.innerHTML=`<strong>Army upkeep</strong><div>${s.used} / ${s.capacity} territory</div><progress max="${Math.max(1,s.capacity)}" value="${s.used}"></progress><small>${over?`Over capacity: −25 morale/turn<br>Dragon rebellion: ${s.streak}/3 turns`:'March to expand your territory'}</small>`;
+  // Keep the side HUD below resources and any visible editor/Endless notices.
+  let top=106;for(const id of ['resourceBanner','editorModeStatus','endlessBar','battleNotice']){const el=document.getElementById(id);if(el&&!el.hidden&&el.getClientRects().length)top=Math.max(top,el.getBoundingClientRect().bottom+12);}
+  box.style.top=top+'px';
+  const contents=`<strong>Army upkeep</strong><div>${s.used} / ${s.capacity} territory</div><progress max="${Math.max(1,s.capacity)}" value="${s.used}"></progress><small>${over?`Over capacity: −25 morale/turn<br>Dragon rebellion: ${s.streak}/3 turns`:'March to expand your territory'}</small>`;
+  if(box.innerHTML!==contents)box.innerHTML=contents;
   box.title='Soldier 1 · Archer/Spearman/Swordsman 2 · Assassin/Cleric/Knight 3 · Catapult/Dragon 4. Ships 2/3/4; Crowns and fortresses 0. Recruitment permits 25% overflow, or one extra unit from within capacity.';
  }
  return {costs,value,eligible,stats,ownership,canRecruit,march,finishTurn,actRogues,snapshot,restore,reset,shift,render,warning:team=>streak[team]||0};

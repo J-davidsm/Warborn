@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const ctx={};vm.createContext(ctx);vm.runInContext(fs.readFileSync('js/rendering/territory-overlay.js','utf8'),ctx);const g=vm.runInContext('TerritoryOverlay.geometry',ctx);
+assert.equal(g(['PLAYER'],1,1,true,40,60).edges.length,6);
+assert.equal(g(['PLAYER','PLAYER'],2,1,true,40,60).edges.length,10,'same kingdom shares no internal hex edge');
+assert.equal(g(['PLAYER','AI'],2,1,true,40,60).edges.length,12,'both colors remain on contested edges');
+assert.equal(g(['PLAYER','PLAYER','PLAYER','PLAYER'],2,2,true,40,60).edges.length,14,'odd-column seams cancel correctly');
+assert.equal(g(['PLAYER','PLAYER','PLAYER','PLAYER'],2,2,false,40,60).edges.length,8,'square map internal seams cancel');
+assert.equal(g([null,'PLAYER',null],3,1,true,40,60).edges.length,6,'neutral tiles are not painted');
+const normal=g(['PLAYER','PLAYER'],2,1,true,40,60),pan=g(['PLAYER','PLAYER'],2,1,true,40,60,2,3);
+assert.equal(pan.edges.length,normal.edges.length);
+assert.equal(g(['PLAYER'],1,1,true,40,60).cells.length,1);
+console.log('Territory perimeter geometry: hex, square, odd columns, contested borders, neutral tiles, pan and shared-edge removal pass.');

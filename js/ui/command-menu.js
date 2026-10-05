@@ -10,6 +10,7 @@ const CommandMenu=(()=>{
   $('commandBack').hidden=next==='actions';$('commandClose').focus();
  }
  function refresh(){
+  if(typeof Territory!=='undefined')Territory.render();
   if(!$('commandToggle'))return;
   const editorButton=$('editorModeBtn');
   const locked=typeof scenarioPlayStarted!=='undefined'&&scenarioPlayStarted&&!isEditorMode;
