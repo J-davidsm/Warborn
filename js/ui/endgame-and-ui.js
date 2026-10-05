@@ -267,6 +267,7 @@ function getWinner(){
   return null; // No winner yet - multiple teams still alive
 }
 function checkEndGame(){
+  if(typeof watchGameMode!=='undefined'&&watchGameMode)return;
   if(typeof Endless!=='undefined'&&Endless.active){Endless.check();return;}
   if (typeof OnlineMatch !== "undefined" && OnlineMatch.playing) { OnlineMatch.finish(); return; }
   if (gameOver && endScreenShown) return;
@@ -535,6 +536,7 @@ function processDiplomaticTurnEnd() {
   
   // Check for coalition formation against powerful factions
   checkForCoalitions();
+  formSharedEnemyTreaties();
   
   // Enhanced AI diplomatic decision making with power considerations
   allTeams.forEach(team => {
@@ -545,6 +547,22 @@ function processDiplomaticTurnEnd() {
   
   // Generate contextual AI messages
   generateContextualAIMessages();
+}
+
+// Two AI kingdoms sign a defensive pact when the same nearby opponent is
+// clearly stronger than both of them. This reuses the normal treaty path.
+function formSharedEnemyTreaties() {
+  const ais=getActiveTeams().filter(isAITeam), power=t=>calculateFactionPower(t);
+  const nearby=(a,e)=>{
+    const points=[...units.filter(u=>u.team===a&&u.hp>0&&!u.ruins&&!u.rogue),...settlements.flatMap((s,i)=>s?.owner===a?[{col:i%COLS,row:Math.floor(i/COLS)}]:[])];
+    return points.some(p=>units.some(u=>u.team===e&&u.hp>0&&!u.ruins&&manhattan(p.col,p.row,u.col,u.row)<=8)||settlements.some((s,i)=>s?.owner===e&&manhattan(p.col,p.row,i%COLS,Math.floor(i/COLS))<=8));
+  };
+  for(let i=0;i<ais.length;i++)for(let j=i+1;j<ais.length;j++){
+    const a=ais[i],b=ais[j];if(hasTreaty(a,b,'NON_AGGRESSION')||hasTreaty(a,b,'DEFENSIVE_PACT'))continue;
+    const enemy=getActiveTeams().filter(e=>e!==a&&e!==b&&!areFriendlyTeams(e,a)&&!areFriendlyTeams(e,b)&&power(e)>power(a)*1.15&&power(e)>power(b)*1.15).find(e=>nearby(a,e)&&nearby(b,e));
+    if(!enemy)continue;
+    createTreaty(a,b,'DEFENSIVE_PACT',15);addAIMessage(a,`${b} and we will stand together against ${enemy}.`,'COALITION_TREATY');addAIMessage(b,`A defensive pact with ${a} is signed while ${enemy} threatens us both.`,'COALITION_TREATY');
+  }
 }
 
 function considerDiplomaticActions(aiTeam) {

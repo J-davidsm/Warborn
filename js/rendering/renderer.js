@@ -771,6 +771,7 @@ function drawUnits(){
 
   // Draw and update any damage popups
   if (!window.damagePopups) window.damagePopups = [];
+  if (typeof watchGameMode !== 'undefined' && watchGameMode) window.damagePopups.length = 0;
   // Update popups: move up and fade
   for (let i = window.damagePopups.length - 1; i >= 0; i--) {
     const p = window.damagePopups[i];
@@ -842,7 +843,7 @@ function drawUnits(){
 
     // Draw unit image if available, otherwise fallback to emoji
     noStroke(); fill(255); textAlign(CENTER,CENTER);
-    const img = IMAGES[u.name];
+    const img = u.ruins ? IMAGES.Ruins : IMAGES[u.name];
     const spriteY = y + getUnitMoveBobOffset(u);
     if (img && IMAGE_LOAD_STATUS[u.name] === 'loaded') {
       // Preserve aspect ratio; larger artwork can extend beyond the owning tile.
@@ -885,7 +886,9 @@ function drawUnits(){
       text(unitEmojis[u.name], x, spriteY-2);
     }
 
-    drawUnitStatusIndicators(u, x, y, unitScale);
+    // Ruins are an inactive landmark: they deliberately have no rank, morale,
+    // or health indicators that could make the fortification look operational.
+    if (!u.ruins) drawUnitStatusIndicators(u, x, y, unitScale);
 
     // Draw water unit anchor in bottom-right corner if unit is water-upgraded
     if (u.isWaterUnit) {
@@ -901,16 +904,19 @@ function drawUnits(){
         text('🛡️', x - TILE*0.28*unitScale, y + TILE*0.20*unitScale);
       }
     }
-    const barW=TILE*0.6*unitScale,hpY=y+TILE*0.44*unitScale;
-    fill(255,255,255,16); rect(x-barW/2,hpY,barW,8*unitScale,4);
-    const pct=constrain(u.hp/u.maxHp,0,1);
-    fill(pct>0.5?'#22c55e':pct>0.25?'#facc15':'#f43f5e');
-    rect(x-barW/2,hpY,barW*pct,8*unitScale,4);
+    if (!u.ruins) {
+      const barW=TILE*0.6*unitScale,hpY=y+TILE*0.44*unitScale;
+      fill(255,255,255,16); rect(x-barW/2,hpY,barW,8*unitScale,4);
+      const pct=constrain(u.hp/u.maxHp,0,1);
+      fill(pct>0.5?'#22c55e':pct>0.25?'#facc15':'#f43f5e');
+      rect(x-barW/2,hpY,barW*pct,8*unitScale,4);
+    }
 
   } pop();
   // Render popups on top
   push(); translate(OFFSET, OFFSET); textAlign(CENTER, CENTER);
   for (const p of (window.damagePopups || [])) {
+    if (typeof watchGameMode !== 'undefined' && watchGameMode) continue;
     push();
     translate(p.x, p.y);
     textAlign(CENTER, CENTER);

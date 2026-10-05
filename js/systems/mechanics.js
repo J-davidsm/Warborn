@@ -707,6 +707,22 @@ function mouseWheel(event) {
 
 function keyPressed() {
   if(document.activeElement?.closest?.('input,textarea,select,[contenteditable]'))return;
+  // Secret shortcuts are intentionally handled before normal map input guards.
+  if ((key === 'e' || key === 'E') && document.getElementById('mainMenu')?.classList.contains('hidden') === false) {
+    if (typeof WatchGame!=='undefined') WatchGame.start();
+    return false;
+  }
+  if ((key === 'q' || key === 'Q') && typeof isEditorMode!=='undefined' && isEditorMode) {
+    doubleUpkeepMode=!doubleUpkeepMode;
+    if(typeof BattleGuide!=='undefined')BattleGuide.notify(`Unit upkeep is now ${doubleUpkeepMode?'doubled':'normal'}.`);
+    if(typeof updateUI==='function')updateUI();
+    return false;
+  }
+  if ((key === 'w' || key === 'W') && typeof isEditorMode!=='undefined' && isEditorMode) {
+    hyperAggressiveMode=!hyperAggressiveMode;
+    if(typeof BattleGuide!=='undefined')BattleGuide.notify(`Hyper-aggressive AI is ${hyperAggressiveMode?'enabled':'disabled'}.`);
+    return false;
+  }
   if(isMenuBlockingGameInput())return;
   // Only respond to zoom/pan keys if canvas is focused
   if (mapCanvasFocused) {

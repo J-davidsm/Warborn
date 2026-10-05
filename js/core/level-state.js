@@ -147,7 +147,9 @@ function createLevelData(name = null) {
     researchedTechs: typeof serializeResearch==='function'?serializeResearch():undefined,
     research: Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]])),
     territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,
-    aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined
+    aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,
+    doubleUpkeepMode: !!doubleUpkeepMode,
+    hyperAggressiveMode: !!hyperAggressiveMode
   };
   if (name) data.name = name;
   return data;
@@ -296,6 +298,7 @@ function applyLevelData(data) {
   }
   
   if (data.startingResources) startingResources = clonePlain(data.startingResources);
+  doubleUpkeepMode=!!data.doubleUpkeepMode;hyperAggressiveMode=!!data.hyperAggressiveMode;
   if (data.aiPlayerCount && data.aiPlayerCount >= 1 && data.aiPlayerCount <= maxAIPlayers) {
     setAIPlayerCount(data.aiPlayerCount);
   }

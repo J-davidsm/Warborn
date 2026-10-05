@@ -144,7 +144,7 @@ const OnlineMatch = (() => {
   return copy({incomeReceipt:typeof BattleGuide!=='undefined'?BattleGuide.incomeReceipt:null,effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
    researchPoints:typeof researchPoints!=='undefined'?researchPoints:undefined,researchPointReceipts:typeof researchPointReceipts!=='undefined'?researchPointReceipts:undefined,
     activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
-   researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
+   researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,doubleUpkeepMode:!!doubleUpkeepMode,hyperAggressiveMode:!!hyperAggressiveMode,research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
  }
  function valid(s){
   const teams=mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity),cols=mode==='coop'?8*capacity+2:capacity===2?20:21,rows=mode==='coop'?20:capacity===2?16:21;
@@ -173,7 +173,7 @@ const OnlineMatch = (() => {
   else researchedUnits=Object.fromEntries(Object.entries(s.research).map(([k,v])=>[k,new Set(v)]));
   if(typeof restoreResearchPoints==='function')restoreResearchPoints(s.researchPoints,s.researchPointReceipts,true);
   diplomacy=copy(s.diplomacy);
-  currentVictoryCondition=copy(s.victoryCondition);gameOver=s.gameOver;selectedUnit=null;closeSpawnMenu();buildMode=false;buildModeUnitId=null;
+  currentVictoryCondition=copy(s.victoryCondition);gameOver=s.gameOver;doubleUpkeepMode=!!s.doubleUpkeepMode;hyperAggressiveMode=!!s.hyperAggressiveMode;selectedUnit=null;closeSpawnMenu();buildMode=false;buildModeUnitId=null;
   if(typeof Endless!=='undefined')Endless.restore(mode==='coop'?copy(s.endless):null);
   if(typeof BattleGuide!=='undefined')BattleGuide.receiveIncome(s.incomeReceipt);
   accepted=copy(s);saveSession();pending=false;for(const id of [...pendingUpdates.keys()])confirmOptimisticUpdate(id);

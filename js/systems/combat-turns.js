@@ -348,6 +348,8 @@ function moraleCheck(u){
 // ---------- Turn ----------
 let lastHumanEndTurn=0;
 function endTurn(expectedAITeam = null) {
+  if (typeof watchGameMode!=='undefined' && watchGameMode && watchGamePaused) return;
+  if (typeof watchGameMode!=='undefined' && watchGameMode && watchGamePaused) return;
   if(!expectedAITeam&&typeof BattleGuide!=='undefined'&&BattleGuide.blocking)return;
   if(gameOver || (isAITeam(currentTeam) && expectedAITeam!==currentTeam))return;
   if(expectedAITeam && expectedAITeam!==currentTeam)return;

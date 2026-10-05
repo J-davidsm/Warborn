@@ -32,6 +32,7 @@ const BattleGuide = (() => {
   return out.join('')||'<span>No unit-specific damage bonus.</span>';
  }
  function stats(u){
+  if(u.ruins)return '<div class="stat-grid"><span title="Status">🏚️ Unclaimed ruins</span><span title="Repair">🛠️ Rebuild nearby</span></div>';
   const cost=typeof u.cost==='object'?u.cost:{gold:u.cost||0,materials:0};
   return `<div class="stat-grid"><span title="Owner">🚩 ${esc(teamName(u.team))}</span><span title="Movement">👣 ${u.move}</span><span title="Attack range">🎯 ${u.atkRange}</span><span title="Damage">⚔️ ${u.dmg}</span><span title="Gold cost">💰 ${cost.gold||0}</span><span title="Material cost">⚒️ ${cost.materials||0}</span><span title="Experience">⭐ ${u.experience||0}</span><span title="Health">❤️ ${u.hp}/${u.maxHp}</span><span title="Morale">🔥 ${u.morale} · ${esc(moraleLabel(u))}</span></div>`;
  }
@@ -157,7 +158,7 @@ const BattleGuide = (() => {
   $('menuPlayBtn')?.addEventListener('click',()=>{if(opponentType==='AI'&&isAITeam(currentTeam)&&!gameOver)setTimeout(()=>aiTakeTurn(currentTeam),400);});
   document.addEventListener('click',e=>{if(training&&!e.target.closest('#battleTutorial,#battleToolbar,#battleHandbook')){e.preventDefault();e.stopImmediatePropagation();}},true);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(training)finish();$('battleHandbook').hidden=true;}});
-  setInterval(()=>{const canStart=!seen&&!training&&!isEditorMode&&!gameOver&&units.length&&$('mainMenu')?.classList.contains('hidden')&&!document.getElementById('customPopup')&&!$('campaignPage')?.classList.contains('visible')&&!$('scenarioWorkshop')?.classList.contains('visible')&&!(typeof OnlineMatch!=='undefined'&&OnlineMatch.blocksMapInput());if(canStart)start();refresh();},500);
+  setInterval(()=>{const canStart=!seen&&!training&&!(typeof watchGameMode!=='undefined'&&watchGameMode)&&!isEditorMode&&!gameOver&&units.length&&$('mainMenu')?.classList.contains('hidden')&&!document.getElementById('customPopup')&&!$('campaignPage')?.classList.contains('visible')&&!$('scenarioWorkshop')?.classList.contains('visible')&&!(typeof OnlineMatch!=='undefined'&&OnlineMatch.blocksMapInput());if(canStart)start();refresh();},500);
   window.addEventListener('resize',layout);refresh();
  });
  function recordIncome(team,inc){incomeReceipt={team,turn:turnNumber,gold:inc.gold,materials:inc.materials};}

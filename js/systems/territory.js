@@ -1,6 +1,7 @@
 // Persistent marching claims; settlement/fortress protection is derived from the board.
 const Territory=(()=>{
  const costs={Soldier:1,Archer:2,Spearman:2,Swordsman:2,Assassin:3,Cleric:3,Knight:3,Catapult:4,Dragon:4,Sloop:2,'Man-of-War':3,Battleship:4};
+ const effectiveCost=name=>Math.max(0,(costs[name]||0)*(typeof doubleUpkeepMode!=='undefined'&&doubleUpkeepMode?2:1));
  let claims=[],streak={},processed={},rogueTurns={},dimensions='',seeded=false,cacheKey='',owners=[];
  const eligible=u=>u&&u.hp>0&&!u.rogue&&!u.ruins&&!['Cleric','Assassin'].includes(u.name);
  const value=t=>t==='VOID'?0:['MOUNTAIN','DESERT'].includes(t)?1:['WATER','BRIDGE'].includes(t)?.5:t==='FARM'?3:2;
@@ -26,8 +27,8 @@ const Territory=(()=>{
   for(const u of units)if(u.hp>0){const i=u.row*COLS+u.col;if(u.ruins)owners[i]=null;else if(eligible(u))owners[i]=u.team;}
   owners=owners.map((o,i)=>terrain[i]==='VOID'?null:o);return owners;
  }
- function stats(team){const tiles=ownership();let capacity=0;tiles.forEach((o,i)=>{if(o===team)capacity+=value(terrain[i]);});return {capacity,used:units.filter(u=>u.team===team&&u.hp>0&&!u.rogue&&!u.ruins).reduce((n,u)=>n+(costs[u.name]||0),0),streak:streak[team]||0};}
- function canRecruit(team,name){const s=stats(team),cost=costs[name]||0;return !cost||s.used+cost<=s.capacity*1.25||s.used<=s.capacity;}
+ function stats(team){const tiles=ownership();let capacity=0;tiles.forEach((o,i)=>{if(o===team)capacity+=value(terrain[i]);});return {capacity,used:units.filter(u=>u.team===team&&u.hp>0&&!u.rogue&&!u.ruins).reduce((n,u)=>n+effectiveCost(u.name),0),streak:streak[team]||0};}
+ function canRecruit(team,name){const s=stats(team),cost=effectiveCost(name);return !cost||s.used+cost<=s.capacity*1.25||s.used<=s.capacity;}
  function march(u,path){if(!eligible(u))return;prepare();for(const p of path||[])if(p.col>=0&&p.row>=0&&p.col<COLS&&p.row<ROWS&&terrain[p.row*COLS+p.col]!=='VOID')claims[p.row*COLS+p.col]=u.team;cacheKey='';}
  function finishTurn(team){
   const key=String(turnNumber);if(processed[team]===key)return;processed[team]=key;
@@ -59,7 +60,7 @@ const Territory=(()=>{
   if(box.innerHTML!==contents)box.innerHTML=contents;
   box.title='Soldier 1 · Archer/Spearman/Swordsman 2 · Assassin/Cleric/Knight 3 · Catapult/Dragon 4. Ships 2/3/4; Crowns and fortresses 0. Recruitment permits 25% overflow, or one extra unit from within capacity.';
  }
- return {costs,value,eligible,stats,ownership,canRecruit,march,finishTurn,actRogues,snapshot,restore,reset,shift,render,warning:team=>streak[team]||0};
+ return {costs,value,eligible,stats,ownership,canRecruit,march,finishTurn,actRogues,snapshot,restore,reset,shift,render,warning:team=>streak[team]||0,effectiveCost};
 })();
 
 // Ruins retain the original unit identity and veteran stats; rebuilding restores ownership.

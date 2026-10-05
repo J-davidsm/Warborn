@@ -59,6 +59,21 @@ html, body {
   display: none;
 }
 
+/* The observer keeps only map inspection and relations visible. */
+body.watch-mode #panel > :not(#diplomacySection):not(#battleToolbar):not(#battleNotice),
+body.watch-mode #resourceBanner,
+body.watch-mode #mapDiplomacyButton,
+body.watch-mode #musicToggleBtn { display: none !important; }
+body.watch-mode #panel { width: min(320px, 28vw); }
+#watchGameBar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 62000; display:flex; align-items:center; gap:12px; padding:9px 13px; border:1px solid rgba(255,209,102,.5); border-radius:10px; background:rgba(8,14,22,.94); color:#f2f0dc; box-shadow:0 8px 30px #0008; font-size:12px; }
+#watchGameBar button { border:1px solid rgba(255,209,102,.45); border-radius:6px; padding:5px 9px; color:#f7d98a; background:#1b2631; cursor:pointer; }
+#watchGameBar input { width:130px; accent-color:#ffd166; vertical-align:middle; }
+#watchGameBar label { color:#c8d0d8; }
+.watch-relations { position:fixed; inset:10vh 18vw; z-index:61000; max-height:80vh; overflow:auto; padding:18px; color:#e6eef6; background:rgba(11,18,32,.97); border:1px solid rgba(255,209,102,.55); border-radius:12px; box-shadow:0 14px 50px #000b; }
+.watch-relations header { display:flex; justify-content:space-between; margin-bottom:10px; color:#ffd166; }
+.watch-relations header button { background:#1b2631; border:1px solid #8d6f2e; color:#ffd166; border-radius:5px; padding:5px 9px; }
+.watch-relations > div { display:flex; justify-content:space-between; gap:18px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.08); }
+
 #musicToggleBtn {
   position: fixed;
   z-index: 55000;

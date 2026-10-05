@@ -384,6 +384,14 @@ let selectedUnit = null;
 /** @type {string} Current active team ('PLAYER', 'AI', 'PLAYER2') */
 let currentTeam = 'PLAYER';
 
+// Hidden editor challenge toggle. It intentionally lives in synchronized game
+// state so a saved scenario cannot silently change its upkeep rules.
+let doubleUpkeepMode = false;
+let hyperAggressiveMode = false;
+let watchGameMode = false;
+let watchGamePaused = false;
+let watchGameDelay = 180;
+
 /** @type {number} Global turn counter for diplomacy and game state tracking */
 let turnNumber = 1;
 

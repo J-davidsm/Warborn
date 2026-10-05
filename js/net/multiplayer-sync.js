@@ -38,7 +38,7 @@ function postGameState(actionId = null, retryCount = 0){
     activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
       researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,
       research:typeof researchedUnits!=='undefined'?Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]])):undefined,
-      territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,
+      territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,doubleUpkeepMode:!!doubleUpkeepMode,hyperAggressiveMode:!!hyperAggressiveMode,
       units: units.map(u => ({ 
         id: u.id, name: u.name, team: u.team, col: u.col, row: u.row, rogue:u.rogue===true, ruins:u.ruins===true,
         hp: u.hp, maxHp: u.maxHp, morale: u.morale, 

@@ -141,6 +141,10 @@ function getTeamColor(team) {
     'PLAYER4': { fill: [200, 130, 245], stroke: [85, 40, 120] }
   };
   
+  if (!teamColors[team] && /^AI(?:[2-9]|1[0-9]|20)?$/.test(String(team))) {
+    const palette=['#e95555','#45d985','#e6d34f','#c86bea','#43c6e8','#f39b4a','#8a9cf5','#d66d9a','#78c85c','#f06f5c','#55b9d6','#b78be5','#d0b34d','#52d1a8','#ed7baf','#7792dc','#b4d25a','#d89555','#66c9c9','#c67cd7'];
+    const hex=palette[Math.max(0,(Number(String(team).slice(2))||1)-1)%palette.length];const n=parseInt(hex.slice(1),16);const fill=[n>>16,(n>>8)&255,n&255];return {fill,stroke:fill.map(v=>Math.max(0,Math.round(v*.52)))};
+  }
   return teamColors[team] || { fill: [128, 128, 128], stroke: [64, 64, 64] }; // Default gray
 }
 

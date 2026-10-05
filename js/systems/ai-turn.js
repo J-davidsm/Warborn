@@ -30,6 +30,7 @@ function aiProtectedUnit(team) {
   return mission||units.find(u=>u.hp>0&&u.team===team&&u.name==='Crown');
 }
 function aiMayLeave(u,tile) {
+  if (typeof hyperAggressiveMode !== 'undefined' && hyperAggressiveMode) return true;
   if(tile.col===u.col&&tile.row===u.row)return true;
   const home=settlements[u.row*COLS+u.col];
   // Occupied towns keep a defender on the actual tile, even when no enemy is nearby.
@@ -127,7 +128,7 @@ function aiChoosePosition(u) {
   const escort=units.filter(a=>a!==u&&a.hp>0&&a.team===u.team&&a.name!=='Cleric'&&!isFortressUnit(a));
   // Combat units press every hostile faction, even while ahead economically.
   // Clerics and mission targets retain their protective positioning.
-  const aggressive=!vip&&u.name!=='Cleric',brave=group?.type==='VANGUARD';
+  const aggressive=(typeof hyperAggressiveMode!=='undefined'&&hyperAggressiveMode)||(!vip&&u.name!=='Cleric'),brave=group?.type==='VANGUARD'||hyperAggressiveMode;
   const captures=objectives.filter(o=>o.capture);
   let best={col:u.col,row:u.row},bestScore=-Infinity;
   for(const tile of aiMoveOptions(u)){
@@ -230,7 +231,7 @@ async function aiTakeTurn(team='AI') {
   if(gameOver||currentTeam!==team||!isAITeam(team)||(typeof OnlineMatch!=='undefined'&&OnlineMatch.active&&!OnlineMatch.canRunAI()))return;
   if(activeAITurn&&activeAITurn.team===team&&activeAITurn.turn===turnNumber)return;
   const token={team,turn:turnNumber};activeAITurn=token;
-  const valid=()=>activeAITurn===token&&currentTeam===team&&turnNumber===token.turn&&!gameOver&&(typeof OnlineMatch==='undefined'||!OnlineMatch.active||OnlineMatch.canRunAI());
+  const valid=()=>activeAITurn===token&&currentTeam===team&&turnNumber===token.turn&&!gameOver&&!(typeof watchGameMode!=='undefined'&&watchGameMode&&watchGamePaused)&&(typeof OnlineMatch==='undefined'||!OnlineMatch.active||OnlineMatch.canRunAI());
   clearTimeout(aiTurnTimeoutId);
   try{
     // Plan once under the same host authority and cancellation token as tactics.
@@ -254,7 +255,7 @@ async function aiTakeTurn(team='AI') {
       aiHeal(u);
       if(u.name!=='Cleric'&&!aiRecoveryClerics(u).length&&!u.hasActed&&aiCanFire(u,u)){const target=aiTargets(u)[0];if(target){attackUnit(u,target);if(target.hp<=0&&plan)AICommander.invalidateRoutes();}}
       updateUI();checkEndGame();
-      await new Promise(resolve=>setTimeout(resolve,180));
+      await new Promise(resolve=>setTimeout(resolve,typeof watchGameMode!=='undefined'&&watchGameMode?Math.max(0,watchGameDelay):180));
     }
     if(valid()){
       // Catch units that retreated into range after their cleric's movement.

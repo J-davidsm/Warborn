@@ -175,6 +175,7 @@ const DEFAULT_IMAGE_MAP = {
   'Stockade': 'assets/stockade.png',
   'Castle': 'assets/castle.png',
   'Heavy Fortress': 'assets/heavy_fortress.png'
+  ,'Ruins': 'assets/ruins.png'
 };
 
 try{ preloadImages(DEFAULT_IMAGE_MAP); } catch(e){ console.warn('Image preload failed', e); }
