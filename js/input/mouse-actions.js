@@ -1,6 +1,30 @@
 // Warborn source split from the original game.js.
 // Section: js/input/mouse-actions.js
 
+// Finish all movement effects before optional learning can run.
+function completeHumanMove(unit, col, row) {
+  const fromCol = unit.col, fromRow = unit.row;
+  recordAction(col, row);
+  const actionId = createOptimisticUpdate('unitMove', {
+    unitId: unit.id, fromCol, fromRow, toCol: col, toRow: row
+  });
+  if (typeof MoveUndo !== 'undefined') MoveUndo.begin(unit);
+  ActionEffects.move(unit, col, row);
+  unit.col = col; unit.row = row; unit.hasMoved = true;
+  try { SoundManager.playMove(unit); } catch (e) {}
+  checkSettlementCaptureAfterMove(unit, col, row);
+  if (typeof MoveUndo !== 'undefined') MoveUndo.finish();
+  updateUI();
+  try { postGameState(actionId); } catch (e) {}
+  // Learning is optional; a recording failure must never interrupt gameplay.
+  try {
+    if (!isAITeam(unit.team)) recordHumanAction('move', {
+      unitType: unit.name, fromCol, fromRow, toCol: col, toRow: row,
+      distance: manhattan(fromCol, fromRow, col, row)
+    });
+  } catch (e) { console.warn('Could not record movement for AI learning:', e); }
+}
+
 // ---------- Input ----------
 // Use mousePressed to update inspectedTerrain briefly (no action) and
 // use mouseClicked (fires on release) for actual game/editor clicks so UI menus
@@ -186,28 +210,7 @@ function handleGridClick(c,r){
   if(!clicked && s && s.owner === currentTeam){
     // If player has a unit selected that can move to this tile, prefer moving the unit
     if(selectedUnit && !selectedUnit.hasMoved && canMoveTo(selectedUnit, c, r)){
-      recordAction(c, r); // Record this as a significant action
-      
-      // Create optimistic update for unit movement
-      const actionId = createOptimisticUpdate('unitMove', {
-        unitId: selectedUnit.id,
-        fromCol: selectedUnit.col,
-        fromRow: selectedUnit.row,
-        toCol: c,
-        toRow: r
-      });
-      
-      if(typeof MoveUndo!=='undefined')MoveUndo.begin(selectedUnit);
-      ActionEffects.move(selectedUnit,c,r);
-      selectedUnit.col = c; selectedUnit.row = r; selectedUnit.hasMoved = true;
-      try { SoundManager.playMove(selectedUnit); } catch (e) {}
-      
-      // NEW: Immediate settlement capture check after movement
-      checkSettlementCaptureAfterMove(selectedUnit, c, r);
-      if(typeof MoveUndo!=='undefined')MoveUndo.finish();
-      
-      updateUI();
-      try{ postGameState(actionId); } catch(e){}
+      completeHumanMove(selectedUnit, c, r);
       return;
     }
     // Otherwise open spawn menu
@@ -401,42 +404,7 @@ function handleGridClick(c,r){
     console.log('DEBUG: Settlement at target:', s ? `type: ${s.type}, owner: ${s.owner}` : 'none');
     if(!getUnitAt(c,r) && canMoveResult){
       
-      recordAction(c, r); // Record this as a significant action
-      
-      // Create optimistic update for regular movement
-      const actionId = createOptimisticUpdate('unitMove', {
-        unitId: selectedUnit.id,
-        fromCol: selectedUnit.col,
-        fromRow: selectedUnit.row,
-        toCol: c,
-        toRow: r
-      });
-      
-      console.log('DEBUG: Moving unit from', selectedUnit.col, selectedUnit.row, 'to', c, r);
-      if(typeof MoveUndo!=='undefined')MoveUndo.begin(selectedUnit);
-      ActionEffects.move(selectedUnit,c,r);
-      selectedUnit.col=c; selectedUnit.row=r; selectedUnit.hasMoved=true;
-      try { SoundManager.playMove(selectedUnit); } catch (e) {}
-      
-      // Record human action for learning AI
-      if (!isAITeam(selectedUnit.team)) {
-        recordHumanAction('move', {
-          unitType: selectedUnit.name,
-          fromCol: selectedUnit.col,
-          fromRow: selectedUnit.row,
-          toCol: c,
-          toRow: r,
-          distance: manhattan(selectedUnit.col, selectedUnit.row, c, r)
-        });
-      }
-      
-      // Claim settlement if present
-      console.log('DEBUG: Attempting to claim settlement at', c, r, 'for team', selectedUnit.team);
-      console.log('DEBUG: Settlement at position:', s ? `type: ${s.type}, owner: ${s.owner}` : 'none');
-      claimSettlementAt(c, r, selectedUnit.team);
-      if(typeof MoveUndo!=='undefined')MoveUndo.finish();
-      updateUI();
-      try{ postGameState(actionId); } catch(e){}
+      completeHumanMove(selectedUnit, c, r);
     } else {
       console.log('DEBUG: Movement blocked - Unit at target:', !!getUnitAt(c,r), 'canMove:', canMoveResult);
     }

@@ -18,7 +18,7 @@ function recordHumanAction(actionType, actionData) {
     turnNumber: turnNumber,
     currentTeam: currentTeam,
     boardState: captureBoardState(),
-    resources: JSON.parse(JSON.stringify(teamResources)),
+    resources: JSON.parse(JSON.stringify(resources)),
     unitCount: getTeamUnitCounts(),
     territoryControl: calculateTerritoryControl()
   };

@@ -12,6 +12,8 @@ const MoveUndo=(()=>{
  function finish(){if(typeof markScenarioPlaying==='function')markScenarioPlaying();if(entry){entry.after=signature();entry.captureMessages=(diplomacy.aiMessages||[]).filter(m=>!entry.messages.has(m)).map(m=>JSON.stringify(m));}}
  function canUndo(){
   if(!entry||gameOver||isEditorMode||currentTeam!==entry.team||turnNumber!==entry.turn)return false;
+  // Capture rewards can refresh the UI before the movement snapshot is finished.
+  if(!entry.after)return false;
   if(typeof OnlineMatch!=='undefined'&&!OnlineMatch.canAct())return false;
   if(signature()!==entry.after){clear();return false;}return true;
  }
