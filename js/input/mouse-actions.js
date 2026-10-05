@@ -39,7 +39,7 @@ const SAME_TILE_DEBOUNCE_MS = 300; // Extra protection for same tile clicks
 
 function isMenuBlockingGameInput() {
   if(typeof CommandMenu!=='undefined'&&CommandMenu.blocking)return true;
-  if(document.getElementById('spawnMenu')||typeof BattleGuide!=='undefined'&&BattleGuide.blocking)return true;
+  if(document.getElementById('ruinChoice')||document.getElementById('spawnMenu')||typeof BattleGuide!=='undefined'&&BattleGuide.blocking)return true;
   if (['campaignPage','scenarioWorkshop'].some(id=>document.getElementById(id)?.classList.contains('visible'))) return true;
   if(document.getElementById('endlessMenu')&&!document.getElementById('endlessMenu').hidden)return true;
   if (typeof OnlineMatch !== "undefined" && OnlineMatch.blocksMapInput()) return true;
@@ -167,6 +167,7 @@ function handleGridClick(c,r){
     }
   }
   const clicked=getUnitAt(c,r);
+  if(clicked?.ruins&&typeof FortressRuins!=='undefined'){FortressRuins.show(clicked,currentTeam);return;}
   console.log('DEBUG: Clicked unit:', clicked ? `${clicked.name} (team: ${clicked.team})` : 'none');
   
   // Check for settlement upgrade (Shift+Click on owned settlement)
@@ -214,7 +215,7 @@ function handleGridClick(c,r){
     return;
   }
   // Check for Cleric healing before unit selection (cannot heal self)
-  if(selectedUnit && selectedUnit.name === 'Cleric' && clicked && clicked.team === selectedUnit.team && 
+  if(selectedUnit && selectedUnit.name === 'Cleric' && clicked && clicked.team === selectedUnit.team && !clicked.rogue &&
      clicked.id !== selectedUnit.id && manhattan(selectedUnit.col,selectedUnit.row,c,r) <= selectedUnit.atkRange && !selectedUnit.hasActed && clicked.hp < clicked.maxHp){
     
     recordAction(c, r); // Record this as a significant action
@@ -244,7 +245,7 @@ function handleGridClick(c,r){
     return;
   }
   
-  if(clicked && clicked.team === currentTeam){
+  if(clicked && !clicked.rogue && clicked.team === currentTeam){
     console.log('DEBUG: Unit clicked - Team:', clicked.team, 'Current Team:', currentTeam, 'OpponentType:', opponentType);
     console.log('DEBUG: Selected unit details:', {
       id: clicked.id,
@@ -307,7 +308,7 @@ function handleGridClick(c,r){
   const attackerTerrain = terrain[attackerTerrainIdx];
   const canAttackFromTerrain = !(attackerTerrain === 'SWAMP' && TERRAIN.SWAMP.noAttack && selectedUnit.name !== 'Assassin' && selectedUnit.name !== 'Dragon');
   
-  if(selectedUnit.name !== 'Cleric' && clicked && clicked.team !== selectedUnit.team && dist<=selectedUnit.atkRange && !selectedUnit.hasActed && canAttackFromTerrain){
+  if(selectedUnit.name !== 'Cleric' && clicked && (clicked.rogue||clicked.team !== selectedUnit.team) && dist<=selectedUnit.atkRange && !selectedUnit.hasActed && canAttackFromTerrain){
     
     console.log(`DEBUG: Attack initiated - ${selectedUnit.name} (hasActed: ${selectedUnit.hasActed}) attacking ${clicked.name}`);
     recordAction(c, r); // Record this as a significant action

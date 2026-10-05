@@ -1,0 +1,14 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const c={console,Math,turnNumber:4,currentTeam:'PLAYER',aiTeamNames:['AI','AI2'],diplomacy:{peaceBeggingFlags:{AI:8},leaders:{AI:'farid'},treaties:[],warDeclarations:[{attacker:'AI',target:'PLAYER',active:true}],trust:{PLAYER:{AI:-100},AI:{PLAYER:-100}},reputation:{},diplomaticHistory:[],aiMessages:[]},isDiplomacyActive:()=>true,isAITeam:t=>t?.startsWith('AI'),updateDiplomacyTarget(){},updateUI(){},postGameState(){}};
+vm.createContext(c);vm.runInContext(fs.readFileSync('js/systems/diplomacy.js','utf8'),c);vm.runInContext(fs.readFileSync('js/systems/leaders.js','utf8'),c);
+assert(c.evaluateTreatyProposal('AI','NON_AGGRESSION').accepted,'peace request is honored even at -100 trust');
+const L=vm.runInContext('WarbornLeaders',c);assert.equal(L.get('AI')[0],'farid');assert.equal(new Set(L.choices.map(c=>c[0])).size,8);assert.equal(L.get('AI2')[0],'brennan');
+c.createTreaty=(a,b,type,duration)=>{assert.equal(type,'NON_AGGRESSION');assert.equal(duration,20);delete c.diplomacy.peaceBeggingFlags[b];c.diplomacy.warDeclarations[0].active=false;};c.updateDiplomacyTarget=()=>{};c.addAIMessage=()=>{};
+assert(L.acceptPeace('AI'));assert(!L.acceptPeace('AI'),'cannot accept twice');
+c.COLS=10;c.units=[];c.settlements=Array(100).fill(null);c.resources={};c.manhattan=(a,b,x,y)=>Math.abs(a-x)+Math.abs(b-y);c.canAttack=(a,b)=>a!==b;
+vm.runInContext(fs.readFileSync('js/systems/trade.js','utf8'),c);
+const p={proposer:'PLAYER',target:'AI',offer:{units:[],settlements:[44]},request:{units:[]}};
+const u=(id,team,col,row)=>({id,team,col,row,hp:100,dmg:25,move:3,name:'Soldier'});
+c.units=[u('one','PLAYER',4,3),u('two','PLAYER',5,4)];assert.equal(c.tradeSettlementSafety(44,'AI',p),0,'unguarded town surrounded by seller troops is worthless');
+p.offer.units=['one','two'];assert.equal(c.tradeSettlementSafety(44,'AI',p),1,'transferred escorts protect new owner');
+console.log('Binding peace requests, actionable acceptance, leader IDs, and surrounding-force trade valuation pass.');

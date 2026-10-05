@@ -107,6 +107,7 @@ function createTreaty(faction1, faction2, treatyType, customDuration = null) {
   };
   
   diplomacy.treaties.push(treaty);
+  if(treatyType==='NON_AGGRESSION'&&diplomacy.peaceBeggingFlags)for(const t of [faction1,faction2])delete diplomacy.peaceBeggingFlags[t];
   
   if (['NON_AGGRESSION', 'DEFENSIVE_PACT', 'TRADE_AGREEMENT'].includes(treatyType)) {
     endWarBetween(faction1, faction2, `${TREATY_TYPES[treatyType].name} signed`);
@@ -1131,6 +1132,7 @@ function updateDiplomacyButtonBubbles() {
 }
 
 function updateDiplomacyTarget() {
+  if(typeof WarbornLeaders!=='undefined')WarbornLeaders.render();
   const targetInfo = document.getElementById('diplomacyTargetInfo');
   const messageHistoryDiv = document.getElementById('messageHistory');
   
@@ -1154,7 +1156,7 @@ function updateDiplomacyTarget() {
     const targetTreaties = document.getElementById('targetTreaties');
     
     if (targetFactionName) {
-      targetFactionName.innerHTML = currentDiplomacyTarget + ' (REFUSES TO TALK)';
+      targetFactionName.textContent = getTeamDisplayName(currentDiplomacyTarget) + ' (REFUSES TO TALK)';
       targetFactionName.style.color = '#ff6b6b';
     }
     if (targetFactionPersonality) targetFactionPersonality.innerHTML = `Communication locked for ${lockoutTurns} more turn(s)`;
@@ -1206,7 +1208,7 @@ function updateDiplomacyTarget() {
   
   if (targetFactionIcon) targetFactionIcon.innerHTML = getPersonalityIcon(personality?.type || 'BALANCED');
   if (targetFactionName) {
-    targetFactionName.innerHTML = currentDiplomacyTarget;
+    targetFactionName.textContent = getTeamDisplayName(currentDiplomacyTarget);
     targetFactionName.style.color = getTeamColorHex(currentDiplomacyTarget);
   }
   if (targetFactionPersonality) targetFactionPersonality.innerHTML = personality ? personality.name + ' - ' + personality.description : 'Unknown AI';
@@ -2232,6 +2234,7 @@ function generateTypedResponse(aiTeam, messageType, personality, trust, reputati
 }
 
 function evaluateTreatyProposal(aiTeam, treatyType) {
+  if(treatyType==='NON_AGGRESSION'&&diplomacy.peaceBeggingFlags?.[aiTeam]>=turnNumber)return {accepted:true,message:'I accept. Let us honor the peace I proposed.'};
   const personality = diplomacy.personalities[aiTeam] ? AI_PERSONALITIES[diplomacy.personalities[aiTeam]] : AI_PERSONALITIES.BALANCED;
   const trust = getTrust(aiTeam, 'PLAYER');
   const reputation = getReputation('PLAYER', aiTeam);

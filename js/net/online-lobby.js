@@ -144,17 +144,18 @@ const OnlineMatch = (() => {
   return copy({incomeReceipt:typeof BattleGuide!=='undefined'?BattleGuide.incomeReceipt:null,effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
    researchPoints:typeof researchPoints!=='undefined'?researchPoints:undefined,researchPointReceipts:typeof researchPointReceipts!=='undefined'?researchPointReceipts:undefined,
     activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
-   researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
+   researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
  }
  function valid(s){
   const teams=mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity),cols=mode==='coop'?8*capacity+2:capacity===2?20:21,rows=mode==='coop'?20:capacity===2?16:21;
   if(mode==='coop'&&(!s?.endless||s.endless.difficulty!==difficulty||!Number.isInteger(s.endless.seed)||!Number.isInteger(s.endless.wave)||s.endless.wave<1||s.endless.lastAdvance!==s.turnNumber||JSON.stringify(s.endless.players)!==JSON.stringify(TEAMS.slice(0,capacity))||typeof s.endless.lossReason!=='string'))return false;
+  if(s?.territory&&(s.territory.cols!==cols||s.territory.rows!==rows||!Array.isArray(s.territory.claims)||s.territory.claims.length!==cols*rows||!s.territory.claims.every(t=>t===null||teams.includes(t))))return false;
   if(s?.researchPoints&&typeof validResearchPoints==='function'&&!validResearchPoints(s.researchPoints))return false;
   if(s?.researchedTechs&&typeof validResearchState==='function'&&!validResearchState(s.researchedTechs))return false;
   return s&&(s.mode||'competitive')===mode&&s.playerCount===capacity&&(mode==='coop'?s.theme==='Cooperative Endless':FairMap.themes.some(t=>t.name===s.theme))&&s.cols===cols&&s.rows===rows&&
    Array.isArray(s.terrain)&&s.terrain.length===cols*rows&&s.terrain.every(t=>[null,'GRASS','WOODS','MOUNTAIN','SWAMP','DESERT','WATER','BRIDGE','FARM','FOUNTAIN','VOID'].includes(t))&&
    Array.isArray(s.settlements)&&s.settlements.length===cols*rows&&s.settlements.every(t=>t===null||(['HAMLET','VILLAGE','CITY','PORT'].includes(t.type)&&[null,...teams].includes(t.owner)))&&
-   Array.isArray(s.units)&&s.units.length<=1000&&new Set(s.units.map(u=>u?.id)).size===s.units.length&&s.units.every(u=>u&&typeof u.id==='string'&&Object.hasOwn(UNIT_TEMPLATES,u.name)&&teams.includes(u.team)&&Number.isInteger(u.col)&&Number.isInteger(u.row)&&u.col>=0&&u.col<cols&&u.row>=0&&u.row<rows&&s.terrain[u.row*cols+u.col]!=='VOID'&&Number.isFinite(u.hp)&&u.hp>0&&Number.isFinite(u.dmg))&&
+   Array.isArray(s.units)&&s.units.length<=1000&&new Set(s.units.map(u=>u?.id)).size===s.units.length&&s.units.every(u=>u&&typeof u.id==='string'&&Object.hasOwn(UNIT_TEMPLATES,u.name)&&(!u.rogue||u.name==='Dragon')&&(!u.ruins||(u.team===null&&['Stockade','Castle','Heavy Fortress','Fortress'].includes(u.name)))&&(teams.includes(u.team)||(u.ruins===true&&u.team===null&&['Stockade','Castle','Heavy Fortress','Fortress'].includes(u.name)))&&Number.isInteger(u.col)&&Number.isInteger(u.row)&&u.col>=0&&u.col<cols&&u.row>=0&&u.row<rows&&s.terrain[u.row*cols+u.col]!=='VOID'&&Number.isFinite(u.hp)&&u.hp>0&&Number.isFinite(u.dmg))&&
    teams.includes(s.currentTeam)&&Number.isInteger(s.turnNumber)&&s.turnNumber>0&&s.resources&&s.startingResources&&s.research&&teams.every(t=>s.resources[t]&&['gold','materials'].every(k=>Number.isFinite(s.resources[t][k])&&s.resources[t][k]>=0)&&Array.isArray(s.research[t]))&&
    s.diplomacy&&s.victoryCondition&&typeof s.gameOver==='boolean'&&Array.isArray(s.turnOrder)&&s.turnOrder.length===teams.length&&new Set(s.turnOrder).size===teams.length&&s.turnOrder.every(t=>teams.includes(t))&&s.turnOrder[s.currentTurnIndex]===s.currentTeam;
  }
@@ -165,6 +166,7 @@ const OnlineMatch = (() => {
   units=copy(s.units);terrain=copy(s.terrain);settlements=copy(s.settlements);resources=copy(s.resources);startingResources=copy(s.startingResources);
   if(typeof AICommander!=='undefined')AICommander.restore(s.aiCommander);
   if(typeof ensureVeteranName==='function')units.forEach(u=>ensureVeteranName(u));
+  if(typeof Territory!=='undefined')Territory.restore(s.territory);
   currentTeam=s.currentTeam;turnNumber=s.turnNumber;currentTurnIndex=s.currentTurnIndex;turnOrder=copy(s.turnOrder);
   if(typeof restoreResearch==='function')restoreResearch(s.researchedTechs,s.research,Object.keys(s.research));
   if(typeof restoreActiveResearch==='function')restoreActiveResearch(s.activeResearch);
@@ -257,7 +259,7 @@ const OnlineMatch = (() => {
   if(msg.type==='lobby'&&!host){lobby();return;}
  }
  function returnLobby(){if(host){lobby();send({type:'lobby'});roster();}else{send({type:'lobbyRequest'});status('Waiting for host…');open();}}
- function eliminated(t){if(mode==='coop'&&t==='AI')return false;return (currentVictoryCondition.crownFallenTeams||[]).includes(t)||(!units.some(u=>u.hp>0&&u.team===t)&&!settlements.some(s=>s?.owner===t));}
+ function eliminated(t){if(mode==='coop'&&t==='AI')return false;return (currentVictoryCondition.crownFallenTeams||[]).includes(t)||(!units.some(u=>u.hp>0&&u.team===t&&!u.rogue&&!u.ruins)&&!settlements.some(s=>s?.owner===t));}
  function finish(){
   if(!playing)return false;if(mode==='coop'){if(gameOver)showEndScreen({outcome:'defeat',explanation:(Endless.lossReason||'The allied kingdoms have fallen.')+' Your team survived '+(Endless.wave-1)+' rounds on '+difficulty+'.'});return true;}const alive=TEAMS.slice(0,capacity).filter(t=>!eliminated(t));if(alive.length>1)return true;
   gameOver=true;const winner=alive[0];showEndScreen({outcome:winner===localTeam?'victory':'defeat',explanation:winner?winner===localTeam?'You are the last kingdom standing!':'The last kingdom standing is '+(members.find(m=>m.team===winner)?.name||winner)+'.':'Draw. No kingdom remains.'});return true;

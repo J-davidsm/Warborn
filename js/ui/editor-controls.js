@@ -984,7 +984,7 @@ function updateTeamSelector() {
       // Add options for all active AI teams
       for (let i = 0; i < currentAIPlayers; i++) {
         const teamName = aiTeamNames[i];
-        const displayName = `AI${i + 1}`;
+        const displayName = getTeamDisplayName(aiTeamNames[i]);
         options += `<option value="${teamName}">${displayName}</option>`;
       }
     }

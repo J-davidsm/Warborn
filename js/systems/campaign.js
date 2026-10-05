@@ -866,10 +866,11 @@ function loadCurrentScenario() {
   if (scenario.startingUnits) {
     Object.keys(scenario.startingUnits).forEach(team => {
       scenario.startingUnits[team].forEach(unitData => {
-        units.push(makeUnit(unitData.type, team, unitData.col, unitData.row, unitData));
+        units.push(makeUnit(unitData.type, unitData.ruins?null:team, unitData.col, unitData.row, unitData));
       });
     });
   }
+  if(typeof Territory!=='undefined')Territory.restore(scenario.territory);
   if (currentVictoryCondition.type === 'KILL_UNIT_LIMIT' &&
       !units.some(u => u.id === currentVictoryCondition.targetUnitId) &&
       units.some(u => u.team !== 'PLAYER')) {
@@ -1080,6 +1081,7 @@ function captureCurrentGameState(scenarioIndex) {
   scenario.researchPoints=clonePlain(researchPoints);
   scenario.researchPointReceipts=clonePlain(researchPointReceipts);
   scenario.activeResearch=clonePlain(activeResearch);
+  if(typeof Territory!=='undefined')scenario.territory=Territory.snapshot();
   readVictoryConditionFromUI();
   
   // Capture current map size
@@ -1224,10 +1226,11 @@ function loadScenarioForEditing(scenarioIndex) {
     if (scenario.startingUnits) {
       Object.keys(scenario.startingUnits).forEach(team => {
         scenario.startingUnits[team].forEach(unitData => {
-          units.push(makeUnit(unitData.type, team, unitData.col, unitData.row, unitData));
+          units.push(makeUnit(unitData.type, unitData.ruins?null:team, unitData.col, unitData.row, unitData));
         });
       });
     }
+    if(typeof Territory!=='undefined')Territory.restore(scenario.territory);
     if (currentVictoryCondition.type === 'KILL_UNIT_LIMIT' &&
         !units.some(u => u.id === currentVictoryCondition.targetUnitId) &&
         units.some(u => u.team !== 'PLAYER')) {

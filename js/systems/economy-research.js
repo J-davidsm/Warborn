@@ -89,6 +89,7 @@ function restoreResearchPoints(points={},receipts={},notify=false) {
   }
 }
 function awardKillResearch(killer,victim) {
+  if(killer?.rogue||killer?.ruins||victim?.ruins)return false;
   if(!killer||!victim||victim.hp>0||victim.researchRewardClaimed||killer.team===victim.team||areFriendlyTeams(killer.team,victim.team)||!canAttack(killer.team,victim.team))return false;
   const amount=RESEARCH_REWARDS[victim.name]||RESEARCH_REWARDS.unit;
   if(!awardResearchPoints(killer.team,amount,isFortressUnit(victim)?`${victim.name} destroyed`:'Enemy defeated'))return false;
@@ -234,7 +235,7 @@ function completeDoctrine(team,id) {
   (researchedTechs[team]??=new Set()).add(id);refreshResearchMirror(team);
   // Saved units already carry their stats. Apply only this new purchase, never
   // replay this loop during restoration. Promotions retain their existing bonuses.
-  for(const u of typeof units==='undefined'?[]:units)if(u.team===team&&u.hp>0)applyDoctrineEffect(u,id);
+  for(const u of typeof units==='undefined'?[]:units)if(u.team===team&&u.hp>0&&!u.rogue&&!u.ruins)applyDoctrineEffect(u,id);
   if(typeof AICommander!=='undefined')AICommander.invalidateRoutes();
   refreshResearchState();
   return true;
@@ -374,6 +375,7 @@ function getResearchableUnits(team) {
 
 // Every new battle and replay starts with an empty treasury.
 function resetStartingEconomy() {
+  if(typeof Territory!=='undefined')Territory.reset();
   const empty = () => Object.fromEntries(getActiveTeams().map(team => [team, {gold:0, materials:0}]));
   resources = empty();
   startingResources = empty();

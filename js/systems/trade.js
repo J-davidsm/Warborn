@@ -3,7 +3,7 @@ function tradeBundle(bundle={}) {
   return {resources:{gold:bundle.resources?.gold??0,materials:bundle.resources?.materials??0},units:bundle.units??[],settlements:bundle.settlements??[]};
 }
 function tradeProtectedUnit(u) {
-  return u.name==='Crown'||(currentVictoryCondition.type==='KILL_UNIT_LIMIT'&&u.id===currentVictoryCondition.targetUnitId);
+  return u.rogue||u.ruins||u.name==='Crown'||(currentVictoryCondition.type==='KILL_UNIT_LIMIT'&&u.id===currentVictoryCondition.targetUnitId);
 }
 function tradeValidation(p) {
   if(p.proposer===p.target||!isAITeam(p.target))return 'Choose another AI kingdom.';
@@ -22,14 +22,14 @@ function tradeValidation(p) {
   }
   return '';
 }
-function tradeAssetValue(b) {
+function tradeAssetValue(b,recipient=null,proposal=null) {
   b=tradeBundle(b);let value=b.resources.gold+b.resources.materials*1.5;
   for(const id of b.units){const u=units.find(u=>u.id===id);if(!u)continue;const c=UNIT_TEMPLATES[u.name]?.cost||1;
     const base=typeof c==='number'?c:(c.gold||0)+1.5*(c.materials||0);
     const moraleFactor=u.name==='Dragon'||u.morale===undefined?1:0.35+0.65*Math.max(0,Math.min(1,u.morale/75));
     value+=Math.max(2,base)*(0.4+0.6*Math.min(1,u.hp/u.maxHp))*moraleFactor*(1+0.15*(u.promotionLevel||0))+(u.isWaterUnit&&!UNIT_TEMPLATES[u.name]?.isWaterUnit?4:0);
   }
-  for(const i of b.settlements){const s=settlements[i],income=SETTLEMENTS[s?.type]?.income||{};value+=12+12*((income.gold||0)+1.5*(income.materials||0));}
+  for(const i of b.settlements){const s=settlements[i],income=SETTLEMENTS[s?.type]?.income||{};value+=(12+12*((income.gold||0)+1.5*(income.materials||0)))*tradeSettlementSafety(i,recipient,proposal);}
   return value;
 }
 function assessTrade(aiTeam,p) {
@@ -45,7 +45,7 @@ function assessTrade(aiTeam,p) {
   for(const id of request.units){const u=units.find(u=>u.id===id);if(settlements.some((s,i)=>s?.owner===aiTeam&&!request.settlements.includes(i)&&manhattan(u.col,u.row,i%COLS,Math.floor(i/COLS))<=2&&units.some(e=>e.hp>0&&e.dmg>0&&canAttack(aiTeam,e.team)&&manhattan(e.col,e.row,i%COLS,Math.floor(i/COLS))<=3)))return {chance:0,reason:'They need that unit to defend a threatened settlement.'};}
   const war=isAtWar(p.proposer,aiTeam),friend=!war&&(getTrust(aiTeam,p.proposer)>=30||hasTreaty(aiTeam,p.proposer,'DEFENSIVE_PACT')||hasTreaty(aiTeam,p.proposer,'NON_AGGRESSION'));
   // Net identical resources before valuation: padding both sides cannot disguise a loss.
-  const given=tradeAssetValue(offer),asked=tradeAssetValue(request);
+  const given=tradeAssetValue(offer,aiTeam,p),asked=tradeAssetValue(request,p.proposer,p);
   const common=Math.min(offer.resources.gold,request.resources.gold)+1.5*Math.min(offer.resources.materials,request.resources.materials);
   const netAsked=asked-common,netGiven=given-common;
   if(netAsked<=0&&netGiven<=0)return {chance:0,reason:'This exchange does not change anything.'};
@@ -131,4 +131,22 @@ function submitTradeProposal(){
   const accepted=evaluateTradeProposal(p.target,p)&&acceptTradeProposal(p.id,p.target);
   if(!accepted)rejectTradeProposal(p.id,p.target);
   closeTradeProposalModal();updateUI();checkEndGame();showPopup(accepted?'Trade accepted':'Trade declined',accepted?'The exchange is complete. Transferred units stay in place and can act next turn.':p.reason||'The kingdom declined. Improve the offer or negotiate next turn.',accepted?'success':'info');
+}
+
+// Value a holding after all offered garrisons change sides, including troops of
+// the seller: proximity makes a nominally valuable town trivial to reclaim.
+function tradeSettlementSafety(i,recipient,p) {
+ if(!recipient||!p)return 1;
+ const owner=u=>tradeBundle(p.offer).units.includes(u.id)?p.target:tradeBundle(p.request).units.includes(u.id)?p.proposer:u.team;
+ let defense=0,threat=0,raiders=0;
+ for(const u of units){
+  if(u.hp<=0||u.ruins||u.name==='Cleric'||u.name==='Crown')continue;
+  const d=manhattan(u.col,u.row,i%COLS,Math.floor(i/COLS));if(d>Math.max(2,(u.move||2)+1))continue;
+  const power=Math.sqrt(Math.max(1,u.hp)*Math.max(8,u.dmg||20))/(1+d*.4);
+  if(owner(u)===recipient&&!u.rogue)defense+=power;
+  else if(u.rogue||canAttack(recipient,owner(u))||owner(u)===p.proposer||owner(u)===p.target){threat+=power;raiders++;}
+ }
+ if(!threat)return 1;
+ if(raiders>=2&&threat>=Math.max(1,defense)*1.5)return 0;
+ return Math.max(0,Math.min(1,(defense+10)/(threat+10)));
 }

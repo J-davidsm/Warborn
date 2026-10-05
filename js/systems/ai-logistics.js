@@ -11,10 +11,10 @@ function aiMilitaryNeeds(team) {
   return {neighbor,power,defense:Math.max(aiAssets(team).length*35,enemyPower*.9),offense:Math.max(aiAssets(team).length*90,enemyPower*1.25)};
 }
 function aiRecruitChoice(team,type,combatOnly=false) {
-  const army=aiMilitary(team),foes=units.filter(e=>e.hp>0&&aiHostile(team,e.team));
+  const army=aiMilitary(team),foes=units.filter(e=>e.hp>0&&aiEnemyUnit(team,e));
   const count=n=>army.filter(u=>u.name===n).length;
   const focus=aiDoctrineFocus(team);
-  return allowedUnitsForSettlement(type,team).filter(n=>(!combatOnly||UNIT_TEMPLATES[n].dmg>0)&&canAfford(team,getEffectiveUnitCostForTeam(team,n)))
+  return allowedUnitsForSettlement(type,team).filter(n=>(!combatOnly||UNIT_TEMPLATES[n].dmg>0)&&canAfford(team,getEffectiveUnitCostForTeam(team,n))&&(typeof Territory==='undefined'||Territory.canRecruit(team,n)))
     .map(name=>{
       const stats=getDoctrineUnitStats(team,name),size=Math.max(1,army.length);
       let score=aiStrength({...stats,hp:stats.hp})/(1+count(name)/size);
@@ -34,6 +34,7 @@ function aiBuyAt(team,home) {
   deductResources(team,getEffectiveUnitCostForTeam(team,name));units.push(makeUnit(name,team,home.col,home.row,{justSpawned:true}));return true;
 }
 function aiSpendResources(team) {
+  if(typeof FortressRuins!=='undefined')FortressRuins.aiRepair(team);
   const homes=aiAssets(team).sort((a,b)=>aiThreat(b,team)-aiThreat(a,team));
   // 1. Threatened holdings and a force worth at least 90% of our nearest rival.
   let needs=aiMilitaryNeeds(team);

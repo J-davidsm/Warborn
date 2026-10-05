@@ -43,6 +43,7 @@ const BattleGuide = (() => {
   const u=units.find(u=>u.hp>0&&u.col===c&&u.row===r),s=settlements[r*COLS+c],t=terrain[r*COLS+c]||'GRASS';
   let html=`<button id="inspectorClose" aria-label="Close tile details">×</button><h3>${esc((u?getUnitDisplayName(u):null)||names[s?.type]|| (t==='WOODS'?'Forest':t==='SWAMP'?'Marsh':t.toLowerCase()))}</h3>`;
   if(u)html+=unitDetails(u);
+  if(typeof Territory!=='undefined')html+=`<p>Territory: ${Territory.value(t)} · ${esc(teamName(Territory.ownership()[r*COLS+c]))}${u?` · Upkeep: ${u.ruins||u.rogue?0:Territory.costs[u.name]||0}`:''}</p>`;
   if(s){const d=SETTLEMENTS[s.type],next=SETTLEMENTS[d.upgradeTo],upgrade=typeof getSettlementUpgradeCost==='function'?getSettlementUpgradeCost(s.owner,s.type):d.upgradeCost;html+=`<h4>${names[s.type]} · ${esc(teamName(s.owner))}</h4><p>Each turn: 💰 ${d.income.gold} · ⚒️ ${d.income.materials}. Defense +${Math.round(d.defense*100)}%; healing ${Math.round(d.healPct*100)}%.</p>${next?`<p>Upgrade → ${names[d.upgradeTo]}: +💰 ${next.income.gold-d.income.gold}, +⚒️ ${next.income.materials-d.income.materials} per turn. Cost 💰 ${upgrade.gold} · ⚒️ ${upgrade.materials}.</p>`:''}`;}
   html+=`<p class="terrain-note">${esc(terrainNotes[t]||terrainNotes.GRASS)}</p>`;
   if(html===inspectionSignature&&!el.hidden)return;inspectionSignature=html;

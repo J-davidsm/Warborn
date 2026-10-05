@@ -120,7 +120,7 @@ function calculateTerritoryControl() {
 
 function isTeamDead(team) {
   // Check if team has any living units
-  const hasUnits = units.some(u => u.team === team && u.hp > 0);
+  const hasUnits = units.some(u => u.team === team && u.hp > 0 && !u.rogue && !u.ruins);
   
   // Check if team has any settlements
   const hasSettlements = settlements.some(s => s && s.owner === team);

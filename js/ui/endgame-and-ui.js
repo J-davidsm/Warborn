@@ -119,11 +119,11 @@ function replayCurrentScenario() {
 }
 
 function teamHasLife(team) {
-  return units.some(u => u.team === team && u.hp > 0) || settlements.some(s => s && s.owner === team);
+  return units.some(u => u.team === team && u.hp > 0 && !u.rogue && !u.ruins) || settlements.some(s => s && s.owner === team);
 }
 
 function isTeamConquered(team) {
-  return !units.some(u => u.team === team && u.hp > 0) && !settlements.some(s => s && s.owner === team);
+  return !units.some(u => u.team === team && u.hp > 0 && !u.rogue && !u.ruins) && !settlements.some(s => s && s.owner === team);
 }
 
 function playerControlsTile(col, row) {
@@ -228,7 +228,7 @@ function getWinner(){
   
   // Check each active team to see if they're still alive
   activeTeams.forEach(team => {
-    const hasUnits = units.some(u => u.team === team && u.hp > 0);
+    const hasUnits = units.some(u => u.team === team && u.hp > 0 && !u.rogue && !u.ruins);
     const hasSettlements = settlements.some(s => s && s.owner === team);
     
     // A team is alive if they have EITHER units OR owned settlements
@@ -242,7 +242,7 @@ function getWinner(){
   const teamStatus = {};
   activeTeams.forEach(team => {
     teamStatus[team] = {
-      units: units.filter(u => u.team === team && u.hp > 0).length,
+      units: units.filter(u => u.team === team && u.hp > 0 && !u.rogue && !u.ruins).length,
       settlements: settlements.filter(s => s && s.owner === team).length,
       alive: aliveTeams.includes(team)
     };
@@ -346,7 +346,8 @@ function checkCampaignVictory() {
  * Handles: turn indicator, resource display, unit selection panel, health bars
  */
 function updateUI() {
-  if(typeof markScenarioPlaying==='function'&&!isEditorMode&&(turnNumber>1||units.some(u=>u.hasMoved||u.hasActed)))markScenarioPlaying();
+  if(typeof Territory!=='undefined')Territory.render();
+  if(typeof markScenarioPlaying==='function'&&!isEditorMode&&(turnNumber>1||units.some(u=>!u.ruins&&!u.rogue&&(u.hasMoved||u.hasActed))))markScenarioPlaying();
   if(typeof BattleGuide!=='undefined')BattleGuide.refresh();
   if(typeof Endless!=='undefined')Endless.refresh();
   const modeSummary=document.getElementById("modeSummary");

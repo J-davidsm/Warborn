@@ -38,9 +38,9 @@ function postGameState(actionId = null, retryCount = 0){
     activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
       researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,
       research:typeof researchedUnits!=='undefined'?Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]])):undefined,
-      aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,
+      territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,
       units: units.map(u => ({ 
-        id: u.id, name: u.name, team: u.team, col: u.col, row: u.row, 
+        id: u.id, name: u.name, team: u.team, col: u.col, row: u.row, rogue:u.rogue===true, ruins:u.ruins===true,
         hp: u.hp, maxHp: u.maxHp, morale: u.morale, 
         hasMoved: u.hasMoved, hasActed: u.hasActed, 
         cost: u.cost, atkRange: u.atkRange, move: u.move, dmg: u.dmg,
@@ -228,7 +228,7 @@ window.addEventListener('message', (ev) => {
         const col = (typeof inc.col === 'number') ? inc.col : (typeof inc.x === 'number' ? inc.x : 0);
         const row = (typeof inc.row === 'number') ? inc.row : (typeof inc.y === 'number' ? inc.y : 0);
         const opts = {
-          experience: inc.experience, promotionLevel: inc.promotionLevel,
+          rogue:inc.rogue, ruins:inc.ruins, experience: inc.experience, promotionLevel: inc.promotionLevel,
           personalName: inc.personalName, isWaterUnit: inc.isWaterUnit,
           move: inc.move, atkRange: inc.atkRange, dmg: inc.dmg,
           id: ('id' in inc) ? inc.id : undefined,
@@ -237,7 +237,7 @@ window.addEventListener('message', (ev) => {
           morale: (typeof inc.morale !== 'undefined') ? inc.morale : 100,
           cost: (typeof inc.cost !== 'undefined') ? inc.cost : 0
         };
-        const team = (typeof inc.team === 'string') ? inc.team : (inc.team === null ? 'AI' : (msg.team || 'AI'));
+        const team = (typeof inc.team === 'string') ? inc.team : (inc.team === null ? (inc.ruins?null:'AI') : (msg.team || 'AI'));
         const u = makeUnit(inc.name || 'Unit', team, col, row, opts);
         u.hasMoved = !!inc.hasMoved; u.hasActed = !!inc.hasActed;
         u.morale = (typeof inc.morale !== 'undefined') ? inc.morale : u.morale;
@@ -245,6 +245,7 @@ window.addEventListener('message', (ev) => {
       }catch(e){ console.warn('Failed to recreate unit from snapshot', inc, e); }
     });
 
+    if(typeof Territory!=='undefined')Territory.restore(snapshot?.territory);
     if(snapshot && snapshot.currentTeam) currentTeam = snapshot.currentTeam;
 
     // Update lastSnapshotTs so future incoming snapshots are compared

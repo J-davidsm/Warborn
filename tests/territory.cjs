@@ -1,0 +1,30 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+// Exercise the real movement, combat, doctrine and AI helpers with a headless board.
+const bootstrap=fs.readFileSync('tests/ai-commander.cjs','utf8').split('reset();let soldier=')[0];
+const harness={require,console};vm.createContext(harness);
+vm.runInContext(bootstrap+';this.fixture={ctx,run,unit,reset};',harness);
+const {ctx,run,unit,reset:baseReset}=harness.fixture;
+vm.runInContext(fs.readFileSync('js/systems/territory.js','utf8'),ctx);
+const T=run('Territory'),R=run('FortressRuins');run('addAIMessage=()=>{};modifyTrust=()=>{};modifyReputation=()=>{};getActiveTeams=()=>["AI","PLAYER"];');
+const reset=()=>{baseReset();T.reset();run("resources.AI={gold:100,materials:100};resources.PLAYER={gold:100,materials:100};");};
+reset();assert.equal(T.value('MOUNTAIN'),1);assert.equal(T.value('DESERT'),1);assert.equal(T.value('WATER'),.5);assert.equal(T.value('BRIDGE'),.5);assert.equal(T.value('FARM'),3);assert.equal(T.value(null),2);assert.equal(T.value('VOID'),0);
+let u=unit('Soldier',0,0);ctx.units=[u];T.march(u,[{col:0,row:0},{col:1,row:0},{col:2,row:0}]);ctx.terrain[0]='WATER';ctx.terrain[1]='BRIDGE';ctx.terrain[2]='FARM';assert.equal(T.stats('AI').capacity,4);
+for(const n of ['Cleric','Assassin'])T.march(unit(n,3,0),[{col:3,row:0}]);assert.equal(T.ownership()[3],null);
+let saved=T.snapshot();T.reset();T.restore(JSON.parse(JSON.stringify(saved)));assert.equal(T.stats('AI').capacity,4,'claims survive round trip');
+reset();ctx.settlements[3*12+4]={type:'CITY',owner:'AI'};assert.equal(T.ownership()[3*12+7],'AI');assert.equal(T.ownership()[3*12+8],null);
+ctx.COLS=8;ctx.ROWS=8;ctx.terrain=Array(64).fill(null);ctx.settlements=Array(64).fill(null);ctx.settlements[3*8+3]={type:'CITY',owner:'AI'};T.reset();assert.equal(T.ownership()[3*8+5],'AI');assert.equal(T.ownership()[3*8+6],null);
+ctx.settlements[27].type='VILLAGE';assert.equal(T.ownership()[3*8+4],'AI');assert.equal(T.ownership()[3*8+5],null);
+u=unit('Soldier',4,3,'PLAYER');ctx.units=[u];assert.equal(T.ownership()[28],'PLAYER');u.name='Cleric';assert.equal(T.ownership()[28],'AI');u.name='Assassin';assert.equal(T.ownership()[28],'AI');
+reset();u=unit('Castle',4,3);ctx.units=[u];assert.equal(T.ownership()[3*12+5],'AI');u.name='Stockade';assert.equal(T.ownership()[3*12+5],null);
+reset();ctx.units=[unit('Soldier',0,0)];T.march(ctx.units[0],[{col:0,row:0}]);assert.equal(T.stats('AI').used,1);assert(T.canRecruit('AI','Dragon'),'one extra unit from below cap is permitted');ctx.units.push(unit('Dragon',0,0));assert(!T.canRecruit('AI','Soldier'));assert(T.canRecruit('AI','Castle'),'fortresses have zero upkeep');
+// Consecutive turns, not repeated calls or save/load, cause a permanent rebellion.
+for(let t=1;t<=2;t++){ctx.turnNumber=t;T.finishTurn('AI');}assert.equal(ctx.units[0].morale,50);assert.equal(T.warning('AI'),2);saved=T.snapshot();T.restore(saved);T.finishTurn('AI');assert.equal(T.warning('AI'),2);
+ctx.turnNumber=3;T.finishTurn('AI');const dragon=ctx.units.find(u=>u.name==='Dragon');assert(dragon.rogue);assert.equal(T.stats('AI').used,1);assert(!ctx.canMoveTo(dragon,1,0));assert(!ctx.aiMobile('AI').includes(dragon));
+reset();u=unit('Dragon',3,3);u.rogue=true;const target=unit('Soldier',4,3);target.maxHp=target.hp=1000;ctx.units=[u,target];const hp=target.hp;T.finishTurn('AI');assert(target.hp<hp,'rogue attacks former ally');target.hasActed=false;const before=target.hp;ctx.attackUnit(target,u);assert(target.hp<before,'rogue retaliates');assert.equal(ctx.healUnit(unit('Cleric',2,3),u).didHeal,false);
+reset();const fort=unit('Castle',4,3,'PLAYER'),attacker=unit('Catapult',3,3);fort.hp=1;ctx.units=[fort,attacker];ctx.attackUnit(attacker,fort);let ruin=ctx.units.find(u=>u.id===fort.id);assert(ruin&&!ruin.ruins&&ruin.team==='AI'&&ruin.hp===ruin.maxHp,'AI rebuilds conquered useful fort');assert.equal(run('resources.AI.materials'),97);
+ruin.hp=0;ctx.units=ctx.units.filter(u=>u!==ruin);R.destroyed(ruin,null);ruin=ctx.units.find(u=>u.ruins);assert.equal(T.ownership()[ruin.row*12+ruin.col],null);assert.equal(ctx.attackUnit(attacker,ruin).blocked,true);assert(R.rebuild(ruin,'AI','gold'));assert(!R.rebuild(ruin,'AI','gold'),'cannot pay twice');assert.equal(run('resources.AI.gold'),97);
+const serialized=ctx.serializeUnits();assert(serialized.some(u=>u.ruins===false));const rogueSave=ctx.makeUnit('Dragon','AI',0,0,{rogue:true});assert(rogueSave.rogue);
+reset();ctx.units=[unit('Soldier',0,0)];T.march(ctx.units[0],[{col:1,row:0}]);T.shift();assert.equal(T.snapshot().claims[13],'AI','endless scrolls claims with terrain');
+console.log('Territory values, marching, passive radii, exclusions, capacity, overflow, save receipts, rogue combat, ruins, AI rebuilding and Endless scrolling pass.');
+vm.runInContext(fs.readFileSync('js/systems/move-undo.js','utf8'),ctx);ctx.closeSpawnMenu=()=>{};ctx.postGameState=()=>{};
+reset();ctx.currentTeam='AI';u=unit('Soldier',0,0);ctx.units=[u];const undo=run('MoveUndo');undo.begin(u);T.march(u,[{col:0,row:0},{col:1,row:0}]);u.col=1;u.hasMoved=true;undo.finish();assert(undo.undo());assert.equal(T.snapshot().claims[1],null,'undo rolls back marching claims');

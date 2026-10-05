@@ -25,6 +25,7 @@ const ActionEffects = (() => {
   function emit(event) { receive([{...event,id:crypto.randomUUID()}]); }
   function move(unit,col,row) {
     const path=findMovementPath(unit,col,row);
+    if(typeof Territory!=='undefined')Territory.march(unit,path);
     if(path&&path.length>1)emit({type:'move',unitId:unit.id,path});
   }
   function position(unit, project, now=performance.now()) {

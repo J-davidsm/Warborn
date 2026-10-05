@@ -1,11 +1,12 @@
 // Tactical AI: one cancellable turn per faction, shared legal movement rules.
 let activeAITurn = null;
+function aiEnemyUnit(team,u){return !u.ruins&&(u.rogue||aiHostile(team,u.team));}
 function aiHostile(a,b) { return a!==b && !areFriendlyTeams(a,b) && canAttack(a,b); }
 function aiDistance(a,b) { return manhattan(a.col,a.row,b.col,b.row); }
 function aiAssets(team) {
   return settlements.flatMap((s,i)=>s&&s.owner===team?[{...s,col:i%COLS,row:Math.floor(i/COLS)}]:[]);
 }
-function aiMobile(team) { return units.filter(u=>u.hp>0&&u.team===team&&!isFortressUnit(u)); }
+function aiMobile(team) { return units.filter(u=>u.hp>0&&u.team===team&&!u.rogue&&!u.ruins&&!isFortressUnit(u)); }
 function aiExpansionMode(team) {
   const value=t=>{const income=computeIncomeForTeam(t);return income.gold+income.materials;};
   return value(team)<=value('PLAYER');
@@ -16,7 +17,7 @@ function aiGarrisonReplacement(u) {
   return aiRecruitChoice(u.team,home.type,true);
 }
 function aiThreat(tile,team) {
-  return units.filter(e=>e.hp>0&&aiHostile(e.team,team)).reduce((sum,e)=>{
+  return units.filter(e=>e.hp>0&&aiEnemyUnit(team,e)).reduce((sum,e)=>{
     const d=aiDistance(e,tile), reach=(isFortressUnit(e)?0:e.move)+e.atkRange;
     return sum+(d<=reach ? e.dmg*Math.max(.4,e.hp/e.maxHp)*(d<=e.atkRange?1:.55) : 0);
   },0);
@@ -32,7 +33,7 @@ function aiMayLeave(u,tile) {
   if(tile.col===u.col&&tile.row===u.row)return true;
   const home=settlements[u.row*COLS+u.col];
   // Occupied towns keep a defender on the actual tile, even when no enemy is nearby.
-  if(home?.owner===u.team)return !!aiGarrisonReplacement(u);
+  if(home?.owner===u.team)return !!aiGarrisonReplacement(u)||(typeof Territory!=='undefined'&&!Territory.canRecruit(u.team,'Soldier')&&aiThreat(u,u.team)<=0);
   if(aiProtectedUnit(u.team)===u)return true; // Losing this unit ends the mission.
   // Keep the last garrison in place while an enemy can reach its settlement.
   return aiAssets(u.team).every(s=>{
@@ -42,7 +43,7 @@ function aiMayLeave(u,tile) {
   });
 }
 function aiTargets(u) {
-  return units.filter(e=>e.hp>0&&aiHostile(u.team,e.team)&&aiDistance(u,e)<=u.atkRange)
+  return units.filter(e=>e.hp>0&&aiEnemyUnit(u.team,e)&&aiDistance(u,e)<=u.atkRange)
     .sort((a,b)=>aiAttackValue(u,b)-aiAttackValue(u,a));
 }
 function aiAttackValue(u,e) {
@@ -94,11 +95,11 @@ function aiCrownDeployment(u) {
   if(u.name!=='Crown'&&getGold(u.team)<20&&aiMilitaryNeeds(u.team).power>=aiMilitaryNeeds(u.team).defense)return null;
   return aiMoveOptions(u).filter(tile=>aiDistance(u,tile)===1&&
     !settlements[tile.row*COLS+tile.col]&&aiThreat(tile,u.team)===0)
-    .sort((a,b)=>units.filter(e=>e.hp>0&&aiHostile(u.team,e.team)).reduce((score,e)=>
+    .sort((a,b)=>units.filter(e=>e.hp>0&&aiEnemyUnit(u.team,e)).reduce((score,e)=>
       score+1/(1+aiDistance(a,e))-1/(1+aiDistance(b,e)),0))[0]||null;
 }
 function aiNearbyCapture(u) {
-  if(u.hasMoved||isFortressUnit(u)||u.name==='Crown'||u.name==='Cleric'||aiProtectedUnit(u.team)===u)return null;
+  if(u.hasMoved||isFortressUnit(u)||u.name==='Crown'||u.name==='Cleric'||u.name==='Assassin'||aiProtectedUnit(u.team)===u)return null;
   const group=typeof AICommander!=='undefined'&&AICommander.group(u);
   if(group&&['GUARD','DEFEND','RESERVE'].includes(group.type)&&aiThreat(group.target,u.team)>0)return null;
   const cost=(p,from=u)=>typeof AICommander!=='undefined'?AICommander.pathCost(u,p,from):aiDistance(from,p);
@@ -113,12 +114,13 @@ function aiNearbyCapture(u) {
   return null;
 }
 function aiChoosePosition(u) {
+  const territoryOwners=typeof Territory!=='undefined'?Territory.ownership():null;
   const capture=aiNearbyCapture(u);if(capture)return capture;
   const deployment=aiCrownDeployment(u);
   if(deployment)return deployment;
   const group=typeof AICommander!=='undefined'&&AICommander.group(u);
   const order=typeof AICommander!=='undefined'&&AICommander.order(u);
-  const enemies=units.filter(e=>e.hp>0&&aiHostile(u.team,e.team));
+  const enemies=units.filter(e=>e.hp>0&&aiEnemyUnit(u.team,e));
   const patients=units.filter(a=>a!==u&&a.hp>0&&areFriendlyTeams(a.team,u.team)&&a.hp<a.maxHp);
   const objectives=aiObjectives(u), vip=u.name==='Crown'||aiProtectedUnit(u.team)===u;
   const healers=aiRecoveryClerics(u);
@@ -161,6 +163,7 @@ function aiChoosePosition(u) {
     }else{
       for(const home of aiAssets(u.team))score+=20/(1+aiDistance(tile,home));
     }
+    if(typeof Territory!=='undefined'&&Territory.eligible(u)&&territoryOwners[tile.row*COLS+tile.col]!==u.team)score+=12*Territory.value(terrain[tile.row*COLS+tile.col]);
     if(group)score+=AICommander.positionScore(u,tile);
     if(order&&!u.hasActed&&order.tile.col===tile.col&&order.tile.row===tile.row)score+=600;
     if(tile.col===u.col&&tile.row===u.row)score+=1;
@@ -172,7 +175,7 @@ function aiMoveWithGarrison(u,tile) {
   if(u.hasMoved||!canMoveTo(u,tile.col,tile.row)||!aiMayLeave(u,tile))return false;
   const col=u.col,row=u.row,home=settlements[row*COLS+col];
   const replacement=home?.owner===u.team?aiGarrisonReplacement(u):null;
-  if(home?.owner===u.team&&!replacement)return false;
+  if(home?.owner===u.team&&!replacement&&!aiMayLeave(u,tile))return false;
   ActionEffects.move(u,tile.col,tile.row);u.col=tile.col;u.row=tile.row;u.hasMoved=true;
   // No await between departure and replacement: the town is never left open for a turn.
   if(replacement){
@@ -190,7 +193,7 @@ function aiHeal(u) {
 }
 function aiAnchor(u) {
   if(u.isWaterUnit||u.name==='Dragon'||isFortressUnit(u)||getGold(u.team)<6)return;
-  const objectives=aiObjectives(u).concat(units.filter(e=>e.hp>0&&aiHostile(u.team,e.team)));
+  const objectives=aiObjectives(u).concat(units.filter(e=>e.hp>0&&aiEnemyUnit(u.team,e)));
   if(!objectives.length)return;
   const oldBest=Math.min(...objectives.map(o=>aiDistance(u,o)));
   const dirs=useHexGrid?getHexNeighbors(u.col,u.row):[[1,0],[-1,0],[0,1],[0,-1]];
@@ -211,7 +214,7 @@ function aiRecruit(team) {
 function aiRecruitNaval(team,homes) {
   const navalThreat=units.some(u=>u.hp>0&&aiHostile(team,u.team)&&UNIT_TEMPLATES[u.name]?.isWaterUnit);
   if(!navalThreat&&terrain.filter(t=>t==='WATER').length<terrain.length*.25)return false;
-  const name=['Battleship','Man-of-War','Sloop'].find(n=>isUnitUnlocked(team,n)&&canAfford(team,getEffectiveUnitCostForTeam(team,n)));
+  const name=['Battleship','Man-of-War','Sloop'].find(n=>isUnitUnlocked(team,n)&&canAfford(team,getEffectiveUnitCostForTeam(team,n))&&(typeof Territory==='undefined'||Territory.canRecruit(team,n)));
   if(!name)return false;
   for(const port of homes.filter(h=>h.type==='PORT')){
     const dirs=useHexGrid?getHexNeighbors(port.col,port.row):[[1,0],[-1,0],[0,1],[0,-1]];
@@ -233,7 +236,7 @@ async function aiTakeTurn(team='AI') {
     // Plan once under the same host authority and cancellation token as tactics.
     const plan=typeof AICommander!=='undefined'?AICommander.build(team):null;
     const orderIndex=u=>{const i=plan?.attacks.findIndex(a=>a.unitId===u.id);return i>=0?i:1000+(u.name==='Cleric'?0:1);};
-    const army=units.filter(u=>u.team===team&&u.hp>0).sort((a,b)=>plan?orderIndex(a)-orderIndex(b):(b.name==='Cleric')-(a.name==='Cleric'));
+    const army=units.filter(u=>u.team===team&&u.hp>0&&!u.rogue&&!u.ruins).sort((a,b)=>plan?orderIndex(a)-orderIndex(b):(b.name==='Cleric')-(a.name==='Cleric'));
     for(const u of army){
       if(!valid())return;
       if(u.hp<=0||u.morale<=0)continue;
@@ -255,7 +258,7 @@ async function aiTakeTurn(team='AI') {
     }
     if(valid()){
       // Catch units that retreated into range after their cleric's movement.
-      for(const healer of units.filter(u=>u.team===team&&u.hp>0&&u.morale>0))aiHeal(healer);
+      for(const healer of units.filter(u=>u.team===team&&u.hp>0&&u.morale>0&&!u.rogue&&!u.ruins))aiHeal(healer);
       aiRecruit(team);updateUI();checkEndGame();
     }
   }finally{

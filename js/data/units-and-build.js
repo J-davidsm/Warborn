@@ -176,6 +176,8 @@ function promoteUnit(unit) {
 }
 
 function getUnitDisplayName(unit) {
+  if(unit?.ruins)return 'Ruins of '+unit.name;
+  if(unit?.rogue)return 'Rogue '+(unit.personalName||'Dragon');
   if (!unit.promotionLevel || unit.promotionLevel === 0) return unit.name;
   const promotion = PROMOTION_LEVELS[unit.promotionLevel];
   return promotion && promotion.name ? `${promotion.name} ${unit.personalName ? unit.personalName + ' the ' : ''}${unit.name}` : unit.name;
@@ -525,7 +527,8 @@ function openSpawnMenu(col, row, settlement){
       buyBtn.style.fontSize = '11px';
       buyBtn.style.fontWeight = '600';
       buyBtn.textContent = `Buy (${formatCost(t.cost)})`;
-      buyBtn.disabled = !canAfford(settlement.owner,t.cost);
+      buyBtn.disabled = !canAfford(settlement.owner,t.cost)||(typeof Territory!=='undefined'&&!Territory.canRecruit(settlement.owner,name));
+      if(typeof Territory!=='undefined'&&!Territory.canRecruit(settlement.owner,name))buyBtn.title='Army upkeep limit reached. Capture more territory.';
       buyBtn.onclick = () => { 
         try { 
           spawnUnitAt(name, settlement.owner, col, row);
@@ -783,13 +786,13 @@ function openBuildMenu(col, row){
         
         info.innerHTML = `<div style="font-weight:700">${st}</div><div style="font-size:12px;color:#9aa6b2">HP ${t.hp} • Range ${t.atkRange} • DMG ${t.dmg} • Cost ${costDisplay}</div>`;
         const btn = document.createElement('button'); btn.className='small'; btn.textContent = `Build ${st} (${costDisplay})`;
-        btn.disabled=!isUnitUnlocked(currentTeam,st)||!canAfford(currentTeam,t.cost);
+        btn.disabled=!isUnitUnlocked(currentTeam,st)||!canAfford(currentTeam,t.cost)||(typeof Territory!=='undefined'&&!Territory.canRecruit(currentTeam,st));
         btn.title=isUnitUnlocked(currentTeam,st)?'':'Requires: '+RESEARCH_TREE[UNIT_DOCTRINES[st]].name;
         btn.onclick = () => {
           try{
             const team = currentTeam;
             const cost = getEffectiveUnitCostForTeam(team,st);
-            if(!isUnitUnlocked(team,st))return;
+            if(!isUnitUnlocked(team,st)||(typeof Territory!=='undefined'&&!Territory.canRecruit(team,st)))return;
             
             // Use proper resource checking
             if (!canAfford(team, cost)) { 
@@ -838,6 +841,7 @@ function spawnUnitAt(name, team, col, row){
   const t = UNIT_TEMPLATES[name]; if(!t) return;
   
   // Check cost and resources using unified system
+  if(typeof Territory!=='undefined'&&!Territory.canRecruit(team,name)){showPopup('Army upkeep','Capture more territory before recruiting another unit.','error');return;}
   const unitCost = getEffectiveUnitCostForTeam(team,name);
   if (!canAfford(team, unitCost)) {
     showPopup('Insufficient Resources', 'Not enough resources!', 'error');

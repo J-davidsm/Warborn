@@ -45,6 +45,7 @@ function canMoveTo(unit, targetCol, targetRow) {
 }
 
 function findMovementPath(unit, targetCol, targetRow) {
+  if(unit?.rogue||unit?.ruins)return false;
   if(unit && (unit.fortress || ['Stockade','Castle','Heavy Fortress','Fortress'].includes(unit.name)))return false;
   const flying=unit?.name==='Dragon';
   if (!unit || !Number.isInteger(targetCol) || !Number.isInteger(targetRow) ||
@@ -145,7 +146,7 @@ function findMovementPath(unit, targetCol, targetRow) {
       
       // Pass through our own formation, but never stop on an occupied tile.
       // Other factions remain blockers, including diplomatic allies.
-      if (unitAtPos && unitAtPos.id !== unit.id && unitAtPos.team !== unit.team) continue;
+      if (unitAtPos && unitAtPos.id !== unit.id && (unitAtPos.rogue||unitAtPos.ruins||unitAtPos.team !== unit.team)) continue;
       
       // Check terrain restrictions
       const terrainIdx = newRow * COLS + newCol;

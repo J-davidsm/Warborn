@@ -9,7 +9,7 @@ function getTeamDisplayName(team) {
     if (team === 'PLAYER') return (players.P1 && players.P1.name) ? players.P1.name : 'Player 1';
     if (isAITeam(team)) {
       const idx = aiTeamNames.indexOf(team);
-      return `AI${idx + 1}`;
+      return typeof WarbornLeaders!=='undefined'?WarbornLeaders.get(team)[1]:`AI${idx + 1}`;
     }
     // Treat AI or PLAYER2 as P2/opponent
     if (team === 'PLAYER2' || team === 'P2') return (players.P2 && players.P2.name) ? players.P2.name : (opponentType === 'AI' ? 'AI1' : 'Player 2');
@@ -542,4 +542,5 @@ function renderStartingDiplomacyEditor() {
     row.appendChild(select);
     rowsEl.appendChild(row);
   });
+  if(typeof WarbornLeaders!=='undefined')WarbornLeaders.editor();
 }

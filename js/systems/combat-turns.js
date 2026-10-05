@@ -2,6 +2,7 @@
 // Section: js/systems/combat-turns.js
 
 function hasCrownAura(unit) {
+  if(unit.rogue||unit.ruins)return false;
   return units.some(c=>c!==unit&&c.name==='Crown'&&c.hp>0&&areFriendlyTeams(c.team,unit.team)&&manhattan(c.col,c.row,unit.col,unit.row)===1);
 }
 function applyCrownDeath(crown) {
@@ -18,7 +19,7 @@ function applyCrownDeath(crown) {
 }
 function attackUnit(a, d) {
   if(!a||!d||a.hp<=0||d.hp<=0)return {blocked:true};
-  if(!a||!d||areFriendlyTeams(a.team,d.team))return {blocked:true};
+  if(a.ruins||d.ruins||(!a.rogue&&!d.rogue&&areFriendlyTeams(a.team,d.team)))return {blocked:true};
   if(a.name==='Crown')return {blocked:true,reason:'The Crown cannot attack'};
   // Safety check: prevent units that have already acted from attacking
   if (a.hasActed && !(a.name === 'Knight' && !a.usedBonusAttack)) {
@@ -27,7 +28,7 @@ function attackUnit(a, d) {
   }
   
   // Check war declaration requirement (only in multi-player diplomatic games)
-  if (isDiplomacyActive() && diplomacy.warDeclarations && diplomacy.trust[a.team] && diplomacy.trust[a.team][d.team] !== undefined) {
+  if (!a.rogue&&!d.rogue&&isDiplomacyActive() && diplomacy.warDeclarations && diplomacy.trust[a.team] && diplomacy.trust[a.team][d.team] !== undefined) {
     if (!canAttack(a.team, d.team)) {
       console.log(`${a.team} cannot attack ${d.team} - no valid war declaration`);
       if (a.team === 'PLAYER') {
@@ -178,7 +179,7 @@ function attackUnit(a, d) {
   if(d.hp < 0) d.hp = 0;
 
   // Retaliation is a fortress-only doctrine and respects actual attack range.
-  if (isFortressUnit(d) && typeof hasTech==='function' && hasTech(d.team,'garrison_training') && d.hp > 0 && a.hp > 0 && manhattan(d.col, d.row, a.col, a.row) <= d.atkRange) {
+  if ((d.rogue||(isFortressUnit(d) && typeof hasTech==='function' && hasTech(d.team,'garrison_training'))) && d.hp > 0 && a.hp > 0 && manhattan(d.col, d.row, a.col, a.row) <= d.atkRange) {
     // Calculate counter damage from fortress: scale by fortress health (with same 40% floor)
     let counterDmg = d.dmg;
     if(terrain[d.row*COLS+d.col]==='SWAMP')counterDmg*=0.5;
@@ -249,9 +250,10 @@ function attackUnit(a, d) {
   try{ console.debug('attackUnit - about to rebuild units array. beforeCount=', beforeCount, 'attackerId=', attackerId); } catch(e){}
   if(a.hp<=0&&isFortressUnit(d)&&typeof awardKillResearch==='function')awardKillResearch(d,a);
   units = units.filter(u => u.hp > 0);
+  if(typeof FortressRuins!=='undefined'){FortressRuins.destroyed(d,a);FortressRuins.destroyed(a,d);}
   try{ console.debug('attackUnit - after rebuild units length=', units.length, 'expect attackerId present?', !!units.find(u=>u.id===attackerId)); } catch(e){}
   // Find attacker in the new units array by id and restore coords
-  const attackerNow = units.find(u => u.id === attackerId);
+  const attackerNow = units.find(u => u.id === attackerId && u.team === a.team && !u.ruins);
   if (attackerNow) {
     try{ console.debug('attackUnit - attackerNow BEFORE restore', { id: attackerNow.id, col: attackerNow.col, row: attackerNow.row, hasMoved: attackerNow.hasMoved, hasActed: attackerNow.hasActed }); } catch(e){}
     attackerNow.col = origCol;
@@ -271,7 +273,7 @@ function attackUnit(a, d) {
   }
   
   // Diplomatic consequences of combat
-  if (diplomacy && diplomacy.trust && a.team !== d.team) {
+  if (!a.rogue&&!d.rogue&&diplomacy && diplomacy.trust && a.team !== d.team) {
     // Attacking reduces trust between factions
     modifyTrust(a.team, d.team, -5, `${a.team} attacked ${d.team}`);
     
@@ -298,7 +300,7 @@ function attackUnit(a, d) {
 
 // Healing function for Clerics, Boost unit by 50 morale and 20 health.
 function healUnit(healer, target) {
-  if (!healer || !target || !areFriendlyTeams(healer.team,target.team)) return { didHeal: false };
+  if (!healer || !target || target.rogue || target.ruins || healer.rogue || !areFriendlyTeams(healer.team,target.team)) return { didHeal: false };
   if (target.hp >= target.maxHp) return { didHeal: false };
   
   const healAmount = typeof hasTech==='function'&&hasTech(healer.team,'battlefield_medicine')?28:20;
@@ -354,6 +356,7 @@ function endTurn(expectedAITeam = null) {
   if(typeof markScenarioPlaying==='function')markScenarioPlaying();
   console.log('endTurn called. currentTeam before switch:', currentTeam, 'opponentType:', opponentType);
   if(typeof MoveUndo!=='undefined')MoveUndo.clear();
+  if(typeof document!=='undefined')document.getElementById('ruinChoice')?.remove();
   
   // Update communication lockouts (reduce remaining turns)
   Object.keys(communicationLockouts).forEach(target => {
@@ -379,11 +382,12 @@ function endTurn(expectedAITeam = null) {
   // For LOCAL_2P mode, no role validation needed - the device is passed between players
   
   if(typeof advanceDoctrineResearch==='function')advanceDoctrineResearch(currentTeam);
+  const upkeepOver=typeof Territory!=='undefined'&&Territory.stats(currentTeam).used>Territory.stats(currentTeam).capacity;
   // Process team-specific healing and effects for the team that just finished
   units.forEach(u => {
-    if (u.team === currentTeam) {
+    if (u.team === currentTeam && !u.ruins && !u.rogue) {
       // Morale recovery (only for team that just finished their turn)
-      u.morale = Math.min(150, u.morale + 5);
+      if(!upkeepOver)u.morale = Math.min(150, u.morale + 5);
       
       // Check if unit is in a settlement and heal if so
       const idx = u.row * COLS + u.col;
@@ -427,6 +431,7 @@ function endTurn(expectedAITeam = null) {
   // NUCLEAR SOLUTION: Auto-capture all settlements with team units before income
   try { captureSettlementsWithUnits(currentTeam); } catch(e) { console.warn('captureSettlementsWithUnits failed', e); }
   
+  if(typeof Territory!=='undefined')Territory.finishTurn(currentTeam);
   // Grant income for the team that is starting now
   try { grantIncomeForTeam(currentTeam); } catch(e) { console.warn('grantIncomeForTeam failed', e); }
 
@@ -445,6 +450,7 @@ function endTurn(expectedAITeam = null) {
   
   // Increment global turn number when we complete a full cycle (back to first team)
   if (wrappedTurn) {
+    if(typeof Territory!=='undefined')Territory.actRogues();
     turnNumber++;
     if(typeof Endless!=='undefined'&&Endless.active){Endless.advance();if(gameOver){updateUI();postGameState();return;}}
     console.log('New turn cycle started - Turn Number:', turnNumber);
@@ -465,7 +471,7 @@ function endTurn(expectedAITeam = null) {
   console.log(`DEBUG: Resetting movement for team ${currentTeam}. Total units: ${units.length}`);
   let resetCount = 0;
   units.forEach(u => {
-    if (u.team === currentTeam) {
+    if (u.team === currentTeam && !u.ruins && !u.rogue) {
       console.log(`DEBUG: Resetting unit ${u.name} at (${u.col},${u.row}) - hasMoved: ${u.hasMoved} -> false, hasActed: ${u.hasActed} -> false`);
       u.hasMoved = false;
       u.hasActed = false;
@@ -536,7 +542,7 @@ function endTurn(expectedAITeam = null) {
 
 function autoFlee(team) {
   // Get all fleeing units and sort them by distance to enemies (furthest first)
-  let fleeing = units.filter(u => u.team === team && u.hp > 0 && u.morale <= 0 && !isFortressUnit(u));
+  let fleeing = units.filter(u => u.team === team && u.hp > 0 && !u.rogue && !u.ruins && u.morale <= 0 && !isFortressUnit(u));
   const enemies = units.filter(e => e.hp > 0 && canAttack(e.team,team));
   
   console.log(`autoFlee called for team ${team}: ${fleeing.length} fleeing units, ${enemies.length} enemies`);
@@ -737,6 +743,7 @@ function claimSettlementAt(col, row, owner){
  * Called after every unit movement to ensure settlements are captured reliably
  */
 function checkSettlementCaptureAfterMove(unit, newCol, newRow) {
+  if(unit.rogue||unit.ruins||(typeof Territory!=='undefined'&&!Territory.eligible(unit)))return;
   console.log(`DEBUG: Checking settlement capture for ${unit.name} (${unit.team}) at (${newCol},${newRow})`);
   
   // Verify coordinates are valid
@@ -811,7 +818,7 @@ function captureSettlementsWithUnits(team) {
       
       // Check if there's a unit from this team at this position
       const unitAtPosition = getUnitAt(col, row);
-      if (unitAtPosition && unitAtPosition.team === team && unitAtPosition.hp > 0) {
+      if (unitAtPosition && unitAtPosition.team === team && unitAtPosition.hp > 0 && !unitAtPosition.rogue && !unitAtPosition.ruins && (typeof Territory==='undefined'||Territory.eligible(unitAtPosition))) {
         // Only capture if settlement isn't already owned by this team
         if (settlement.owner !== team && !areFriendlyTeams(settlement.owner,team)) {
           const previousOwner = settlement.owner;

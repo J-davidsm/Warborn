@@ -3,6 +3,7 @@ const CommandMenu=(()=>{
  const $=id=>document.getElementById(id);let page=null;
  function close(){page=null;document.body.classList.remove('commands-open');$('commandToggle')?.setAttribute('aria-expanded','false');}
  function open(next='actions'){
+  if(next==='editor'&&typeof WarbornLeaders!=='undefined')WarbornLeaders.editor();
   page=next;document.body.classList.add('commands-open');$('commandToggle').setAttribute('aria-expanded','true');
   document.querySelectorAll('.command-page').forEach(el=>el.hidden=el.dataset.page!==next);
   $('commandTitle').textContent={actions:'Commands',settings:'Battle settings',saves:'Saved battles',diplomacy:'Diplomacy',editor:'Editor tools'}[next];

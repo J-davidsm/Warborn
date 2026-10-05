@@ -592,6 +592,7 @@ function shouldShowUnitTurnIndicator(unit) {
 }
 
 function canUnitAttackFromCurrentPosition(unit) {
+  if(unit.rogue||unit.ruins)return false;
   if (!shouldShowUnitTurnIndicator(unit)) return false;
   if (unit.hasActed || unit.name === 'Cleric' || !unit.atkRange || unit.atkRange <= 0) return false;
 
@@ -601,10 +602,10 @@ function canUnitAttackFromCurrentPosition(unit) {
   }
 
   return units.some(target => {
-    if (!target || target.hp <= 0 || target.team === unit.team) return false;
+    if (!target || target.hp <= 0 || target.ruins || (!target.rogue&&target.team === unit.team)) return false;
     if (manhattan(unit.col, unit.row, target.col, target.row) > unit.atkRange) return false;
     try {
-      return typeof canAttack !== 'function' || canAttack(unit.team, target.team);
+      return target.rogue || typeof canAttack !== 'function' || canAttack(unit.team, target.team);
     } catch (e) {
       return true;
     }
@@ -797,10 +798,14 @@ function drawUnits(){
     // Enlarge artwork and its health/status markers by 50% on both grids.
     // The tile backing and movement coordinates still identify the owning cell.
     const unitScale = getUnitRenderScale();
-    const teamColor = getTeamColor(u.team);
+    let teamColor = getTeamColor(u.team);
+    const unrest=u.name==='Dragon'&&typeof Territory!=='undefined'?Territory.warning(u.team):0;
+    if(u.ruins)teamColor={fill:[120,120,120],stroke:[190,190,190]};
+    else if(u.rogue)teamColor={fill:[255,0,0],stroke:[255,40,40]};
+    else if(unrest){const f=Math.min(1,unrest/3);teamColor={fill:teamColor.fill.map((v,i)=>Math.round(v*(1-f)+(i===0?255:0)*f)),stroke:[255,90,70]};}
     const canAttackNow = canUnitAttackFromCurrentPosition(u);
     const blinkPulse = canAttackNow ? (0.5 + 0.5 * Math.sin(frameCount * 0.18)) : 0;
-    const backingAlpha = canAttackNow ? 88 + blinkPulse * 116 : 92;
+    const backingAlpha = u.rogue?255:u.ruins?210:unrest?180:canAttackNow ? 88 + blinkPulse * 116 : 92;
     const strokeAlpha = canAttackNow ? 168 + blinkPulse * 82 : 180;
     fill(teamColor.fill[0], teamColor.fill[1], teamColor.fill[2], backingAlpha);
     stroke(teamColor.stroke[0], teamColor.stroke[1], teamColor.stroke[2], strokeAlpha);

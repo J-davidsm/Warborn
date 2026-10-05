@@ -34,7 +34,7 @@ function makeUnit(name, team, col, row, opts={}) {
   const unit = {
     // preserve an explicit id when provided (used during snapshot rehydrate)
     id: opts.id || Math.random().toString(36).slice(2,9),
-    name, team, col, row,
+    name, team, col, row, rogue:opts.rogue===true, ruins:opts.ruins===true,
     // allow callers to set current HP via opts.hp; fall back to opts.maxHp or defaults
     hp: (typeof opts.hp !== 'undefined') ? opts.hp : (opts.maxHp ?? defaultStats.maxHp),
     maxHp: opts.maxHp ?? defaultStats.maxHp,
@@ -124,6 +124,7 @@ function serializeUnits() {
     isWaterUnit: u.isWaterUnit || false,
     experience: u.experience || 0,
     promotionLevel: u.promotionLevel || 0,
+    rogue:u.rogue===true, ruins:u.ruins===true,
     personalName: u.personalName
   }));
 }
@@ -145,6 +146,7 @@ function createLevelData(name = null) {
     activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
     researchedTechs: typeof serializeResearch==='function'?serializeResearch():undefined,
     research: Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]])),
+    territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,
     aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined
   };
   if (name) data.name = name;
@@ -321,8 +323,10 @@ function applyLevelData(data) {
     isWaterUnit: u.isWaterUnit || false,
     experience: u.experience || 0,
     promotionLevel: u.promotionLevel || 0,
+    rogue:u.rogue===true, ruins:u.ruins===true,
     personalName: u.personalName
   }));
+  if(typeof Territory!=='undefined')Territory.restore(data.territory);
   if (currentVictoryCondition.type === 'KILL_UNIT_LIMIT' &&
       !units.some(u => u.id === currentVictoryCondition.targetUnitId) &&
       units.some(u => u.team !== 'PLAYER')) {

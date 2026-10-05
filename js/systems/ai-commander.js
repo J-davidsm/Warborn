@@ -2,8 +2,8 @@
 // route fields and legal firing positions live for one planning phase.
 const AICommander = (() => {
   let plans = {}, fields = new Map();
-  const live = t => units.filter(u=>u.hp>0&&u.team===t);
-  const enemy = t => units.filter(u=>u.hp>0&&aiHostile(t,u.team));
+  const live = t => units.filter(u=>u.hp>0&&u.team===t&&!u.rogue&&!u.ruins);
+  const enemy = t => units.filter(u=>u.hp>0&&aiEnemyUnit(t,u));
   const key = p => p.row*COLS+p.col;
   function neighbors(p) {
     return (useHexGrid?getHexNeighbors(p.col,p.row):[[1,0],[-1,0],[0,1],[0,-1]])
@@ -238,7 +238,7 @@ const AICommander = (() => {
     if(role(u)==='raider')score+=Math.min(20,Math.max(0,...foes.map(e=>aiDistance(tile,e)<=u.atkRange?value(e)/8:0)));
     return score;
   }
-  function order(u){return plans[u.team]?.attacks?.find(a=>a.unitId===u.id&&units.some(e=>e.id===a.targetId&&e.hp>0&&aiHostile(u.team,e.team)));}
+  function order(u){return plans[u.team]?.attacks?.find(a=>a.unitId===u.id&&units.some(e=>e.id===a.targetId&&e.hp>0&&aiEnemyUnit(u.team,e)));}
   const api={debug:false,build,pathCost,canEnter:passable,role,value,damage,group,order,positionScore,spend,invalidateRoutes(){fields.clear();},
     get:team=>plans[team],reset(){plans={};fields.clear();},snapshot:()=>JSON.parse(JSON.stringify(plans)),
     restore(data){

@@ -95,6 +95,7 @@ const Endless = (() => {
     lastAdvance=turnNumber;check();if(gameOver)return;
     ActionEffects.reset();selectedUnit=null;closeSpawnMenu();
     // Discard the back row, then move every surviving tile, town and unit together.
+    if(typeof Territory!=='undefined')Territory.shift();
     terrain=[...rowTerrain(wave),...terrain.slice(0,COLS*19)];
     settlements=[...Array(COLS).fill(null),...settlements.slice(0,COLS*19)];
     units=units.filter(u=>u.hp>0&&u.row<19);for(const u of units)u.row++;
