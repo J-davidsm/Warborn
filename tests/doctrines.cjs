@@ -30,6 +30,7 @@ reset();run('SETTLEMENTS.HAMLET.upgradeCost.materials=2');const unitCost=c.getEf
 reset();c.units=[c.makeUnit('Dragon','PLAYER',8,8)];assert.equal(c.chooseAIResearch('AI'),'spear_doctrine');for(let i=0;i<3;i++){const id=c.chooseAIResearch('AI');assert(c.canResearchTech('AI',id));c.researchTech('AI',id);}assert(c.isUnitUnlocked('AI','Knight'),'AI walks counter prerequisites');
 for(const [style,id]of [['AGGRESSIVE','engineering_corps'],['DEFENSIVE','fieldworks'],['TRADER','engineering_corps'],['IDEOLOGICAL','engineering_corps']]){reset();c.diplomacy.personalities.AI=style;assert.equal(c.chooseAIResearch('AI'),id);}
 reset();c.diplomacy.personalities.AI='BALANCED';c.units=[c.makeUnit('Knight','PLAYER',8,8)];assert.equal(c.chooseAIResearch('AI'),'spear_doctrine');buy('spear_doctrine','AI');assert(c.isUnitUnlocked('AI','Spearman'));
+reset();assert.equal(c.aiPreferredHeavyUnit('AI'),'Catapult');assert.equal(c.aiPreferredHeavyUnit('AI2'),'Dragon','different kingdoms get different heavy-unit doctrines');c.settlements[0]={owner:'AI',type:'VILLAGE'};c.terrain[0]='MOUNTAIN';assert.equal(c.aiPreferredHeavyUnit('AI'),'Dragon','mountain kingdoms favor Dragons');
 console.log('Doctrine prerequisites, unlocks, exact stats, promotions, repeat load, legacy migration, cost isolation, healing, friendly defense, and AI choices pass.');
 // Exercise the actual end-turn passive-healing path, including team ownership.
 reset();buy('master_assassins');const patient=make('Assassin'),other=make('Assassin','AI');patient.hp=20;other.hp=20;

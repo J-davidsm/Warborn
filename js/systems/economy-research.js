@@ -180,6 +180,32 @@ function aiDoctrineFocus(team) {
   if(['TRADER','AGGRESSIVE','IDEOLOGICAL','ECONOMIC','CUNNING'].includes(personality))return 'engineering';
   return [...team].reduce((sum,c)=>sum+c.charCodeAt(0),0)%2?'defense':'engineering';
 }
+// Keep a stable battlefield specialization for the whole match. Mountain
+// kingdoms favor Dragons because they can fly over the terrain that limits
+// ordinary armies; other kingdoms split between Dragons and Catapults so the
+// AI does not converge on siege weapons every game.
+function aiPreferredHeavyUnit(team) {
+  const name=String(team||'AI'),personality=diplomacy.personalities?.[team]||'BALANCED';
+  let mountain=false;
+  if(typeof Territory!=='undefined'&&typeof Territory.ownership==='function'&&Array.isArray(terrain)){
+    const owners=Territory.ownership();
+    mountain=owners.some((owner,i)=>owner===team&&terrain[i]==='MOUNTAIN');
+  }
+  if(!mountain&&Array.isArray(terrain)){
+    const anchors=[];
+    for(let i=0;i<(settlements?.length||0);i++)if(settlements[i]?.owner===team)anchors.push({col:i%COLS,row:Math.floor(i/COLS)});
+    for(const u of units||[])if(u.team===team&&u.hp>0&&!u.ruins)anchors.push(u);
+    mountain=anchors.some(a=>{
+      for(let r=Math.max(0,a.row-2);r<=Math.min(ROWS-1,a.row+2);r++)for(let c=Math.max(0,a.col-2);c<=Math.min(COLS-1,a.col+2);c++)if(terrain[r*COLS+c]==='MOUNTAIN')return true;
+      return false;
+    });
+  }
+  if(mountain)return 'Dragon';
+  const seed=[...name].reduce((sum,c)=>sum+c.charCodeAt(0),0);
+  // A stable faction hash gives occasional Dragon specialists without making
+  // every aggressive personality converge on the same research path.
+  return seed%4===0?'Dragon':'Catapult';
+}
 function chooseAIResearch(team) {
   const foes=units.filter(u=>u.hp>0&&aiHostile(team,u.team)),army=units.filter(u=>u.hp>0&&u.team===team);
   const personality=diplomacy.personalities?.[team]||'BALANCED';
@@ -196,6 +222,12 @@ function chooseAIResearch(team) {
   if(army.some(u=>u.name==='Catapult')){
     prefer('siege_mobility',80);prefer('counterweight_engines',85);
     if(army.some(u=>u.name==='Catapult'&&u.hp<u.maxHp*.7))prefer('reinforced_carriages',90);
+  }
+  const heavyUnit=aiPreferredHeavyUnit(team);
+  if(heavyUnit==='Dragon'){
+    prefer('dragon_corps',178);prefer('maneuver_warfare',150);prefer('master_assassins',148);
+  }else if(personality!=='DEFENSIVE'){
+    prefer('siege_engineering',150);prefer('artillery',135);prefer('siege_mobility',125);
   }
   for(const tech of Object.values(RESEARCH_TREE))if(tech.branch===focus&&!hasTech(team,tech.id))prefer(tech.id,140);
   const target=[...weights].filter(([id])=>!hasTech(team,id)).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))[0]?.[0];

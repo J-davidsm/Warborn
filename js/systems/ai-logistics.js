@@ -14,6 +14,7 @@ function aiRecruitChoice(team,type,combatOnly=false) {
   const army=aiMilitary(team),foes=units.filter(e=>e.hp>0&&aiEnemyUnit(team,e));
   const count=n=>army.filter(u=>u.name===n).length;
   const focus=aiDoctrineFocus(team);
+  const heavyUnit=typeof aiPreferredHeavyUnit==='function'?aiPreferredHeavyUnit(team):'Catapult';
   return allowedUnitsForSettlement(type,team).filter(n=>(!combatOnly||UNIT_TEMPLATES[n].dmg>0)&&canAfford(team,getEffectiveUnitCostForTeam(team,n))&&(typeof Territory==='undefined'||Territory.canRecruit(team,n)))
     .map(name=>{
       const stats=getDoctrineUnitStats(team,name),size=Math.max(1,army.length);
@@ -21,7 +22,8 @@ function aiRecruitChoice(team,type,combatOnly=false) {
       if(name==='Cleric')score=army.length>=2&&count(name)<Math.ceil(size/6)?220:0;
       if(name==='Knight'&&foes.some(e=>e.name==='Dragon'))score+=100;
       if(name==='Spearman'&&foes.some(e=>e.name==='Knight'))score+=55;
-      if(name==='Catapult')score+=(foes.some(isFortressUnit)?100:0)+(focus==='engineering'?65:0);
+      if(name==='Dragon')score+=(heavyUnit==='Dragon'?180:-25);
+      if(name==='Catapult')score+=(foes.some(isFortressUnit)?100:0)+(heavyUnit==='Catapult'?120:0)+(focus==='engineering'?35:0);
       if(name==='Archer'&&count(name)<size/4)score+=35;
       // Siege upgrades should produce siege armies, with enough melee escorts.
       if(['Archer','Catapult'].includes(name)&&army.filter(u=>u.dmg>0&&u.atkRange===1).length<=army.filter(u=>u.atkRange>1).length)score-=100;
