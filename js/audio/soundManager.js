@@ -54,6 +54,9 @@
     musicMuted = !!muted;
     try { localStorage.setItem(MUSIC_MUTE_KEY, String(musicMuted)); } catch (e) {}
     updateMusicToggleButton();
+    // The single in-game audio toggle controls the complete audio mix. Muting
+    // the song also silences effects already playing and prevents new ones.
+    if (masterGain) masterGain.gain.value = musicMuted ? 0 : 0.72;
     if (musicMuted) {
       if (music) music.pause();
     } else if (musicRequested) {
@@ -160,6 +163,7 @@
   }
 
   function playBuffer(name, volume = 1) {
+    if (musicMuted) return;
     preload();
     const ctx = getAudioContext();
     if (!ctx || !bufferCache[name]) return;
