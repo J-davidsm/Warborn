@@ -5,6 +5,12 @@ const UnitPresentation=(()=>{
  function sprite(u){
   const source=IMAGES[u.ruins?'Ruins':u.name]||IMAGES[u.name==='Fortress'?'Castle':''];
   if(!source?.width)return null;if(u.ruins)return source;
+  // These elite silhouettes intentionally stay neutral. Their special effects
+  // (Swordsman streaks, Assassin stealth, Dragon unrest/rogue state) are drawn
+  // on the hex below the artwork, so their unit art remains identical for all
+  // nations instead of acquiring nation-specific color shading.
+  const neutralArt=['Swordsman','Assassin','Dragon'].includes(u.name);
+  if(neutralArt)return source;
   const rgb=getTeamColor(u.team).fill,key=u.name+':'+rgb.join(',')+':'+source.src;
   if(variants.has(key))return variants.get(key);
   const c=document.createElement('canvas'),ratio=Math.min(1,384/Math.max(source.width,source.height));c.width=Math.max(1,Math.round(source.width*ratio));c.height=Math.max(1,Math.round(source.height*ratio));const ctx=c.getContext('2d');ctx.drawImage(source,0,0,c.width,c.height);
