@@ -82,7 +82,7 @@ const FortressRuins=(()=>{
   const leave=document.createElement('button');leave.textContent='Leave ruins';leave.onclick=()=>box.remove();box.appendChild(leave);document.body.appendChild(box);
  }
  function destroyed(dead,killer){
-  if(!dead||dead.hp>0||dead.ruins||!isFortressUnit(dead))return;
+  if(!dead||dead.hp>0||dead.ruins||!isRuinableFortress(dead))return;
   const ruin={...dead,team:null,hp:1,ruins:true,hasMoved:true,hasActed:true};units.push(ruin);
   if(killer?.hp>0&&!killer.rogue){if(isAITeam(killer.team)){if(useful(ruin,killer.team))rebuild(ruin,killer.team,(resources[killer.team]?.materials||0)>=3?'materials':'gold',true);}else show(ruin,killer.team,true);}
  }

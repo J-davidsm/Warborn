@@ -240,6 +240,13 @@ function isFortressUnit(u){
   return ['Stockade','Castle','Heavy Fortress','Fortress'].includes(u.name);
 }
 
+// Stockades are simple defensive structures and disappear when destroyed.
+// Only the larger castle/fortress buildings leave repairable ruins behind.
+function isRuinableFortress(u){
+  if(!u||!u.name) return false;
+  return ['Castle','Heavy Fortress','Fortress'].includes(u.name);
+}
+
 function getFortressPropsByName(name){
   if(name === 'Stockade') return { damageReduction: 0.0, healPerTurn: 0 };
   if(name === 'Castle') return { damageReduction: 0.10, healPerTurn: 1 };
