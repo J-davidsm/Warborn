@@ -555,16 +555,17 @@ function drawIndicatorImage(key, centerX, centerY, maxWidth, maxHeight) {
 }
 
 function drawUnitStatusIndicators(unit, x, y, unitScale) {
+  const markerScale = 0.7; // requested 30% reduction for rank/morale markers
   const apothem = useHexGrid ? getHexApothem() : TILE / 2;
   const rankMaxW = useHexGrid
-    ? clampNumber(HEX_SIZE * 0.78, 16, 30)
-    : clampNumber(TILE * 0.38 * unitScale, 16, 30);
+    ? clampNumber(HEX_SIZE * 0.78, 16, 30) * markerScale
+    : clampNumber(TILE * 0.38 * unitScale, 16, 30) * markerScale;
   const rankMaxH = useHexGrid
-    ? clampNumber(apothem * 0.50, 12, 22)
-    : clampNumber(TILE * 0.27 * unitScale, 12, 22);
+    ? clampNumber(apothem * 0.50, 12, 22) * markerScale
+    : clampNumber(TILE * 0.27 * unitScale, 12, 22) * markerScale;
   const moraleSize = useHexGrid
-    ? clampNumber(HEX_SIZE * 0.58, 15, 26)
-    : clampNumber(TILE * 0.31 * unitScale, 15, 26);
+    ? clampNumber(HEX_SIZE * 0.58, 15, 26) * markerScale
+    : clampNumber(TILE * 0.31 * unitScale, 15, 26) * markerScale;
 
   const rankX = useHexGrid ? x - HEX_SIZE * 0.43 : x - TILE * 0.32 * unitScale;
   const moraleX = useHexGrid ? x + HEX_SIZE * 0.45 : x + TILE * 0.32 * unitScale;

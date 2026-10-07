@@ -61,8 +61,12 @@ const UnitPresentation=(()=>{
   if(img)fit(ctx,img,x,y+bob,size,size);else{ctx.font=`${TILE*.38}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=rgba(colors.fill);ctx.fillText(({Sloop:'⛵','Man-of-War':'🚢',Battleship:'🛳️'})[u.name]||'⚔️',x,y+bob);}
   if(!u.ruins){
    const a=useHexGrid?getHexApothem():TILE/2;
-   fit(ctx,INDICATOR_IMAGES[getRankIndicatorKey(u)],x-r*.5,y-a*.58,Math.min(30,r*.95),22);
-   fit(ctx,INDICATOR_IMAGES[getMoraleIndicatorKey(u)],x+r*.52,y-a*.58,Math.min(26,r*.7),26);
+   // Keep the status markers readable without letting them dominate the unit
+   // silhouette. Both markers use the same 70% scale so their relative sizing
+   // stays consistent across square and hex board layouts.
+   const markerScale=.7;
+   fit(ctx,INDICATOR_IMAGES[getRankIndicatorKey(u)],x-r*.5,y-a*.58,Math.min(30,r*.95)*markerScale,22*markerScale);
+   fit(ctx,INDICATOR_IMAGES[getMoraleIndicatorKey(u)],x+r*.52,y-a*.58,Math.min(26,r*.7)*markerScale,26*markerScale);
    if(u.isWaterUnit){ctx.font=`${TILE*.2}px serif`;ctx.fillText('⚓',x+r*.5,y+r*.3);}
    const w=TILE*.6*scale,h=3*scale,by=y+r*.48,pct=Math.max(0,Math.min(1,u.hp/u.maxHp));ctx.fillStyle='#26312f';ctx.fillRect(x-w/2,by,w,h);ctx.fillStyle=pct>.5?'#22c55e':pct>.25?'#facc15':'#f43f5e';ctx.fillRect(x-w/2,by,w*pct,h);
   }ctx.restore();
