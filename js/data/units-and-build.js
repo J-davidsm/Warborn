@@ -630,8 +630,10 @@ function renderDoctrineTree(container,team,refresh) {
     section.appendChild(canvas);
     for(const tech of nodes){
       const known=hasTech(team,tech.id),ready=tech.requires.every(id=>hasTech(team,id));
-      const card=document.createElement('article');card.className='doctrine-node '+(known?'researched':ready?'available':'locked');
+      const studying=activeResearch[team]?.id===tech.id;
+      const card=document.createElement('article');card.className='doctrine-node '+(known?'researched':ready?'available':'locked')+(studying?' studying':'');
       card.setAttribute('data-tech-id',tech.id);
+      if(studying){card.setAttribute('aria-current','true');card.setAttribute('data-research-status','Currently researching');}
       card.setAttribute('title',known?'Researched':tech.requires.length?'Requires: '+tech.requires.map(id=>RESEARCH_TREE[id].name).join(' and '):'Starting doctrine');
       card.style.left=(positions[tech.id].x-110)+'px';card.style.top=positions[tech.id].y+'px';
       const info=document.createElement('div');
@@ -650,7 +652,6 @@ function renderDoctrineTree(container,team,refresh) {
       });
       card.appendChild(button);
       const study=document.createElement('button');study.className='doctrine-study';
-      const studying=activeResearch[team]?.id===tech.id;
       study.disabled=known||!ready||studying;
       study.textContent=known?'Completed':!ready?'Prerequisites required':studying?`Studying: ${activeResearch[team].progress}/${tech.cost} turns`:`${job?'Switch study':'Study'} (${tech.cost} turns)`;
       study.setAttribute('aria-label',tech.name+' — '+study.textContent);

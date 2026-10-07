@@ -1065,10 +1065,35 @@ body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/do
 .compact-hud #battleStatusStack > :is(#resourceBanner,#editorModeStatus,#endlessBar,#battleNotice,#armyUpkeep) {position:relative!important;inset:auto!important;width:100%;max-width:100%!important;flex-shrink:0;box-sizing:border-box;margin:0;}
 #researchAvailable {background:#252d36ed;color:#ffe6a1;border:1px solid #baa16e;animation:battle-alert-pulse 1.4s ease-in-out infinite;}
 #researchAvailable[hidden] {display:none!important;}
+/* The painted button skin overrides background and box-shadow, so the active
+   alert flashes through brightness, opacity and a small glow instead. */
+#researchAvailable:not([hidden]) {animation:research-available-flash 1.05s ease-in-out infinite;}
+@keyframes research-available-flash {
+  0%,100% {filter:brightness(1);opacity:1;transform:scale(1);}
+  50% {filter:brightness(1.65) drop-shadow(0 0 9px #ffe28a);opacity:.72;transform:scale(1.03);}
+}
 #diplomacyModal {background:rgba(0,0,0,.48)!important;}
 #diplomacyModal > div {background:linear-gradient(#101a2b66,#101a2b88),url('assets/ui/menu-painted.png') center/cover!important;}
 @media(max-width:700px){#battleStatusStack{left:6px;width:138px;gap:6px;}}
 @media(prefers-reduced-motion:reduce){#researchAvailable{animation:none;}}
+
+/* A gold pulse makes the in-progress doctrine easy to find in the branch. */
+.doctrine-node.studying {
+  border:2px solid #f0cb68;
+  background:linear-gradient(145deg,#3a3424f5,#243348f5);
+  box-shadow:0 0 0 2px #d2b57466,0 0 20px #e5b94d99;
+  animation:doctrine-study-pulse 1.8s ease-in-out infinite;
+}
+.doctrine-node.studying h4 {color:#ffe6a1;padding-top:9px;}
+.doctrine-node.studying::after {
+  content:'CURRENTLY RESEARCHING';
+  position:absolute;top:5px;right:8px;color:#ffe49a;font:700 9px/1 system-ui;letter-spacing:.07em;
+}
+@keyframes doctrine-study-pulse {
+  0%,100% {box-shadow:0 0 0 2px #d2b57455,0 0 12px #e5b94d66;}
+  50% {box-shadow:0 0 0 3px #f5d57a99,0 0 26px #e5b94dcc;}
+}
+@media(prefers-reduced-motion:reduce){#researchAvailable:not([hidden]),.doctrine-node.studying{animation:none;}}
 /* Keep text legible on the brighter scene; modal controls sit above battle HUD. */
 #diplomacyModal {z-index:31000!important;}
 #messageHistory > div > div {background:rgba(13,20,31,.82)!important;}
