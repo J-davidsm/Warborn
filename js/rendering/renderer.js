@@ -592,7 +592,7 @@ function shouldShowUnitTurnIndicator(unit) {
 }
 
 function canUnitAttackFromCurrentPosition(unit) {
-  if(unit.rogue||unit.ruins)return false;
+  if(unit.rogue||unit.ruins||unit.morale<=0)return false;
   if (!shouldShowUnitTurnIndicator(unit)) return false;
   if (unit.hasActed || unit.name === 'Cleric' || !unit.atkRange || unit.atkRange <= 0) return false;
 
@@ -622,7 +622,7 @@ function getStableUnitVisualSeed(unit) {
 }
 
 function getUnitMoveBobOffset(unit) {
-  if (!shouldShowUnitTurnIndicator(unit) || unit.hasMoved || !unit.move || unit.move <= 0) return 0;
+  if (unit.morale<=0 || unit.ruins || !shouldShowUnitTurnIndicator(unit) || unit.hasMoved || !unit.move || unit.move <= 0) return 0;
   const phase = (frameCount * 0.12) + (getStableUnitVisualSeed(unit) * 0.07);
   return Math.sin(phase) * Math.max(2.5, TILE * 0.045);
 }
@@ -798,121 +798,11 @@ function drawUnits(){
       ? hexToPixel(tile.col-cameraX,tile.row-cameraY)
       : {x:(tile.col-cameraX)*TILE+TILE/2,y:(tile.row-cameraY)*TILE+TILE/2});
     x=animated.x;y=animated.y;
-    // Enlarge artwork and its health/status markers by 50% on both grids.
-    // The tile backing and movement coordinates still identify the owning cell.
-    const unitScale = getUnitRenderScale();
-    let teamColor = getTeamColor(u.team);
-    const unrest=u.name==='Dragon'&&typeof Territory!=='undefined'?Territory.warning(u.team):0;
-    if(u.ruins)teamColor={fill:[120,120,120],stroke:[190,190,190]};
-    else if(u.rogue)teamColor={fill:[255,0,0],stroke:[255,40,40]};
-    else if(unrest){const f=Math.min(1,unrest/3);teamColor={fill:teamColor.fill.map((v,i)=>Math.round(v*(1-f)+(i===0?255:0)*f)),stroke:[255,90,70]};}
-    const canAttackNow = canUnitAttackFromCurrentPosition(u);
-    const blinkPulse = canAttackNow ? (0.5 + 0.5 * Math.sin(frameCount * 0.18)) : 0;
-    const backingAlpha = u.rogue?255:u.ruins?210:unrest?180:canAttackNow ? 88 + blinkPulse * 116 : 92;
-    const strokeAlpha = canAttackNow ? 168 + blinkPulse * 82 : 180;
-    fill(teamColor.fill[0], teamColor.fill[1], teamColor.fill[2], backingAlpha);
-    stroke(teamColor.stroke[0], teamColor.stroke[1], teamColor.stroke[2], strokeAlpha);
-    strokeWeight(canAttackNow ? 2.6 + blinkPulse * 1.6 : 2);
-    if (useHexGrid) {
-      drawHexagon(x, y, HEX_SIZE * 0.82);
-    } else {
-      rectMode(CENTER);
-      rect(x, y, TILE * 0.94, TILE * 0.94, 6);
-      rectMode(CORNER);
-    }
-
-    // Define unit emojis
-    const unitEmojis = {
-      'Soldier': '⚔️',
-      'Archer': '🏹',
-      'Knight': '🛡️',
-      'Catapult': '☄️',
-      'Spearman': '🔱',
-      'Swordsman': '🗡️',
-      'Assassin': '🥷',
-      'Dragon': '🐉',
-      'Cleric': '⛑️',
-      'Sloop': '⛵',
-      'Man-of-War': '🚢',
-      'Battleship': '🛳️',
-      'Fortress': '🏰',
-      'Stockade': '🛖',
-      'Castle': '🏰',
-      'Heavy Fortress': '🛕'
-    };
-
-    // Draw unit image if available, otherwise fallback to emoji
-    noStroke(); fill(255); textAlign(CENTER,CENTER);
-    const img = u.ruins ? IMAGES.Ruins : IMAGES[u.name];
-    const spriteY = y + getUnitMoveBobOffset(u);
-    if (img && IMAGE_LOAD_STATUS[u.name] === 'loaded') {
-      // Preserve aspect ratio; larger artwork can extend beyond the owning tile.
-      const maxSize = TILE * (isFortressUnit(u) ? 0.9 : 0.84) * unitScale;
-      const iw = img.width || maxSize;
-      const ih = img.height || maxSize;
-      const ratio = Math.min(maxSize / iw, maxSize / ih);
-      const w = iw * ratio;
-      const h = ih * ratio;
-      // Try p5 image() first if available
-      if (typeof image === 'function') {
-        try{ imageMode(CENTER); image(img, x, spriteY, w, h); imageMode(CORNER); }
-        catch(e){
-          // fallback to direct canvas drawImage
-          try{ const ctx = (document.querySelector('#game canvas')||{}).getContext('2d'); if(ctx) ctx.drawImage(img, x + OFFSET - w/2, spriteY + OFFSET - h/2, w, h); }
-          catch(e2){ textSize(TILE*0.25); text(unitEmojis[u.name], x, spriteY-2); }
-        }
-      } else {
-  // No p5 image(); try direct canvas drawImage (account for p5 translate(OFFSET,OFFSET))
-  try{
-    const ctx = (document.querySelector('#game canvas')||{}).getContext('2d');
-    if(ctx) {
-      ctx.drawImage(img, x + OFFSET - w/2, spriteY + OFFSET - h/2, w, h);
-    } else {
-      const emojiScale = u.isWaterUnit ? 0.35 : 0.25;
-      textSize(TILE * emojiScale * unitScale);
-      text(unitEmojis[u.name], x, spriteY-2);
-    }
-  }
-  catch(e){
-    const emojiScale = u.isWaterUnit ? 0.35 : 0.25;
-    textSize(TILE * emojiScale * unitScale);
-    text(unitEmojis[u.name], x, spriteY-2);
-  }
-      }
-    } else {
-      // Make naval units bigger
-      const emojiScale = u.isWaterUnit ? 0.35 : 0.25;
-      textSize(TILE * emojiScale * unitScale);
-      text(unitEmojis[u.name], x, spriteY-2);
-    }
-
-    // Ruins are an inactive landmark: they deliberately have no rank, morale,
-    // or health indicators that could make the fortification look operational.
-    if (!u.ruins) drawUnitStatusIndicators(u, x, y, unitScale);
-
-    // Draw water unit anchor in bottom-right corner if unit is water-upgraded
-    if (u.isWaterUnit) {
-      textSize(TILE*0.25*unitScale);
-      text('⚓', x + TILE*0.2*unitScale, y + TILE*0.2*unitScale);
-    }
-
-    // Draw spearman adjacency shield in top-left if adjacent ally Spearman exists
-    if (u.name === 'Spearman') {
-      const hasAdjacentAllySpearman = !!units.find(v => v !== u && v.team === u.team && v.name === 'Spearman' && manhattan(v.col, v.row, u.col, u.row) === 1);
-      if (hasAdjacentAllySpearman) {
-        textSize(TILE*0.18*unitScale);
-        text('🛡️', x - TILE*0.28*unitScale, y + TILE*0.20*unitScale);
-      }
-    }
-    if (!u.ruins) {
-      const barW=TILE*0.6*unitScale,hpY=y+TILE*0.44*unitScale;
-      fill(255,255,255,16); rect(x-barW/2,hpY,barW,8*unitScale,4);
-      const pct=constrain(u.hp/u.maxHp,0,1);
-      fill(pct>0.5?'#22c55e':pct>0.25?'#facc15':'#f43f5e');
-      rect(x-barW/2,hpY,barW*pct,8*unitScale,4);
-    }
+    UnitPresentation.draw(drawingContext,u,x,y);
 
   } pop();
+  UnitPresentation.refresh();
+  if(typeof BattleAlerts!=='undefined')BattleAlerts.preview();
   // Render popups on top
   push(); translate(OFFSET, OFFSET); textAlign(CENTER, CENTER);
   for (const p of (window.damagePopups || [])) {
@@ -1086,7 +976,7 @@ function drawHighlights(){
       for (let cc = 0; cc < COLS; cc++) {
         const idx = rr * COLS + cc;
         const isOccupied = !!getUnitAt(cc, rr);
-        const hasTerrain = !!terrain[idx];
+        const hasTerrain = !!['WATER','SWAMP','MARSH','VOID'].includes(terrain[idx]);
         const hasSettlement = !!settlements[idx];
         const isWater = normalizeTerrainType(terrain[idx]) === 'WATER';
         const nearOwnedPort = isNearOwnedPort(cc, rr, currentTeam);

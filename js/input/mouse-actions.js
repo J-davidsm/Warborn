@@ -11,8 +11,10 @@ function completeHumanMove(unit, col, row) {
   if (typeof MoveUndo !== 'undefined') MoveUndo.begin(unit);
   ActionEffects.move(unit, col, row);
   unit.col = col; unit.row = row; unit.hasMoved = true;
+  if(unit.name==='Catapult')unit.hasActed=true;
   try { SoundManager.playMove(unit); } catch (e) {}
   checkSettlementCaptureAfterMove(unit, col, row);
+  if(typeof refreshEliminatedNations==='function')refreshEliminatedNations();
   if (typeof MoveUndo !== 'undefined') MoveUndo.finish();
   updateUI();
   try { postGameState(actionId); } catch (e) {}
@@ -287,7 +289,7 @@ function handleGridClick(c,r){
       // Allow building if:
       // 1. Normal fortress conditions (empty land tile with adjacent unit), OR
       // 2. Water tile near owned port (for ships)
-      const canBuildFortress = !isOccupied && !hasTerrain && !hasSettlement && adjAllowed;
+      const canBuildFortress = canBuildFortressAt(currentTeam,c,r);
       const canBuildShips = !isOccupied && !hasSettlement && isWater && nearOwnedPort;
       
       if(canBuildFortress || canBuildShips){
@@ -335,55 +337,12 @@ function handleGridClick(c,r){
     console.log('ATTACK CLICK - pre-attack', { attackerId, preCol, preRow, preHasMoved, preHasActed, attackerHP: selectedUnit.hp, target: { id: clicked.id, col: clicked.col, row: clicked.row, hp: clicked.hp } });
     const res = attackUnit(selectedUnit, clicked) || {};
 
-    // Record human attack for learning AI
-    if (!isAITeam(selectedUnit.team)) {
-      recordHumanAction('attack', {
-        attackerType: selectedUnit.name,
-        defenderType: clicked.name,
-        attackerCol: preCol,
-        attackerRow: preRow,
-        defenderCol: clicked.col,
-        defenderRow: clicked.row,
-        distance: manhattan(preCol, preRow, clicked.col, clicked.row),
-        success: res && !res.blocked,
-        defenderKilled: res && res.defenderKilled
-      });
-    }
-
-    // Re-bind selectedUnit to the possibly new object instance in units[]
-    const fresh = units.find(u => u.id === attackerId);
-    if (fresh) {
-      // Force coordinates and movement flags back to pre-attack values
-      fresh.col = preCol; fresh.row = preRow;
-      fresh.hasMoved = preHasMoved; fresh.hasActed = preHasActed;
-      try{ if (selectedUnit && selectedUnit.id === attackerId) selectedUnit = fresh; }catch(e){}
-    }
-
-    // Diagnostic output to detect unexpected movement
-    try{
-      const freshLog = fresh ? { id: fresh.id, col: fresh.col, row: fresh.row, hasMoved: fresh.hasMoved, hasActed: fresh.hasActed } : null;
-      console.log('ATTACK CLICK - post-attack rebind', { attackerId, fresh: freshLog, res });
-      if (fresh && (fresh.col !== preCol || fresh.row !== preRow)) {
-        console.warn('ATTACK CLICK - attacker moved unexpectedly after attack', { attackerId, preCol, preRow, newCol: fresh.col, newRow: fresh.row });
-      }
-    }catch(e){ console.warn('ATTACK CLICK - logging failed', e); }
-
-    // Mark acted on the local selection (we'll allow Knight extra-attack handling below)
-    if (selectedUnit) {
-      selectedUnit.hasActed = true;
-      console.log(`DEBUG: Unit ${selectedUnit.name} marked as hasActed = true after attack`);
-    }
-    moraleCheck(selectedUnit); moraleCheck(clicked);
-    // Knights get an extra attack if they score a kill (but only once per turn)
-    if (selectedUnit && selectedUnit.name === 'Knight' && res.didKill && !selectedUnit.usedBonusAttack) {
-      selectedUnit.hasActed = false; // allow another attack
-      selectedUnit.usedBonusAttack = true; // prevent further bonus attacks this turn
-      console.log(`Knight ${selectedUnit.name} gets bonus attack after kill!`);
-      // Don't deselect so player can use bonus attack
-      updateUI(); checkEndGame(); 
-      try{ postGameState(actionId); } catch(e){}
-      return;
-    }
+    if(res.blocked)return;
+    const fresh=units.find(u=>u.id===attackerId&&!u.ruins);
+    if(typeof recordHumanAction==='function'&&fresh&&!isAITeam(fresh.team))recordHumanAction('attack',{attackerType:fresh.name,defenderType:clicked.name,success:true,defenderKilled:res.didKill});
+    selectedUnit=fresh||null;
+    moraleCheck(fresh);moraleCheck(clicked);
+    if(fresh&&!fresh.hasActed){updateUI();checkEndGame();try{postGameState(actionId);}catch(e){}return;}
     // Deselect immediately to avoid any UI/selection side-effects that can
     // cause the attacker to appear to move onto the killed unit's tile.
     selectedUnit = null;

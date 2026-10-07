@@ -2,6 +2,7 @@
 // Section: js/core/game-setup.js
 
 function setupGame(){
+  if(typeof resetDiplomacySession==='function')resetDiplomacySession();
   if(typeof AICommander!=='undefined')AICommander.reset();
   if(typeof resetScenarioPlayLock==='function')resetScenarioPlayLock();
   if(typeof MoveUndo!=='undefined')MoveUndo.clear();

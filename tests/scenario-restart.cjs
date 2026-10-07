@@ -30,3 +30,8 @@ for(let i=0;i<4;i++){
 const oldLevel=JSON.parse(JSON.stringify(doctrineSave));delete oldLevel.researchPoints;delete oldLevel.researchPointReceipts;c.applyLevelData(oldLevel);assert.equal(c.getResearchPoints('PLAYER'),0);
 oldLevel.startingResearchPoints={PLAYER:7,AI:3};c.applyLevelData(oldLevel);assert.equal(c.getResearchPoints('PLAYER'),7);assert.equal(c.getResearchPoints('AI'),3);
 console.log('Full level save/load preserves doctrine state and bonuses through four cycles without stacking.');
+
+Object.assign(c.units[0],{streakBonus:.6,streakMisses:1,streakKilled:true,streakProcessedTurn:8,spawnMoveLimit:2,usedBonusAttack:true,hasMoved:true,hasActed:false});c.turnNumber=9;c.currentTeam='AI';
+const combatSave=c.createLevelData();c.applyLevelData(JSON.parse(JSON.stringify(combatSave)));
+for(const [field,value]of Object.entries({streakBonus:.6,streakMisses:1,streakKilled:true,streakProcessedTurn:8,spawnMoveLimit:2,usedBonusAttack:true,hasMoved:true,hasActed:false}))assert.equal(c.units[0][field],value,field+' save/load');
+assert.equal(c.turnNumber,9);assert.equal(c.currentTeam,'AI');

@@ -7,7 +7,7 @@ const {ctx,run,unit,reset:baseReset}=harness.fixture;
 vm.runInContext(fs.readFileSync('js/systems/territory.js','utf8'),ctx);
 const T=run('Territory'),R=run('FortressRuins');run('addAIMessage=()=>{};modifyTrust=()=>{};modifyReputation=()=>{};getActiveTeams=()=>["AI","PLAYER"];');
 const reset=()=>{baseReset();T.reset();run("resources.AI={gold:100,materials:100};resources.PLAYER={gold:100,materials:100};");};
-reset();assert.equal(T.value('MOUNTAIN'),1);assert.equal(T.value('DESERT'),1);assert.equal(T.value('WATER'),.5);assert.equal(T.value('BRIDGE'),.5);assert.equal(T.value('FARM'),3);assert.equal(T.value(null),2);assert.equal(T.value('VOID'),0);
+reset();assert.equal(T.value('MOUNTAIN'),.5);assert.equal(T.value('DESERT'),0);assert.equal(T.value('WATER'),.5);assert.equal(T.value('BRIDGE'),.5);assert.equal(T.value('FARM'),3);assert.equal(T.value(null),1);assert.equal(T.value('VOID'),0);
 let u=unit('Soldier',0,0);ctx.units=[u];T.march(u,[{col:0,row:0},{col:1,row:0},{col:2,row:0}]);ctx.terrain[0]='WATER';ctx.terrain[1]='BRIDGE';ctx.terrain[2]='FARM';assert.equal(T.stats('AI').capacity,4);
 for(const n of ['Cleric','Assassin'])T.march(unit(n,3,0),[{col:3,row:0}]);assert.equal(T.ownership()[3],null);
 let saved=T.snapshot();T.reset();T.restore(JSON.parse(JSON.stringify(saved)));assert.equal(T.stats('AI').capacity,4,'claims survive round trip');

@@ -829,7 +829,7 @@ function loadCurrentScenario() {
   // setupGame captures the previous editor state; mission rules must win.
   currentVictoryCondition = normalizeVictoryCondition(scenario.victoryCondition || inferVictoryConditionFromText(scenario.victory));
   if (scenario.diplomacy) {
-    diplomacy = clonePlain(scenario.diplomacy);
+    if(typeof resetDiplomacySession==='function')resetDiplomacySession();diplomacy = clonePlain(scenario.diplomacy);if(typeof restoreDiplomacyConversations==='function')restoreDiplomacyConversations();
     ensureDiplomacyForActiveTeams();
   }
   
@@ -1241,7 +1241,7 @@ function loadScenarioForEditing(scenarioIndex) {
     initializeResourcesForActiveTeams();
     calculateTurnOrder();
     if (scenario.diplomacy) {
-      diplomacy = clonePlain(scenario.diplomacy);
+      if(typeof resetDiplomacySession==='function')resetDiplomacySession();diplomacy = clonePlain(scenario.diplomacy);if(typeof restoreDiplomacyConversations==='function')restoreDiplomacyConversations();
       ensureDiplomacyForActiveTeams();
     } else if (hasAIDiplomacy()) {
       initializeDiplomacy();

@@ -38,14 +38,14 @@ function postGameState(actionId = null, retryCount = 0){
     activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
       researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,
       research:typeof researchedUnits!=='undefined'?Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]])):undefined,
-      territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,doubleUpkeepMode:!!doubleUpkeepMode,hyperAggressiveMode:!!hyperAggressiveMode,
+      territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,doubleUpkeepMode:(typeof doubleUpkeepMode!=='undefined'&&doubleUpkeepMode),hyperAggressiveMode:(typeof hyperAggressiveMode!=='undefined'&&hyperAggressiveMode),
       units: units.map(u => ({ 
         id: u.id, name: u.name, team: u.team, col: u.col, row: u.row, rogue:u.rogue===true, ruins:u.ruins===true,
         hp: u.hp, maxHp: u.maxHp, morale: u.morale, 
         hasMoved: u.hasMoved, hasActed: u.hasActed, 
         cost: u.cost, atkRange: u.atkRange, move: u.move, dmg: u.dmg,
         experience: u.experience, promotionLevel: u.promotionLevel,
-        personalName: u.personalName, isWaterUnit: u.isWaterUnit
+        personalName: u.personalName, streakBonus:u.streakBonus, streakMisses:u.streakMisses, streakKilled:u.streakKilled, streakProcessedTurn:u.streakProcessedTurn, spawnMoveLimit:u.spawnMoveLimit, usedBonusAttack:u.usedBonusAttack, hasMoved:u.hasMoved, hasActed:u.hasActed, isWaterUnit: u.isWaterUnit
       })),
       settlements: settlements,
       terrain: terrain
@@ -211,6 +211,7 @@ window.addEventListener('message', (ev) => {
     
     if(snapshot && snapshot.diplomacy && typeof snapshot.diplomacy === 'object') {
       diplomacy = JSON.parse(JSON.stringify(snapshot.diplomacy));
+      if(typeof restoreDiplomacyConversations==='function')restoreDiplomacyConversations(true);
     }
     
     if(snapshot && snapshot.victoryCondition && typeof snapshot.victoryCondition === 'object') {
@@ -229,7 +230,7 @@ window.addEventListener('message', (ev) => {
         const row = (typeof inc.row === 'number') ? inc.row : (typeof inc.y === 'number' ? inc.y : 0);
         const opts = {
           rogue:inc.rogue, ruins:inc.ruins, experience: inc.experience, promotionLevel: inc.promotionLevel,
-          personalName: inc.personalName, isWaterUnit: inc.isWaterUnit,
+          personalName: inc.personalName, streakBonus:inc.streakBonus, streakMisses:inc.streakMisses, streakKilled:inc.streakKilled, streakProcessedTurn:inc.streakProcessedTurn, spawnMoveLimit:inc.spawnMoveLimit, usedBonusAttack:inc.usedBonusAttack, hasMoved:inc.hasMoved, hasActed:inc.hasActed, isWaterUnit: inc.isWaterUnit,
           move: inc.move, atkRange: inc.atkRange, dmg: inc.dmg,
           id: ('id' in inc) ? inc.id : undefined,
           hp: (typeof inc.hp !== 'undefined') ? inc.hp : (typeof inc.maxHp !== 'undefined' ? inc.maxHp : 1),

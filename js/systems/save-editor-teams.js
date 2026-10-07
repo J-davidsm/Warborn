@@ -346,7 +346,8 @@ function wireEditorDrawerTab() {
 }
 
 // ---------- Multi-AI Team Management ----------
-function getActiveTeams() {
+function getActiveTeams() {return getConfiguredTeams().filter(t=>!isNationEliminated(t));}
+function getConfiguredTeams() {
   if(typeof watchGameMode!=='undefined'&&watchGameMode)return aiTeamNames.slice(0,currentAIPlayers);
   if(typeof OnlineMatch!=='undefined'&&OnlineMatch.active&&opponentType==='HUMAN')return [...OnlineMatch.teams];
   const teams = ['PLAYER'];

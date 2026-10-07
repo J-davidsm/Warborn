@@ -39,7 +39,7 @@ function advanceDoctrineResearch(team) {
   job.lastTurn=turnNumber;job.progress+=/^AI\d*$/.test(team)?2:1;
   if(job.progress>=RESEARCH_TREE[job.id].cost){
     const name=RESEARCH_TREE[job.id].name;completeDoctrine(team,job.id);
-    if(typeof BattleGuide!=='undefined'&&team===getLocalPlayableTeam())BattleGuide.notify(name+' research completed.');
+
   }
   refreshResearchState();
 }
@@ -113,7 +113,7 @@ const RESEARCH_TREE = Object.fromEntries([
   ['volley_fire','Volley Fire','warfare',4,['longbows'],'Archers gain +4 damage (base 20).',null,{units:['Archer'],dmg:4}],
   ['field_training','Field Training','command',2,[],'Soldiers gain +10 maximum and current HP.',null,{units:['Soldier'],maxHp:10}],
   ['forced_march','Forced March','command',3,['field_training'],'Soldiers, Spearmen and Swordsmen gain +1 permanent movement.',null,{units:['Soldier','Spearman','Swordsman'],move:1}],
-  ['reconnaissance','Reconnaissance','command',2,['field_training'],'Opens the path to Shadow Warfare.'],
+  ['reconnaissance','Phalanx Warriors','command',2,['field_training'],'Spearmen with two adjacent friendly Spearmen gain an additional 15% defense. Opens Shadow Warfare.'],
   ['maneuver_warfare','Maneuver Warfare','command',4,['forced_march'],'Assassin movement becomes 5; Knight movement becomes 3.',null,{moveFloors:{Assassin:5,Knight:3}}],
   ['shadow_warfare','Shadow Warfare','command',4,['reconnaissance'],'Unlock Assassin.','Assassin'],
   ['master_assassins','Master Assassins','command',5,['shadow_warfare'],'Assassins gain +10 HP and heal 8 HP per turn instead of 5.',null,{units:['Assassin'],maxHp:10}],
@@ -128,9 +128,10 @@ const RESEARCH_TREE = Object.fromEntries([
   ['logistics','Logistics','engineering',3,['engineering_corps'],'Unit production costs 1 fewer gold (minimum 1).'],
   ['siege_mobility','Siege Mobility','engineering',2,['siege_engineering'],'Catapult movement becomes 2 permanently.',null,{units:['Catapult'],moveFloor:2}],
   ['artillery','Artillery','engineering',4,['siege_engineering'],'Catapults gain +5 damage (base 40).',null,{units:['Catapult'],dmg:5}],
-  ['mass_production','Mass Production','engineering',4,['logistics'],'Unit production costs 1 fewer material (minimum 0).'],
+  ['mass_production','Recycling','engineering',4,['logistics'],'Unit production costs 1 fewer material (minimum 0).'],
   ['reinforced_carriages','Reinforced Carriages','engineering',6,['siege_mobility'],'Catapults gain +30 maximum and current HP.',null,{units:['Catapult'],maxHp:30}],
-  ['dragon_corps','Dragon Corps','engineering',6,['artillery','mass_production'],'Unlock Dragon. Requires both parent doctrines.','Dragon'],
+  ['rapid_mobilization','Mass Production','engineering',6,['artillery','mass_production'],'New units can move half their normal movement (rounded down) when built, but cannot attack.'],
+  ['dragon_corps','Dragon Corps','command',6,['maneuver_warfare','master_assassins'],'Unlock Dragon. Requires both parent doctrines.','Dragon'],
   ['counterweight_engines','Counterweight Engines','engineering',4,['reinforced_carriages'],'Catapult attack range becomes 4.',null,{units:['Catapult'],atkRange:1}]
 ].map(([id,name,branch,cost,requires,description,unlockUnit,effect])=>[id,{id,name,branch,cost,requires,description,unlockUnit,effect}]));
 const UNIT_DOCTRINES = Object.fromEntries(Object.values(RESEARCH_TREE).filter(t=>t.unlockUnit).map(t=>[t.unlockUnit,t.id]));
@@ -237,6 +238,7 @@ function completeDoctrine(team,id) {
   // replay this loop during restoration. Promotions retain their existing bonuses.
   for(const u of typeof units==='undefined'?[]:units)if(u.team===team&&u.hp>0&&!u.rogue&&!u.ruins)applyDoctrineEffect(u,id);
   if(typeof AICommander!=='undefined')AICommander.invalidateRoutes();
+  if(typeof BattleGuide!=='undefined'&&team===(typeof getLocalPlayableTeam==='function'?getLocalPlayableTeam():'PLAYER'))BattleGuide.notify(RESEARCH_TREE[id].name+' research completed.');
   refreshResearchState();
   return true;
 }

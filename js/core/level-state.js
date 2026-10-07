@@ -53,6 +53,8 @@ function makeUnit(name, team, col, row, opts={}) {
     promotionLevel: opts.promotionLevel ?? 0,
     personalName: opts.promotionLevel > 0 ? opts.personalName : undefined
   };
+  for(const key of ['streakBonus', 'streakMisses', 'streakKilled', 'streakProcessedTurn', 'spawnMoveLimit', 'usedBonusAttack', 'hasMoved', 'hasActed'])if(opts[key]!==undefined)unit[key]=opts[key];
+  if(opts.justSpawned&&hasTech(team,'rapid_mobilization')){unit.spawnMoveLimit=Math.floor(unit.move/2);unit.hasMoved=unit.spawnMoveLimit===0;unit.hasActed=true;}
   ensureVeteranName(unit, false, opts.id ? null : `${team}:${col}:${row}:${name}`);
   return unit;
 }
@@ -125,7 +127,8 @@ function serializeUnits() {
     experience: u.experience || 0,
     promotionLevel: u.promotionLevel || 0,
     rogue:u.rogue===true, ruins:u.ruins===true,
-    personalName: u.personalName
+    personalName: u.personalName,
+    streakBonus:u.streakBonus, streakMisses:u.streakMisses, streakKilled:u.streakKilled, streakProcessedTurn:u.streakProcessedTurn, spawnMoveLimit:u.spawnMoveLimit, usedBonusAttack:u.usedBonusAttack, hasMoved:u.hasMoved, hasActed:u.hasActed
   }));
 }
 
@@ -133,6 +136,8 @@ function createLevelData(name = null) {
   readVictoryConditionFromUI();
   if (hasAIDiplomacy()) ensureDiplomacyForActiveTeams();
   const data = {
+    turnNumber:typeof turnNumber==='number'?turnNumber:1,
+    currentTeam:typeof currentTeam==='string'?currentTeam:'PLAYER',
     mapSize: clonePlain(mapSize),
     settlements: clonePlain(settlements || []),
     terrain: clonePlain(terrain || []),
@@ -148,8 +153,8 @@ function createLevelData(name = null) {
     research: Object.fromEntries(Object.entries(researchedUnits).map(([t,s])=>[t,[...s]])),
     territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,
     aiCommander: typeof AICommander!=='undefined'?AICommander.snapshot():undefined,
-    doubleUpkeepMode: !!doubleUpkeepMode,
-    hyperAggressiveMode: !!hyperAggressiveMode
+    doubleUpkeepMode: (typeof doubleUpkeepMode!=='undefined'&&doubleUpkeepMode),
+    hyperAggressiveMode: (typeof hyperAggressiveMode!=='undefined'&&hyperAggressiveMode)
   };
   if (name) data.name = name;
   return data;
@@ -267,6 +272,7 @@ function applyLevelData(data) {
   if(typeof MoveUndo!=='undefined')MoveUndo.clear();
   if(typeof Endless!=='undefined')Endless.stop();
   if (!data) return;
+  if(typeof resetDiplomacySession==='function')resetDiplomacySession();
   if(typeof AICommander!=='undefined')AICommander.restore(data.aiCommander);
   activeAITurn = null;
   clearTimeout(aiTurnTimeoutId);
@@ -308,6 +314,7 @@ function applyLevelData(data) {
   else researchedUnits = Object.fromEntries(getActiveTeams().map(team => [team, new Set(data.research?.[team] || ['Soldier'])]));
   if(typeof restoreResearchPoints==='function')restoreResearchPoints(data.researchPoints||data.startingResearchPoints,data.researchPointReceipts);
   if (data.diplomacy) diplomacy = clonePlain(data.diplomacy);
+  if(typeof restoreDiplomacyConversations==='function')restoreDiplomacyConversations();
   if (hasAIDiplomacy()) ensureDiplomacyForActiveTeams();
   currentVictoryCondition = normalizeVictoryCondition(data.victoryCondition);
   currentVictoryCondition.holdProgress = 0;
@@ -327,7 +334,8 @@ function applyLevelData(data) {
     experience: u.experience || 0,
     promotionLevel: u.promotionLevel || 0,
     rogue:u.rogue===true, ruins:u.ruins===true,
-    personalName: u.personalName
+    personalName: u.personalName,
+    streakBonus:u.streakBonus, streakMisses:u.streakMisses, streakKilled:u.streakKilled, streakProcessedTurn:u.streakProcessedTurn, spawnMoveLimit:u.spawnMoveLimit, usedBonusAttack:u.usedBonusAttack, hasMoved:u.hasMoved, hasActed:u.hasActed
   }));
   if(typeof Territory!=='undefined')Territory.restore(data.territory);
   if (currentVictoryCondition.type === 'KILL_UNIT_LIMIT' &&
@@ -340,9 +348,9 @@ function applyLevelData(data) {
   gameOver = false;
   endScreenShown = false;
   gameEndResult = null;
-  currentTeam = 'PLAYER';
+  currentTeam = getActiveTeams().includes(data.currentTeam)?data.currentTeam:'PLAYER';
   currentTurnIndex = 0;
-  turnNumber = 1;
+  turnNumber = Number.isSafeInteger(data.turnNumber)&&data.turnNumber>0?data.turnNumber:1;
   calculateTurnOrder();
   updateTeamSelector();
   applyVictoryConditionToUI();

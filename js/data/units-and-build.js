@@ -28,7 +28,7 @@ const UNIT_TEMPLATES = {
   Catapult: { hp: 160, move: 1, atkRange: 3, dmg: 35, cost: { gold: 8, materials: 4 } },
   
   // Ultimate unit - high stats all around, expensive, has damage resistances  
-  Dragon: { hp: 200, move: 3, atkRange: 2, dmg: 40, cost: { gold: 15, materials: 8 } },
+  Dragon: { hp: 200, move: 3, atkRange: 2, dmg: 40, cost: { gold: 3, materials: 7 } },
   
   // Support unit - no combat damage, but can heal other units, high mobility
   // Heals friendly units within range each turn
@@ -161,17 +161,8 @@ function promoteUnit(unit) {
   console.log(`🌟 ${unit.name} promoted to${levelName}! New stats: ${unit.hp}/${unit.maxHp} HP, ${unit.dmg} DMG, ${unit.move} Move`);
   try { SoundManager.playRankUp(unit); } catch (e) {}
   
-  // Visual feedback
-  if (unit.team === 'PLAYER') {
-    setTimeout(() => {
-      showPopup(
-        '🌟 Unit Promoted!',
-        `${getUnitDisplayName(unit)} has been promoted!\n\n+${promotion.bonuses.hp} HP\n+${promotion.bonuses.dmg} Damage\n+${promotion.bonuses.move} Movement`,
-        'success'
-      );
-    }, 500);
-  }
-  
+  if(unit.team===(typeof getLocalPlayableTeam==='function'?getLocalPlayableTeam():'PLAYER')&&typeof BattleGuide!=='undefined')BattleGuide.notify(getUnitDisplayName(unit)+' promoted.');
+
   return true;
 }
 
@@ -318,7 +309,7 @@ function createUnitIcon(unitName, size = 32) {
   }
 }
 
-function openSpawnMenu(col, row, settlement){
+function openSpawnMenu(col, row, settlement, initialTab='build'){
   closeSpawnMenu();
   const menu = document.createElement('div');
   menu.id = 'spawnMenu';
@@ -425,7 +416,7 @@ function openSpawnMenu(col, row, settlement){
   document.body.appendChild(menu);
   
   // Initialize with build tab
-  switchTab('build');
+  switchTab(initialTab);
   
   // Tab switching function
   function switchTab(tabId) {
@@ -617,32 +608,34 @@ function renderDoctrineTree(container,team,refresh) {
   container.appendChild(heading);
   const tree=document.createElement('div');tree.className='doctrine-tree';
   const paths=document.createElement('nav');paths.className='doctrine-paths';paths.setAttribute('aria-label','Doctrine branches');container.appendChild(paths);
-  const selectedBranch=job?RESEARCH_TREE[job.id].branch:'warfare';
+  const selectedBranch=container.dataset?.researchBranch||(job?RESEARCH_TREE[job.id].branch:'warfare');
+  const backdrop=branch=>{const menu=document.getElementById('spawnMenu');if(menu)menu.style.setProperty('--doctrine-background',`url(assets/doctrines/${branch}-background.png)`);};backdrop(selectedBranch);
   for(const branch of ['warfare','command','defense','engineering']){
     const section=document.createElement('section');section.className='doctrine-branch doctrine-'+branch;
     section.hidden=branch!==selectedBranch;
     const pathButton=document.createElement('button');pathButton.className='doctrine-path-button doctrine-path-'+branch;pathButton.textContent=({warfare:'Warfare',command:'Command',defense:'Defense',engineering:'Engineering'})[branch];pathButton.setAttribute('aria-pressed',String(branch===selectedBranch));
-    pathButton.addEventListener('click',()=>{for(const sibling of tree.children)sibling.hidden=sibling!==section;for(const button of paths.children)button.setAttribute('aria-pressed',String(button===pathButton));});paths.appendChild(pathButton);
+    pathButton.addEventListener('click',()=>{container.dataset.researchBranch=branch;backdrop(branch);for(const sibling of tree.children)sibling.hidden=sibling!==section;for(const button of paths.children)button.setAttribute('aria-pressed',String(button===pathButton));});paths.appendChild(pathButton);
     const title=document.createElement('h3');title.textContent=branch.toUpperCase();section.appendChild(title);
     const nodes=Object.values(RESEARCH_TREE).filter(t=>t.branch===branch);
     const depth=id=>RESEARCH_TREE[id].requires.length?1+Math.max(...RESEARCH_TREE[id].requires.map(depth)):0;
     const canvas=document.createElement('div');canvas.className='doctrine-map';
     const positions={};
-    for(const tech of nodes){const row=depth(tech.id),siblings=nodes.filter(t=>depth(t.id)===row);positions[tech.id]={x:120+siblings.indexOf(tech)*250,y:40+row*290};}
+    for(const tech of nodes){const row=depth(tech.id),siblings=nodes.filter(t=>depth(t.id)===row);positions[tech.id]={x:120+siblings.indexOf(tech)*250,y:40+row*210};}
     const width=Math.max(...Object.values(positions).map(p=>p.x))+150;
     for(const tech of nodes){const siblings=nodes.filter(t=>depth(t.id)===depth(tech.id));positions[tech.id].x+=(width-30-siblings.length*250+10)/2;}
-    const height=Math.max(...Object.values(positions).map(p=>p.y))+250;
+    const height=Math.max(...Object.values(positions).map(p=>p.y))+170;
     canvas.style.width=width+'px';canvas.style.height=height+'px';
     const wires=document.createElement('div');wires.className='doctrine-wires';
-    wires.innerHTML=`<svg width="${width}" height="${height}" aria-hidden="true"><defs><marker id="arrow-${branch}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#bba16c"/></marker></defs>${nodes.flatMap(t=>t.requires.map(id=>{const a=positions[id],b=positions[t.id];const route=b.y-a.y>290?`M ${a.x+110} ${a.y+110} H ${width-15} V ${b.y-20} H ${b.x} V ${b.y-3}`:`M ${a.x} ${a.y+240} V ${b.y-20} H ${b.x} V ${b.y-3}`;return `<path d="${route}" fill="none" stroke="${hasTech(team,id)?'#bba16c':'#536071'}" stroke-width="2" marker-end="url(#arrow-${branch})"/>`;})).join('')}</svg>`;canvas.appendChild(wires);
+    wires.innerHTML=`<svg width="${width}" height="${height}" aria-hidden="true"><defs><marker id="arrow-${branch}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#bba16c"/></marker></defs>${nodes.flatMap(t=>t.requires.map(id=>{const a=positions[id],b=positions[t.id];const route=b.y-a.y>210?`M ${a.x+110} ${a.y+110} H ${width-15} V ${b.y-20} H ${b.x} V ${b.y-3}`:`M ${a.x} ${a.y+160} V ${b.y-20} H ${b.x} V ${b.y-3}`;return `<path d="${route}" fill="none" stroke="${hasTech(team,id)?'#bba16c':'#536071'}" stroke-width="2" marker-end="url(#arrow-${branch})"/>`;})).join('')}</svg>`;canvas.appendChild(wires);
     section.appendChild(canvas);
     for(const tech of nodes){
       const known=hasTech(team,tech.id),ready=tech.requires.every(id=>hasTech(team,id));
       const card=document.createElement('article');card.className='doctrine-node '+(known?'researched':ready?'available':'locked');
       card.setAttribute('data-tech-id',tech.id);
+      card.setAttribute('title',known?'Researched':tech.requires.length?'Requires: '+tech.requires.map(id=>RESEARCH_TREE[id].name).join(' and '):'Starting doctrine');
       card.style.left=(positions[tech.id].x-110)+'px';card.style.top=positions[tech.id].y+'px';
       const info=document.createElement('div');
-      info.innerHTML=`<h4>${tech.name}<span>${tech.cost} RP</span></h4><p>${tech.description}</p><p class="doctrine-prerequisites">${tech.requires.length?'↳ Requires: '+tech.requires.map(id=>RESEARCH_TREE[id].name).join(' and '):'Starting doctrine'}</p>`;
+      info.innerHTML=`<h4>${known?'✓ ':''}${tech.name}<span>${tech.cost} RP</span></h4><p>${tech.description}</p><p class="doctrine-prerequisites">${tech.requires.length?'↳ Requires: '+tech.requires.map(id=>RESEARCH_TREE[id].name).join(' and '):'Starting doctrine'}</p>`;
       card.appendChild(info);
       const button=document.createElement('button');button.disabled=!canResearchTech(team,tech.id);button.className='doctrine-research';
       button.textContent=known?'Researched':!ready?'Locked':getResearchPoints(team)<tech.cost?`Need ${tech.cost-getResearchPoints(team)} more RP`:`Research (${tech.cost} RP)`;
@@ -743,7 +736,7 @@ function openBuildMenu(col, row){
           showPopup('Insufficient Resources', 'Not enough resources', 'error'); 
           return; 
         }
-        if(getUnitAt(col,row) || terrain[row*COLS+col] || settlements[row*COLS+col]){ 
+        if(!canBuildFortressAt(team,col,row)){
           showPopup('Tile Unavailable', 'Tile no longer available', 'error'); 
           return; 
         }
@@ -876,3 +869,8 @@ function spawnUnitAt(name, team, col, row){
 }
 
 // ========================================
+
+function canBuildFortressAt(team,col,row) {
+  if(col<0||row<0||col>=COLS||row>=ROWS)return false;
+  return !['WATER','SWAMP','MARSH','VOID'].includes(terrain[row*COLS+col])&&!settlements[row*COLS+col]&&!getUnitAt(col,row)&&units.some(u=>u.hp>0&&!u.ruins&&!u.rogue&&u.team===team&&(typeof isAdjacentTile==='function'?isAdjacentTile(u.col,u.row,col,row):manhattan(u.col,u.row,col,row)===1));
+}

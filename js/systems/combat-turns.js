@@ -17,12 +17,54 @@ function applyCrownDeath(crown) {
     checkEndGame();
   }
 }
+// One damage calculation for attacks, retaliation, AI estimates and previews.
+// Each step records the actual rounded contribution, rather than an approximation.
+function spearmanDefense(unit) {
+  if(unit.name!=='Spearman')return 0;
+  const neighbors=units.filter(u=>u!==unit&&u.id!==unit.id&&u.hp>0&&!u.ruins&&!u.rogue&&u.team===unit.team&&u.name==='Spearman'&&manhattan(u.col,u.row,unit.col,unit.row)===1).length;
+  return neighbors ? .25+(neighbors>=2&&hasTech(unit.team,'reconnaissance')?.15:0) : 0;
+}
+function calculateCombatDamage(a,d) {
+  let damage=a.dmg;const modifiers=[];
+  const apply=(label,multiplier,round=true)=>{if(multiplier===1)return;const before=damage;damage=round?Math.floor(damage*multiplier):damage*multiplier;modifiers.push({label,multiplier,before,after:damage});};
+  const at=terrain[a.row*COLS+a.col],dt=terrain[d.row*COLS+d.col];
+  apply('Attacking from marsh',at==='SWAMP'?.5:1,false);
+  apply('Nearby Crown',hasCrownAura(a)?1.1:1,false);
+  apply('Assassin against Crown',a.name==='Assassin'&&d.name==='Crown'?2:1,false);
+  apply('Siege against fortress',a.name==='Catapult'&&isFortressUnit(d)?2:1,false);
+  apply('Swordsman kill streak',a.name==='Swordsman'?1+(a.streakBonus||0):1,false);
+  const health=Math.max(a.hp/a.maxHp,.4);apply('Attacker health',health);damage=Math.floor(damage);
+  if(a.name!=='Dragon')apply('Morale',a.morale<=30?.6:a.morale>=120?1.4:1);
+  apply('Knight against Dragon',a.name==='Knight'&&d.name==='Dragon'?2:1);
+  apply('Dragon against Catapult',a.name==='Dragon'&&d.name==='Catapult'?2:1);
+  if(d.name==='Dragon')apply('Dragon defenses / matchup',a.name==='Archer'?1.1:a.name==='Catapult'?.5:a.name==='Knight'?1:.8);
+  apply('Spearman shield wall'+(spearmanDefense(d)>.25?' and Phalanx Warriors':''),1-spearmanDefense(d));
+  apply('Assassin terrain ambush',a.name==='Assassin'&&['SWAMP','WOODS'].includes(dt)?2:1,false);
+  apply('Knight attacking from woods',a.name==='Knight'&&at==='WOODS'?.75:1);
+  apply('Terrain and settlement defense',1-(a.name==='Catapult'?0:getDefenseModifiers(a,d)));
+  apply('Defender terrain exposure',getTerrainDamageMultiplier(d));
+  if(isFortressUnit(d)&&a.name!=='Catapult')apply('Fortress armor',1-(getFortressPropsByName(d.name)?.damageReduction||0));
+  apply('Assassin against walls',a.name==='Assassin'&&isFortressUnit(d)?.1:1);
+  apply('Defending Crown protection',hasCrownAura(d)?.75:1);
+  apply('Longbow shot at three spaces',typeof getDoctrineAttackMultiplier==='function'?getDoctrineAttackMultiplier(a,d):1);
+  return {damage:Math.max(0,Math.floor(damage)),base:a.dmg,modifiers};
+}
+function finishSwordsmanTurn(team) {
+  for(const u of units)if(u.team===team&&u.name==='Swordsman'&&u.streakProcessedTurn!==turnNumber){
+    u.streakProcessedTurn=turnNumber;
+    if(u.streakKilled){u.streakBonus=u.streakBonus>0&&!u.streakMisses?Math.min(1,Math.round((u.streakBonus+.1)*100)/100):.4;u.streakMisses=0;}
+    else if(u.streakBonus){u.streakMisses=(u.streakMisses||0)+1;u.streakBonus=u.streakMisses===1?u.streakBonus/2:0;}
+    u.streakKilled=false;
+  }
+}
 function attackUnit(a, d) {
   if(!a||!d||a.hp<=0||d.hp<=0)return {blocked:true};
   if(a.ruins||d.ruins||(!a.rogue&&!d.rogue&&areFriendlyTeams(a.team,d.team)))return {blocked:true};
+  if(a.name==='Cleric'||(!a.rogue&&a.morale<=0)||manhattan(a.col,a.row,d.col,d.row)>a.atkRange)return {blocked:true};
+  if(terrain[a.row*COLS+a.col]==='SWAMP'&&TERRAIN.SWAMP?.noAttack&&!['Assassin','Dragon'].includes(a.name))return {blocked:true};
   if(a.name==='Crown')return {blocked:true,reason:'The Crown cannot attack'};
   // Safety check: prevent units that have already acted from attacking
-  if (a.hasActed && !(a.name === 'Knight' && !a.usedBonusAttack)) {
+  if (a.hasActed || (a.name==='Catapult'&&a.hasMoved)) {
     console.log(`DEBUG: Attack blocked - ${a.name} has already acted this turn (hasActed: ${a.hasActed}, usedBonusAttack: ${a.usedBonusAttack})`);
     return { blocked: true, reason: 'Unit has already acted' };
   }
@@ -32,7 +74,7 @@ function attackUnit(a, d) {
     if (!canAttack(a.team, d.team)) {
       console.log(`${a.team} cannot attack ${d.team} - no valid war declaration`);
       if (a.team === 'PLAYER') {
-        showPopup('War Declaration Required', `You must declare war on ${d.team} before attacking! Use the diplomacy menu to declare war (attacks possible next turn).`, 'error');
+        showPopup('War Declaration Required', `You must declare war on ${getTeamDisplayName(d.team)} before attacking! Use the diplomacy menu to declare war (attacks possible next turn).`, 'error');
       }
       return { blocked: true };
     }
@@ -44,112 +86,7 @@ function attackUnit(a, d) {
   const origHasMoved = !!a.hasMoved;
   const origHasActed = !!a.hasActed;
   
-  // Start with base damage from unit stats
-  let dmg = a.dmg;
-  if(terrain[a.row*COLS+a.col]==='SWAMP')dmg*=0.5;
-  if(hasCrownAura(a))dmg*=1.10;
-  if(a.name==='Assassin'&&d.name==='Crown')dmg*=2;
-  if(a.name==='Catapult'&&isFortressUnit(d))dmg*=2;
-
-  // Calculate health percentage (0-1)
-  const healthPct = a.hp / a.maxHp;
-
-  // Scale damage by health percentage, but never below 40%
-  let healthMod = max(healthPct, 0.4);
-  dmg = floor(dmg * healthMod);
-
-  // Apply morale modifiers (Dragon is immune to being scared; its morale stays high)
-  if(a.name !== 'Dragon'){
-    if(a.morale <= 30) dmg = floor(dmg * 0.6);
-    if(a.morale >= 120) dmg = floor(dmg * 1.4);
-  } else {
-    // Dragons always have top morale
-    a.morale = 150;
-  }
-
-  // Knight vs Dragon: Knights do double damage against Dragons
-  if (a.name === 'Knight' && d.name === 'Dragon') {
-    dmg = floor(dmg * 2);
-  }
-
-  // Dragon defensive mechanics: 20% reduction against all units except special cases
-  if (d.name === 'Dragon') {
-    if (a.name === 'Archer') {
-      // Archers do 10% extra damage to Dragons
-      dmg = floor(dmg * 1.1);
-    } else if (a.name === 'Catapult') {
-      // Catapults do only 50% damage to Dragons
-      dmg = floor(dmg * 0.5);
-    } else if (a.name !== 'Knight') {
-      // All other units (except Knights, which already got their bonus) do 20% less damage
-      dmg = floor(dmg * 0.8);
-    }
-  }
-
-  // Apply spearman adjacency defense reduction for defender if applicable
-  const isSpearmanDefender = d.name === 'Spearman';
-  if (isSpearmanDefender) {
-    // Check if adjacent friendly spearman exists
-    const hasAdjacentAllySpearman = !!units.find(u => u !== d && u.team === d.team && u.name === 'Spearman' && manhattan(u.col, u.row, d.col, d.row) === 1);
-    if (hasAdjacentAllySpearman) {
-      // Apply 30% damage reduction (take only 70%)
-      dmg = floor(dmg * 0.7);
-    }
-  }
-
-  // Special terrain bonuses: Assassins deal double damage to units in swamps and woods
-  const defenderTerrainIdx = d.row * COLS + d.col;
-  const defenderTerrain = terrain[defenderTerrainIdx];
-  if (a.name === 'Assassin' && ((defenderTerrain === 'SWAMP' && TERRAIN.SWAMP.assassinBonus) || 
-                                (defenderTerrain === 'WOODS' && TERRAIN.WOODS.assassinBonus))) {
-    dmg = dmg * 2; // Double damage for assassins attacking units in swamps or woods
-  }
-  
-  // Knight penalty: Knights deal only 75% damage when attacking from woods
-  const attackerTerrainIdx = a.row * COLS + a.col;
-  const attackerTerrain = terrain[attackerTerrainIdx];
-  if (a.name === 'Knight' && attackerTerrain === 'WOODS' && TERRAIN.WOODS.knightPenalty) {
-    dmg = floor(dmg * 0.75); // Knights deal 75% damage when attacking from woods
-  }
-  
-  // Apply terrain and settlement defense modifiers
-  let defenseModifier = getDefenseModifiers(a, d);
-  // Catapults ignore settlement defenses and fortresses' damage reduction
-  const defenderIdx = d.row * COLS + d.col;
-  const defenderSettlement = settlements[defenderIdx];
-  if (a.name === 'Catapult') {
-    // Ignore settlement defense entirely
-    defenseModifier = 0;
-  }
-  if (defenseModifier !== 0) {
-    dmg = floor(dmg * (1 - defenseModifier));
-  }
-
-  // Apply terrain damage multipliers (like bridge 1.1x damage)
-  const terrainMultiplier = getTerrainDamageMultiplier(d);
-  if (terrainMultiplier !== 1.0) {
-    dmg = floor(dmg * terrainMultiplier);
-  }
-
-  // Fortress special: certain fortress types reduce incoming damage (unless attacker is a Catapult)
-  if (isFortressUnit(d) && a.name !== 'Catapult') {
-    const props = getFortressPropsByName(d.name);
-    const reduction = props && props.damageReduction ? props.damageReduction : 0;
-    if (reduction > 0) {
-      dmg = floor(dmg * (1 - reduction));
-    }
-  }
-
-  // Assassins can harry a fortress, but cannot meaningfully damage its walls.
-  // Apply this after the normal fortress defenses so every fortress tier is
-  // capped at 10% of the damage the hit would otherwise have dealt.
-  if (a.name === 'Assassin' && isFortressUnit(d)) {
-    dmg = floor(dmg * 0.10);
-  }
-
-  // Store target's previous HP to check for kill
-  if(hasCrownAura(d))dmg=floor(dmg*0.75);
-  if(typeof getDoctrineAttackMultiplier==='function')dmg=floor(dmg*getDoctrineAttackMultiplier(a,d));
+  const dmg = calculateCombatDamage(a,d).damage;
   const prevHP = d.hp;
 
   try{ console.debug('attackUnit - pre-damage', { attacker: { id: a.id, col: a.col, row: a.row, hp: a.hp }, defender: { id: d.id, col: d.col, row: d.row, hp: d.hp } }); } catch(e){}
@@ -180,25 +117,7 @@ function attackUnit(a, d) {
 
   // Retaliation is a fortress-only doctrine and respects actual attack range.
   if ((d.rogue||(isFortressUnit(d) && typeof hasTech==='function' && hasTech(d.team,'garrison_training'))) && d.hp > 0 && a.hp > 0 && manhattan(d.col, d.row, a.col, a.row) <= d.atkRange) {
-    // Calculate counter damage from fortress: scale by fortress health (with same 40% floor)
-    let counterDmg = d.dmg;
-    if(terrain[d.row*COLS+d.col]==='SWAMP')counterDmg*=0.5;
-    const fortHealthPct = max(d.hp / d.maxHp, 0.4);
-    counterDmg = floor(counterDmg * fortHealthPct);
-    // Apply defender morale modifiers to counter (treat fortress as non-dragon)
-    if (d.morale <= 30) counterDmg = floor(counterDmg * 0.6);
-    if (d.morale >= 120) counterDmg = floor(counterDmg * 1.4);
-    // Apply terrain/settlement defense for the attacker being on their tile
-    const atkDefenseForAttacker = getDefenseModifiers(d, a);
-    if (atkDefenseForAttacker !== 0) counterDmg = floor(counterDmg * (1 - atkDefenseForAttacker));
-    // Apply spearman adjacency reduction if attacker is a Spearman with ally shield (defensive)
-    if (a.name === 'Spearman') {
-      const hasAdjacentAllySpearman = !!units.find(u => u !== a && u.team === a.team && u.name === 'Spearman' && manhattan(u.col, u.row, a.col, a.row) === 1);
-      if (hasAdjacentAllySpearman) counterDmg = floor(counterDmg * 0.7);
-    }
-  // Subtract counter damage from attacker
-  if(hasCrownAura(d))counterDmg=floor(counterDmg*1.10);
-  if(hasCrownAura(a))counterDmg=floor(counterDmg*0.75);
+    const counterDmg = calculateCombatDamage(d,a).damage;
   a.hp -= counterDmg;
   if(counterDmg>0&&typeof ActionEffects!=='undefined'&&ActionEffects.damage)ActionEffects.damage(a.col,a.row,counterDmg);
   if (a.hp < 0) a.hp = 0;
@@ -214,6 +133,7 @@ function attackUnit(a, d) {
   let didKill = false;
   if(prevHP > 0 && d.hp === 0) {
     didKill = true;
+    if(a.name==='Swordsman')a.streakKilled=true;
     if(typeof awardKillResearch==='function')awardKillResearch(a,d);
     a.morale = min(150, a.morale + 50); // Add 50 morale, capped at 150
     
@@ -239,6 +159,7 @@ function attackUnit(a, d) {
       addAIMessage(a.team, messages[Math.floor(Math.random() * messages.length)], 'UNIT_VICTORY');
     }
   }
+  if(typeof recordCrusadeCombat==='function')recordCrusadeCombat(a,d,didKill);
   // Remove dead units entirely from the units array so their object references
   // don't linger and inadvertently affect other units. After rebuilding the
   // array, restore the attacker's coordinates by locating it by id so we handle
@@ -259,9 +180,10 @@ function attackUnit(a, d) {
     attackerNow.col = origCol;
     attackerNow.row = origRow;
     // Restore movement flag but ensure unit is marked as having acted after attack
-    attackerNow.hasMoved = origHasMoved;
+    attackerNow.hasMoved = a.name==='Catapult' || origHasMoved;
     // Always mark as acted after attacking (Knight bonus attacks are handled by caller)
     attackerNow.hasActed = true;
+    if(a.name==='Knight'&&didKill&&!a.usedBonusAttack){attackerNow.hasActed=false;attackerNow.usedBonusAttack=true;}
     try{ console.debug('attackUnit - attackerNow AFTER restore', { id: attackerNow.id, col: attackerNow.col, row: attackerNow.row, hasMoved: attackerNow.hasMoved, hasActed: attackerNow.hasActed }); } catch(e){}
     // If the local selectedUnit was pointing to an old object, reassign it to the refreshed one
     try { if (selectedUnit && selectedUnit.id === attackerId) selectedUnit = attackerNow; } catch(e){}
@@ -384,6 +306,7 @@ function endTurn(expectedAITeam = null) {
   // For LOCAL_2P mode, no role validation needed - the device is passed between players
   
   if(typeof advanceDoctrineResearch==='function')advanceDoctrineResearch(currentTeam);
+  finishSwordsmanTurn(currentTeam);
   const upkeepOver=typeof Territory!=='undefined'&&Territory.stats(currentTeam).used>Territory.stats(currentTeam).capacity;
   // Process team-specific healing and effects for the team that just finished
   units.forEach(u => {
@@ -441,7 +364,9 @@ function endTurn(expectedAITeam = null) {
   const previousTeam = currentTeam;
   
   // Calculate turn order and advance to next team
+  const priorOrder=turnOrder.slice(),priorIndex=priorOrder.indexOf(previousTeam);
   calculateTurnOrder(); // Ensure we have the current turn order
+  if(!turnOrder.includes(previousTeam)&&priorIndex>=0){const next=Array.from({length:priorOrder.length},(_,i)=>priorOrder[(priorIndex+i+1)%priorOrder.length]).find(t=>turnOrder.includes(t));currentTurnIndex=turnOrder.indexOf(next)-1;}
   let wrappedTurn=false;
   for(let n=0;n<turnOrder.length;n++){
     currentTurnIndex=(currentTurnIndex+1)%turnOrder.length;
@@ -477,6 +402,7 @@ function endTurn(expectedAITeam = null) {
       console.log(`DEBUG: Resetting unit ${u.name} at (${u.col},${u.row}) - hasMoved: ${u.hasMoved} -> false, hasActed: ${u.hasActed} -> false`);
       u.hasMoved = false;
       u.hasActed = false;
+      delete u.spawnMoveLimit;
       u.usedBonusAttack = false; // Reset Knight bonus attack flag
       resetCount++;
     }

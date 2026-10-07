@@ -1016,3 +1016,46 @@ body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/do
 @media(max-width:700px) { #armyUpkeep { width:138px; left:6px; top:106px; padding:7px; font-size:11px; } }
 
 #armyUpkeep progress { display:block; height:14px; margin:7px 0; }
+/* Stationary menu artwork; only the connected doctrine map scrolls. */
+#spawnMenu.doctrine-menu {background-image:linear-gradient(#07101bbb,#07101bd9),var(--doctrine-background)!important;background-size:cover!important;background-position:center!important;}
+.doctrine-menu .doctrine-branch {background:transparent;}
+.doctrine-menu .doctrine-branch::before {display:none;}
+.doctrine-menu #tabContent {background:transparent;}
+.doctrine-node {height:200px;min-height:200px;}
+.doctrine-node > div {flex:1;min-height:0;}
+.doctrine-node .doctrine-prerequisites {min-height:0;margin:4px 0;font-size:10px;}
+.doctrine-node .doctrine-research,.doctrine-node .doctrine-study {opacity:0;pointer-events:none;transition:opacity .15s;padding:4px;}
+.doctrine-node:hover button,.doctrine-node:focus-within button {opacity:1;pointer-events:auto;}
+.doctrine-node:has(button:focus-visible) {outline:2px solid #d5bd79;}
+@media(hover:none){.doctrine-node .doctrine-research,.doctrine-node .doctrine-study{opacity:1;pointer-events:auto;}}
+.unit-board-preview {display:block;width:180px;height:160px;margin:0 auto;max-width:100%;object-fit:contain;}
+#diplomacyModal > div {height:min(820px,90dvh);min-height:0;}
+#diplomacyModal > div > div {min-width:0;min-height:0;box-sizing:border-box;}
+#diplomacyModal > div > div:nth-child(2) {grid-template-rows:auto minmax(0,1fr) auto!important;overflow:hidden;}
+#messageHistory {min-height:0;overflow:auto;overflow-wrap:anywhere;}
+#diplomacyTargetInfo {max-height:24vh;overflow:auto;}
+#diplomacyModal > div > div:nth-child(2) > div:last-child {max-height:35vh;overflow:auto;}
+.diplomacy-banner-button:disabled {filter:grayscale(1);opacity:.45;cursor:not-allowed;}
+.pact-indicators {display:flex;flex-wrap:wrap;justify-content:center;gap:3px;position:relative;z-index:1;padding:3px 12px;}
+.pact-indicators i {display:inline-block;width:12px;height:16px;clip-path:polygon(0 0,100% 0,100% 100%,50% 75%,0 100%);border:1px solid #e0cca1;}
+.diplomacy-banner-button {height:auto!important;min-height:76px;padding-bottom:8px!important;}
+#battleAlerts {position:fixed;right:16px;top:100px;display:grid;gap:8px;z-index:2300;max-width:260px;}
+#battleAlerts button {background:#252d36ed;color:#ffe6a1;border:1px solid #baa16e;border-radius:6px;padding:10px 14px;cursor:pointer;animation:battle-alert-pulse 1.4s ease-in-out infinite;}
+@keyframes battle-alert-pulse {50%{box-shadow:0 0 17px #e4b44f88;background:#514528;}}
+#combatPreview {position:fixed;z-index:9800;pointer-events:none;max-width:280px;padding:10px 13px;background:#0b111bf2;color:#ddd3b9;border:1px solid #9b855b;border-radius:7px;font:12px/1.5 system-ui;box-shadow:0 4px 18px #000a;}
+#combatPreview strong {display:block;font-size:15px;color:#ffce85;}
+#combatPreview small {display:block;color:#bfc9d3;}
+#battleNotice {left:auto!important;right:16px!important;top:auto!important;bottom:20px!important;max-width:310px!important;transform:none!important;pointer-events:none;}
+@media(max-width:600px){#diplomacyModal > div{grid-template-columns:130px minmax(0,1fr)!important;}#diplomacyModal > div > div{padding:8px!important;}}
+@media(prefers-reduced-motion:reduce){#battleAlerts button{animation:none;}}
+
+.diplomacy-banner-button {flex-direction:column;justify-content:center;gap:2px;}
+.diplomacy-banner-button > span {width:100%;text-align:center;}
+
+.doctrine-node {height:160px;min-height:160px;}
+.doctrine-node .doctrine-prerequisites {display:none;}
+.doctrine-node .doctrine-research,.doctrine-node .doctrine-study {position:absolute;left:10px;right:10px;width:calc(100% - 20px);height:26px;background-color:#17212d;}
+.doctrine-node .doctrine-research {bottom:35px;}
+.doctrine-node .doctrine-study {bottom:6px;}
+
+.compact-hud #battleNotice {z-index:30010;}

@@ -55,24 +55,7 @@ const AICommander = (() => {
       (e.id===currentVictoryCondition.targetUnitId?180:0)+(e.promotionLevel||0)*18+45*(1-e.hp/e.maxHp)+(settlements[key(e)]?35:0);
   }
   function damage(u,e,tile=u) {
-    const a={...u,...tile};let d=u.dmg;
-    if(terrain[key(a)]==='SWAMP')d*=.5;
-    if(hasCrownAura(a))d*=1.1;
-    if(u.name==='Assassin'&&e.name==='Crown'||u.name==='Catapult'&&isFortressUnit(e))d*=2;
-    d=Math.floor(d*Math.max(.4,u.hp/u.maxHp));
-    if(u.name!=='Dragon'){if(u.morale<=30)d=Math.floor(d*.6);else if(u.morale>=120)d=Math.floor(d*1.4);}
-    if(u.name==='Knight'&&e.name==='Dragon')d=Math.floor(d*2);
-    if(e.name==='Dragon')d=Math.floor(d*(u.name==='Archer'?1.1:u.name==='Catapult'?.5:u.name==='Knight'?1:.8));
-    if(e.name==='Spearman'&&units.some(v=>v!==e&&v.hp>0&&v.team===e.team&&v.name==='Spearman'&&aiDistance(v,e)===1))d=Math.floor(d*.7);
-    if(u.name==='Assassin'&&TERRAIN[terrain[key(e)]]?.assassinBonus)d*=2;
-    if(u.name==='Knight'&&TERRAIN[terrain[key(a)]]?.knightPenalty)d=Math.floor(d*.75);
-    if(typeof getDefenseModifiers==='function'&&u.name!=='Catapult')d=Math.floor(d*(1-getDefenseModifiers(a,e)));
-    if(typeof getTerrainDamageMultiplier==='function')d=Math.floor(d*getTerrainDamageMultiplier(e));
-    if(isFortressUnit(e)&&u.name!=='Catapult')d=Math.floor(d*(1-(getFortressPropsByName(e.name)?.damageReduction||0)));
-    if(isFortressUnit(e)&&u.name==='Assassin')d=Math.floor(d*.1);
-    if(hasCrownAura(e))d=Math.floor(d*.75);
-    if(typeof getDoctrineAttackMultiplier==='function')d=Math.floor(d*getDoctrineAttackMultiplier(a,e));
-    return Math.max(0,Math.floor(d));
+    return calculateCombatDamage({...u,...tile},e).damage;
   }
   // Observe broad force composition and recent losses, without hidden resources.
   function observe(team,old) {
@@ -101,6 +84,7 @@ const AICommander = (() => {
     }
     for(const e of enemy(team).sort((a,b)=>value(b)-value(a)).slice(0,8))add('hunt:'+e.id,'HUNT',e,value(e)+(plan.style==='CUNNING'?65:0),{unitId:e.id});
     if(typeof Endless!=='undefined'&&Endless.active&&team==='AI')add('breach','BREACH',{col:Math.floor(COLS/2),row:ROWS-1},280);
+    if(isCrusading(team)){const targetTeam=diplomacy.crusades[team].target,homes=aiAssets(team);for(const e of enemy(team).filter(u=>u.team===targetTeam)){const near=Math.min(...homes.map(h=>aiDistance(h,e)),20);add('crusade:'+e.id,'HUNT',e,850-near*25+value(e),{unitId:e.id});}}
     for(const o of candidates){
       const distances=army.map(u=>pathCost(u,o.target)/Math.max(1,u.move));
       o.distance=Math.min(...distances);o.priority-=Math.min(200,o.distance*12);
@@ -135,7 +119,7 @@ const AICommander = (() => {
       add('DEFEND',home,600+threat,'defense:'+key(home),chosen);
     }
     // A small territorial reserve also guards against fast breakthroughs.
-    const fraction=plan.style==='DEFENSIVE'?.32:plan.style==='AGGRESSIVE'?.12:.22;
+    const fraction=isCrusading(team)?.05:plan.style==='DEFENSIVE'?.32:plan.style==='AGGRESSIVE'?.12:.22;
     let count=homes.length>1||army.length>=7?Math.max(1,Math.floor(army.length*fraction)+Math.min(2,Math.ceil(plan.observations.raids))):0;
     for(const home of homes){
       const chosen=army.filter(u=>free.has(u.id)&&u.dmg>0).sort((a,b)=>pathCost(a,home)-pathCost(b,home)).slice(0,count>0?1:0);
@@ -178,7 +162,7 @@ const AICommander = (() => {
       for(const u of attackers){
         if(used.has(u.id))continue;
         const g=group(u);
-        const tiles=options.get(u.id).filter(p=>aiDistance(p,e)<=u.atkRange&&!occupied.has(key(p))&&(!g||!['RESERVE','GUARD','DEFEND'].includes(g.type)||aiDistance(p,g.target)<=3));
+        const tiles=options.get(u.id).filter(p=>(u.name!=='Catapult'||(!u.hasMoved&&p.col===u.col&&p.row===u.row))&&aiDistance(p,e)<=u.atkRange&&!occupied.has(key(p))&&(!g||!['RESERVE','GUARD','DEFEND'].includes(g.type)||aiDistance(p,g.target)<=3));
         tiles.sort((a,b)=>aiThreat(a,team)-aiThreat(b,team)||aiDistance(u,a)-aiDistance(u,b));
         const tile=tiles[0];if(!tile)continue;
         if(g?.type!=='VANGUARD'&&aiThreat(tile,team)>u.hp*(plan.style==='AGGRESSIVE'?1.5:1)&&value(e)<200)continue;

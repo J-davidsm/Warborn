@@ -149,7 +149,7 @@ const IMAGES = {};
 const IMAGE_LOAD_STATUS = {}; // 'loading' | 'loaded' | 'error'
 
 function preloadImages(mapping){
-  // mapping: { 'Soldier': 'assets/soldier.png', ... }
+  // mapping: { 'Soldier': 'assets/soldier.png?v=20261007', ... }
   Object.keys(mapping).forEach(name => {
     const url = mapping[name];
     IMAGE_LOAD_STATUS[name] = 'loading';
@@ -162,7 +162,7 @@ function preloadImages(mapping){
 
 // Default mapping for Warborn's unit art.
 const DEFAULT_IMAGE_MAP = {
-  'Soldier': 'assets/soldier.png',
+  'Soldier': 'assets/soldier.png?v=20261007',
   'Archer': 'assets/archer.png',
   'Knight': 'assets/knight.png',
   'Catapult': 'assets/catapult.png',
@@ -173,6 +173,10 @@ const DEFAULT_IMAGE_MAP = {
   'Cleric': 'assets/cleric.png',
   'Crown': 'assets/crown.png',
   'Stockade': 'assets/stockade.png',
+  'Sloop': 'assets/sloop.png',
+  'Man-of-War': 'assets/man_of_war.png',
+  'Battleship': 'assets/battleship.png',
+  'Fortress': 'assets/castle.png',
   'Castle': 'assets/castle.png',
   'Heavy Fortress': 'assets/heavy_fortress.png'
   ,'Ruins': 'assets/ruins.png'

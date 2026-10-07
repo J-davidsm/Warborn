@@ -137,7 +137,7 @@ function playerControlsTile(col, row) {
 function evaluateVictoryCondition() {
   if(currentVictoryCondition.crownFallenTeams?.includes('PLAYER'))return {outcome:'defeat',explanation:'Your Crown has fallen. Your kingdom is defeated.'};
   const vc = normalizeVictoryCondition(currentVictoryCondition);
-  const enemies = getActiveTeams().filter(team => team !== 'PLAYER' && !areFriendlyTeams('PLAYER', team));
+  const enemies = (typeof getConfiguredTeams==='function'?getConfiguredTeams():getActiveTeams()).filter(team => team !== 'PLAYER' && !areFriendlyTeams('PLAYER', team));
   const playerAlive = teamHasLife('PLAYER');
   
   if (!playerAlive) {
@@ -267,6 +267,7 @@ function getWinner(){
   return null; // No winner yet - multiple teams still alive
 }
 function checkEndGame(){
+  if(typeof refreshEliminatedNations==='function')refreshEliminatedNations();
   if(typeof watchGameMode!=='undefined'&&watchGameMode)return;
   if(typeof Endless!=='undefined'&&Endless.active){Endless.check();return;}
   if (typeof OnlineMatch !== "undefined" && OnlineMatch.playing) { OnlineMatch.finish(); return; }
@@ -347,6 +348,7 @@ function checkCampaignVictory() {
  * Handles: turn indicator, resource display, unit selection panel, health bars
  */
 function updateUI() {
+  if(typeof BattleAlerts!=='undefined')BattleAlerts.refresh();
   if(typeof Territory!=='undefined')Territory.render();
   if(typeof markScenarioPlaying==='function'&&!isEditorMode&&(turnNumber>1||units.some(u=>!u.ruins&&!u.rogue&&(u.hasMoved||u.hasActed))))markScenarioPlaying();
   if(typeof BattleGuide!=='undefined')BattleGuide.refresh();
@@ -411,6 +413,7 @@ function updateUI() {
     const xpDisplay = xpProgress.nextRank !== 'Max Level' ? ` • ⭐ ${xpProgress.current}/${xpProgress.needed}` : ' • Max Level';
     
     selNameEl.elt.textContent = unitName;
+    if(typeof UnitPresentation!=='undefined'){document.getElementById('selectedUnitPreview')?.remove();const preview=document.createElement('div');preview.id='selectedUnitPreview';preview.innerHTML=UnitPresentation.preview(selectedUnit);selNameEl.elt.before(preview);}
     
     // Format cost display - handle both single cost and multi-resource cost
     let costDisplay;
@@ -431,6 +434,7 @@ function updateUI() {
     selNumsEl.html(`❤️ ${selectedUnit.hp}/${selectedUnit.maxHp} • 🔥 ${selectedUnit.morale} (${moraleLabel(selectedUnit)})`);
 
   } else {
+    document.getElementById('selectedUnitPreview')?.remove();
     selNameEl.html("No unit selected"); selDetailsEl.html("Click a friendly unit to select it.");
     selHPEl.style('width',"0%"); selNumsEl.html("HP —");
   }

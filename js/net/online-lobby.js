@@ -144,7 +144,7 @@ const OnlineMatch = (() => {
   return copy({incomeReceipt:typeof BattleGuide!=='undefined'?BattleGuide.incomeReceipt:null,effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
    researchPoints:typeof researchPoints!=='undefined'?researchPoints:undefined,researchPointReceipts:typeof researchPointReceipts!=='undefined'?researchPointReceipts:undefined,
     activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
-   researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,doubleUpkeepMode:!!doubleUpkeepMode,hyperAggressiveMode:!!hyperAggressiveMode,research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
+   researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,doubleUpkeepMode:(typeof doubleUpkeepMode!=='undefined'&&doubleUpkeepMode),hyperAggressiveMode:(typeof hyperAggressiveMode!=='undefined'&&hyperAggressiveMode),research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
  }
  function valid(s){
   const teams=mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity),cols=mode==='coop'?8*capacity+2:capacity===2?20:21,rows=mode==='coop'?20:capacity===2?16:21;
@@ -172,7 +172,7 @@ const OnlineMatch = (() => {
   if(typeof restoreActiveResearch==='function')restoreActiveResearch(s.activeResearch);
   else researchedUnits=Object.fromEntries(Object.entries(s.research).map(([k,v])=>[k,new Set(v)]));
   if(typeof restoreResearchPoints==='function')restoreResearchPoints(s.researchPoints,s.researchPointReceipts,true);
-  diplomacy=copy(s.diplomacy);
+  diplomacy=copy(s.diplomacy);if(typeof restoreDiplomacyConversations==='function')restoreDiplomacyConversations(true);
   currentVictoryCondition=copy(s.victoryCondition);gameOver=s.gameOver;doubleUpkeepMode=!!s.doubleUpkeepMode;hyperAggressiveMode=!!s.hyperAggressiveMode;selectedUnit=null;closeSpawnMenu();buildMode=false;buildModeUnitId=null;
   if(typeof Endless!=='undefined')Endless.restore(mode==='coop'?copy(s.endless):null);
   if(typeof BattleGuide!=='undefined')BattleGuide.receiveIncome(s.incomeReceipt);
@@ -205,7 +205,7 @@ const OnlineMatch = (() => {
   if(typeof resetResearch==='function')resetResearch(TEAMS.slice(0,capacity));
   terrain=map.terrain;settlements=map.settlements;units=map.units.map(u=>makeUnit(u.name,u.team,u.col,u.row,{id:u.id}));
   const teams=TEAMS.slice(0,capacity);resources=map.resources;startingResources=copy(map.resources);researchedUnits=Object.fromEntries(teams.map(t=>[t,new Set(['Soldier'])]));
-  diplomacy=createDefaultWarDiplomacy(teams);currentTeam=map.firstTeam;const first=teams.indexOf(currentTeam);turnOrder=[...teams.slice(first),...teams.slice(0,first)];currentTurnIndex=0;turnNumber=1;
+  if(typeof resetDiplomacySession==='function')resetDiplomacySession();diplomacy=createDefaultWarDiplomacy(teams);currentTeam=map.firstTeam;const first=teams.indexOf(currentTeam);turnOrder=[...teams.slice(first),...teams.slice(0,first)];currentTurnIndex=0;turnNumber=1;
   currentVictoryCondition=normalizeVictoryCondition({type:'ANNIHILATE_ALL'});gameOver=false;communicationLockouts={};
   playing=true;suspended=false;revision=0;accepted=snapshot();saveSession();pending=false;selectedUnit=null;updateUI();fitBoard();render();
   send({type:'start',state:accepted,revision,seed});status('Fresh '+capacity+'-player '+currentTheme+' map generated.');

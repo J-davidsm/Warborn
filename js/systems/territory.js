@@ -4,8 +4,9 @@ const Territory=(()=>{
  const effectiveCost=name=>Math.max(0,(costs[name]||0)*(typeof doubleUpkeepMode!=='undefined'&&doubleUpkeepMode?2:1));
  let claims=[],streak={},processed={},rogueTurns={},dimensions='',seeded=false,cacheKey='',owners=[];
  const eligible=u=>u&&u.hp>0&&!u.rogue&&!u.ruins&&!['Cleric','Assassin'].includes(u.name);
- const value=t=>t==='VOID'?0:['MOUNTAIN','DESERT'].includes(t)?1:['WATER','BRIDGE'].includes(t)?.5:t==='FARM'?3:2;
+ const value=t=>['VOID','DESERT','SWAMP','MARSH'].includes(t)?0:t==='FARM'?3:(!t||t==='GRASS'||t==='GRASSLAND')?1:.5;
  const distance=(a,b)=>manhattan(a.col,a.row,b.col,b.row);
+ function neutralize(team){prepare();claims=claims.map(t=>t===team?null:t);cacheKey='';}
  function reset(){claims=[];streak={};processed={};rogueTurns={};dimensions='';seeded=false;cacheKey='';}
  function prepare(){
   if(dimensions!==`${COLS}:${ROWS}`){claims=Array(COLS*ROWS).fill(null);dimensions=`${COLS}:${ROWS}`;seeded=false;cacheKey='';}
@@ -60,7 +61,7 @@ const Territory=(()=>{
   if(box.innerHTML!==contents)box.innerHTML=contents;
   box.title='Soldier 1 · Archer/Spearman/Swordsman 2 · Assassin/Cleric/Knight 3 · Catapult/Dragon 4. Ships 2/3/4; Crowns and fortresses 0. Recruitment permits 25% overflow, or one extra unit from within capacity.';
  }
- return {costs,value,eligible,stats,ownership,canRecruit,march,finishTurn,actRogues,snapshot,restore,reset,shift,render,warning:team=>streak[team]||0,effectiveCost};
+ return {neutralize,costs,value,eligible,stats,ownership,canRecruit,march,finishTurn,actRogues,snapshot,restore,reset,shift,render,warning:team=>streak[team]||0,effectiveCost};
 })();
 
 // Ruins retain the original unit identity and veteran stats; rebuilding restores ownership.

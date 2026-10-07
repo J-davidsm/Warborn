@@ -4,6 +4,7 @@
 // ========== DIPLOMACY SYSTEM FUNCTIONS ==========
 
 function initializeDiplomacy() {
+  resetDiplomacySession();
   const allTeams = getActiveTeams();
   
   // Initialize trust matrix - bilateral relationships
@@ -137,7 +138,7 @@ function endWarBetween(faction1, faction2, reason = 'Peace agreement') {
   
   if (ended) {
     modifyTrust(faction1, faction2, 10, reason);
-    addAIMessage(isAITeam(faction1) ? faction1 : faction2, `Hostilities between ${faction1} and ${faction2} have ended.`, 'PEACE_RESPONSE');
+    addAIMessage(isAITeam(faction1) ? faction1 : faction2, `Hostilities between ${getTeamDisplayName(faction1)} and ${getTeamDisplayName(faction2)} have ended.`, 'PEACE_RESPONSE');
     console.log(`War ended between ${faction1} and ${faction2}: ${reason}`);
   }
   
@@ -169,7 +170,7 @@ function applyDefensivePactResponses(defender, attacker) {
     modifyTrust(ally, attacker, -35, `${ally} joined defensive war against ${attacker}`);
     
     if (ally === 'PLAYER') {
-      showPopup('Defensive Pact Triggered', `Your pact with ${defender} pulled you into war with ${attacker}.`, 'warning');
+      showPopup('Defensive Pact Triggered', `Your pact with ${getTeamDisplayName(defender)} pulled you into war with ${getTeamDisplayName(attacker)}.`, 'warning');
     } else {
       addAIMessage(ally, `Our pact with ${defender} compels us to oppose ${attacker}.`, 'WAR_DECLARATION');
     }
@@ -408,6 +409,9 @@ function nextDiplomacyMessageTimestamp() {
 
 function addAIMessage(fromFaction, message, type = 'GENERAL') {
   
+  if(isNationEliminated(fromFaction))return;
+  message=diplomaticPhrase(type==='PEACE_RESPONSE'?null:type,fromFaction,message);
+  if(type==='PEACE_REQUEST')(diplomacy.peaceBeggingFlags??={})[fromFaction]=turnNumber+5;
   const aiMessage = {
     from: fromFaction,
     message: message,
@@ -503,6 +507,7 @@ const AI_RESPONSE_COMPONENTS = {
 };
 
 function generateDynamicResponse(messageType, personality, context = {}) {
+  if(DIPLOMACY_PHRASES[messageType])return diplomaticPhrase(messageType,personality);
   const components = AI_RESPONSE_COMPONENTS;
   const personalityData = AI_PERSONALITIES[personality] || AI_PERSONALITIES.BALANCED;
   
@@ -667,7 +672,7 @@ function processAIPowerBasedDiplomacy(aiTeam) {
       
       // Send a follow-up message suggesting the player offer peace
       if (Math.random() < 0.6) { // 60% chance to follow through
-        setTimeout(() => {
+        scheduleDiplomacy(() => {
           if (isAtWar(aiTeam, 'PLAYER')) {
             addAIMessage(aiTeam, "I am ready to discuss peace terms. Please use the diplomacy menu to offer a non-aggression pact.", 'TREATY_OFFER');
           }
@@ -687,7 +692,7 @@ function processAIPowerBasedDiplomacy(aiTeam) {
       
       // Offer alliance (but don't create it automatically)
       if (Math.random() < 0.4 && !hasTreaty(aiTeam, 'PLAYER', 'DEFENSIVE_PACT')) {
-        setTimeout(() => {
+        scheduleDiplomacy(() => {
           addAIMessage(aiTeam, "I believe our civilizations would benefit from a formal alliance. Please consider proposing a defensive pact through the diplomacy menu.", 'TREATY_OFFER');
         }, 1500);
       }
@@ -795,7 +800,7 @@ function updateDiplomacyUI() {
         <span style="margin-right: 8px;">${icon}</span>
         <div style="flex: 1;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="color: ${getTeamColorHex(otherTeam)}; font-weight: bold;">${otherTeam}</span>
+            <span style="color: ${getTeamColorHex(otherTeam)}; font-weight: bold;">${getTeamDisplayName(otherTeam)}</span>
             <span style="color: ${color}; font-weight: bold;">${relationship}</span>
           </div>
           <div style="font-size: 10px; color: var(--muted);">
@@ -818,8 +823,8 @@ function updateDiplomacyUI() {
             const relationship = trust > 40 ? 'Allied' : trust > 20 ? 'Friendly' : trust > -20 ? 'Neutral' : 'Hostile';
             
             trustHTML += `<div style="display: flex; justify-content: space-between; margin: 1px 0; font-size: 10px;">
-              <span style="color: ${getTeamColorHex(team1)};">${team1}</span>
-              <span style="color: ${getTeamColorHex(team2)};">→${team2}</span>
+              <span style="color: ${getTeamColorHex(team1)};">${getTeamDisplayName(team1)}</span>
+              <span style="color: ${getTeamColorHex(team2)};">→${getTeamDisplayName(team2)}</span>
               <span style="color: ${color};">${relationship}</span>
             </div>`;
           }
@@ -845,7 +850,7 @@ function updateDiplomacyUI() {
       else if (rep < -20) repDesc = 'Disliked';
       
       repHTML += `<div style="display: flex; justify-content: space-between; margin: 2px 0; font-size: 11px;">
-        <span style="color: ${getTeamColorHex(team)};">${team}</span>
+        <span style="color: ${getTeamColorHex(team)};">${getTeamDisplayName(team)}</span>
         <span style="color: ${color};">${repDesc} (${rep.toFixed(0)})</span>
       </div>`;
     }
@@ -877,7 +882,7 @@ function updateDiplomacyUI() {
     treatyHTML += `<div style="display: flex; align-items: center; margin: 3px 0; padding: 2px; background: rgba(255,255,255,0.05); border-radius: 3px;">
       <span style="margin-right: 6px;">${icon}</span>
       <div style="flex: 1;">
-        <span style="color: ${getTeamColorHex(otherTeam)}; font-weight: bold;">${otherTeam}</span>
+        <span style="color: ${getTeamColorHex(otherTeam)}; font-weight: bold;">${getTeamDisplayName(otherTeam)}</span>
         <div style="font-size: 10px; color: var(--accent);">${treatyType.name} (${treaty.turnsRemaining} turns)</div>
       </div>
     </div>`;
@@ -890,8 +895,8 @@ function updateDiplomacyUI() {
       const [team1, team2] = treaty.participants;
       const treatyType = TREATY_TYPES[treaty.type];
       treatyHTML += `<div style="font-size: 10px; color: var(--muted); margin: 1px 0;">
-        <span style="color: ${getTeamColorHex(team1)};">${team1}</span> ↔ 
-        <span style="color: ${getTeamColorHex(team2)};">${team2}</span>: ${treatyType.name}
+        <span style="color: ${getTeamColorHex(team1)};">${getTeamDisplayName(team1)}</span> ↔
+        <span style="color: ${getTeamColorHex(team2)};">${getTeamDisplayName(team2)}</span>: ${treatyType.name}
       </div>`;
     });
   }
@@ -1009,7 +1014,9 @@ function renderDiplomacyBannerButton(team, personality, unreadCount) {
   const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const hue = {AI:145,AI2:265,AI3:205,AI4:85}[team] || 0;
   const label = typeof getTeamDisplayName==='function' ? getTeamDisplayName(team) : team;
-  return `<button class="diplomacy-banner-button" onclick="selectDiplomacyTarget('${escape(team)}')" aria-pressed="${currentDiplomacyTarget===team}" aria-label="${escape(label)} diplomacy" title="${escape(personality)}"><img src="assets/ui/turn-banner.png" alt="" style="filter:hue-rotate(${hue}deg)"><span>${escape(label)}</span>${unreadCount>0?`<b class="diplomacy-banner-unread">${unreadCount}</b>`:''}</button>`;
+  const partners=[...new Set((diplomacy.treaties||[]).filter(t=>t.active&&t.turnsRemaining>0&&t.participants.includes(team)).flatMap(t=>t.participants))].filter(t=>t!==team&&!isNationEliminated(t));
+  const icons=partners.map(t=>`<i title="${escape(getTeamDisplayName(t))}" aria-label="${escape(getTeamDisplayName(t))}" style="background:${getTeamColorHex(t)}"></i>`).join('');
+  return `<button class="diplomacy-banner-button" ${isNationEliminated(team)?'disabled':''} onclick="selectDiplomacyTarget('${escape(team)}')" aria-pressed="${currentDiplomacyTarget===team}" aria-label="${escape(label)} diplomacy" title="${escape(personality)}"><img src="assets/ui/turn-banner.png" alt="" style="filter:hue-rotate(${hue}deg)"><span>${escape(label)}${isNationEliminated(team)?' · Eliminated':''}</span><small class="pact-indicators">${icons}</small>${unreadCount>0?`<b class="diplomacy-banner-unread">${unreadCount}</b>`:''}</button>`;
 }
 
 function openDiplomacyNegotiation() {
@@ -1023,7 +1030,7 @@ function openDiplomacyNegotiation() {
   }
   
   // Populate faction buttons with notification bubbles
-  const activeTeams = getActiveTeams();
+  const activeTeams = typeof getConfiguredTeams==='function'?getConfiguredTeams():getActiveTeams();
   let buttonsHTML = '';
   
   activeTeams.forEach(team => {
@@ -1071,6 +1078,7 @@ function getUnreadMessagesFromTeam(team) {
 }
 
 function selectDiplomacyTarget(team) {
+  if(isNationEliminated(team))return;
   currentDiplomacyTarget = team;
   
   // Mark messages from this team as read when selected
@@ -1108,7 +1116,7 @@ function updateDiplomacyButtonBubbles() {
   const modal = document.getElementById('diplomacyModal');
   if (!modal || modal.style.display !== 'flex') return;
   
-  const activeTeams = getActiveTeams();
+  const activeTeams = typeof getConfiguredTeams==='function'?getConfiguredTeams():getActiveTeams();
   let buttonsHTML = '';
   
   activeTeams.forEach(team => {
@@ -1297,10 +1305,10 @@ function loadMessageHistory() {
     historyHTML += `<div style="margin-bottom: 8px; text-align: ${align};">
       <div style="display: inline-block; max-width: 80%; padding: 6px 10px; background: ${bgColor}; border: ${borderColor}; border-radius: 12px; color: ${color};">
         <div style="font-weight: bold; font-size: 10px; margin-bottom: 2px;">
-          ${isPlayer ? 'You' : msg.from} ${typeIcon}
+          ${isPlayer ? 'You' : getTeamDisplayName(msg.from)} ${typeIcon}
         </div>
         ${isAIMessage ? `<div style="font-size: 9px; color: var(--accent); font-weight: bold; margin-bottom: 4px; text-transform: uppercase;">${typeLabel}</div>` : ''}
-        <div style="font-size: 11px;">${msg.message}</div>
+        <div style="font-size: 11px;">${diplomacyDisplayText(msg.message)}</div>
         <div style="font-size: 9px; color: var(--muted); margin-top: 2px;">Turn ${msg.turn}</div>
       </div>
     </div>`;
@@ -1384,23 +1392,24 @@ function lockoutCommunication(target, turns = 3) {
 }
 
 function sendQuickMessage(type) {
-  console.log('sendQuickMessage called with type:', type, 'currentDiplomacyTarget:', currentDiplomacyTarget);
+  const replyTarget=currentDiplomacyTarget;
+  console.log('sendQuickMessage called with type:', type, 'replyTarget:', replyTarget);
   
-  if (!currentDiplomacyTarget) {
+  if (!replyTarget) {
     console.log('No diplomacy target selected');
     showPopup('No Target Selected', 'Please select a faction to negotiate with first!', 'error');
     return;
   }
   
   // Check if communication is locked
-  const lockoutTurns = isLocked(currentDiplomacyTarget);
+  const lockoutTurns = isLocked(replyTarget);
   if (lockoutTurns) {
-    showPopup('Communication Blocked', `${currentDiplomacyTarget} refuses to speak with you for ${lockoutTurns} more turn(s) due to your repetitive messages.`, 'error');
+    showPopup('Communication Blocked', `${getTeamDisplayName(replyTarget)} refuses to speak with you for ${lockoutTurns} more turn(s) due to your repetitive messages.`, 'error');
     return;
   }
   
   // Check for message spam
-  const spamCheck = checkMessageSpam(currentDiplomacyTarget, type);
+  const spamCheck = checkMessageSpam(replyTarget, type);
   
   // Show spam warning if needed
   const spamWarningDiv = document.getElementById('spamWarning');
@@ -1471,11 +1480,11 @@ function sendQuickMessage(type) {
   const message = messages[Math.floor(Math.random() * messages.length)];
   
   // Add player message to history directly
-  if (!messageHistory[currentDiplomacyTarget]) {
-    messageHistory[currentDiplomacyTarget] = [];
+  if (!messageHistory[replyTarget]) {
+    messageHistory[replyTarget] = [];
   }
   
-  messageHistory[currentDiplomacyTarget].push({
+  messageHistory[replyTarget].push({
     from: 'PLAYER',
     message: message,
     turn: turnNumber,
@@ -1500,7 +1509,7 @@ function sendQuickMessage(type) {
     buttonElement.textContent = 'Sending...';
     
     // Re-enable after AI responds
-    setTimeout(() => {
+    scheduleDiplomacy(() => {
       buttonElement.disabled = false;
       buttonElement.style.opacity = '1';
       buttonElement.textContent = originalText;
@@ -1516,7 +1525,7 @@ function sendQuickMessage(type) {
     const typingIndicator = document.createElement('div');
     typingIndicator.id = 'typingIndicator';
     typingIndicator.style.cssText = 'margin: 8px 0; text-align: left; color: var(--muted); font-style: italic; font-size: 10px;';
-    typingIndicator.innerHTML = `<span style="color: ${getTeamColorHex(currentDiplomacyTarget)};">${currentDiplomacyTarget}</span> is considering...`;
+    typingIndicator.innerHTML = `<span style="color: ${getTeamColorHex(replyTarget)};">${getTeamDisplayName(replyTarget)}</span> is considering...`;
     messageHistoryDiv.appendChild(typingIndicator);
     messageHistoryDiv.scrollTop = messageHistoryDiv.scrollHeight;
   } else {
@@ -1524,14 +1533,14 @@ function sendQuickMessage(type) {
   }
   
   // Generate AI response after delay
-  setTimeout(() => {
+  scheduleDiplomacy(() => {
     // Remove typing indicator
     const indicator = document.getElementById('typingIndicator');
     if (indicator) indicator.remove();
     
-    const aiResponse = generateAIResponse(currentDiplomacyTarget, message, type, spamCheck);
-    messageHistory[currentDiplomacyTarget].push({
-      from: currentDiplomacyTarget,
+    const aiResponse = generateAIResponse(replyTarget, message, type, spamCheck);
+    messageHistory[replyTarget].push({
+      from: replyTarget,
       message: aiResponse.message,
       turn: turnNumber,
       timestamp: nextDiplomacyMessageTimestamp()
@@ -1539,7 +1548,7 @@ function sendQuickMessage(type) {
     
     // Handle lockout if triggered
     if (spamCheck.shouldLockout) {
-      lockoutCommunication(currentDiplomacyTarget, 3);
+      lockoutCommunication(replyTarget, 3);
       // Update UI to show lockout
       updateDiplomacyTarget();
       return; // Exit early, no trust changes
@@ -1561,8 +1570,8 @@ function sendQuickMessage(type) {
       }
       
       if (finalTrustChange !== 0) {
-        modifyTrust('PLAYER', currentDiplomacyTarget, finalTrustChange);
-        modifyTrust(currentDiplomacyTarget, 'PLAYER', finalTrustChange * 0.8);
+        modifyTrust('PLAYER', replyTarget, finalTrustChange);
+        modifyTrust(replyTarget, 'PLAYER', finalTrustChange * 0.8);
       }
       
       // Show appropriate feedback
@@ -1581,13 +1590,14 @@ function sendQuickMessage(type) {
 }
 
 function proposeTreaty() {
+  const replyTarget=currentDiplomacyTarget;
   const treatyTypeSelect = document.getElementById('treatyTypeSelect');
   const treatyType = treatyTypeSelect ? treatyTypeSelect.value : '';
   
-  if (!treatyType || !currentDiplomacyTarget) return;
+  if (!treatyType || !replyTarget) return;
   
   // Check if treaty already exists
-  if (hasTreaty('PLAYER', currentDiplomacyTarget, treatyType)) {
+  if (hasTreaty('PLAYER', replyTarget, treatyType)) {
     showPopup('Treaty Exists', 'You already have this type of treaty with this faction!', 'info');
     return;
   }
@@ -1625,7 +1635,7 @@ function proposeTreaty() {
       break;
   }
   
-  const confirmationMessage = `Propose ${treatyDisplayName} with ${currentDiplomacyTarget}?
+  const confirmationMessage = `Propose ${treatyDisplayName} with ${getTeamDisplayName(replyTarget)}?
   
 📜 TREATY TERMS:
 ${description}
@@ -1654,15 +1664,15 @@ Do you want to proceed with this proposal?`;
   }
   
   // Evaluate AI response to treaty proposal
-  const aiResponse = evaluateTreatyProposal(currentDiplomacyTarget, treatyType);
+  const aiResponse = evaluateTreatyProposal(replyTarget, treatyType);
   
   // Add proposal message to history
-  if (!messageHistory[currentDiplomacyTarget]) {
-    messageHistory[currentDiplomacyTarget] = [];
+  if (!messageHistory[replyTarget]) {
+    messageHistory[replyTarget] = [];
   }
   
   const treatyName = TREATY_TYPES[treatyType].name;
-  messageHistory[currentDiplomacyTarget].push({
+  messageHistory[replyTarget].push({
     from: 'PLAYER',
     message: `I propose we establish a ${treatyName} between our civilizations.`,
     turn: turnNumber,
@@ -1670,36 +1680,36 @@ Do you want to proceed with this proposal?`;
   });
   
   // Generate AI response
-  setTimeout(() => {
+  scheduleDiplomacy(() => {
     if (aiResponse.accepted) {
       // Create the treaty
-      createTreaty('PLAYER', currentDiplomacyTarget, treatyType, 20); // 20 turn duration
+      createTreaty('PLAYER', replyTarget, treatyType, 20); // 20 turn duration
       
-      messageHistory[currentDiplomacyTarget].push({
-        from: currentDiplomacyTarget,
+      messageHistory[replyTarget].push({
+        from: replyTarget,
         message: aiResponse.message,
         turn: turnNumber,
         timestamp: nextDiplomacyMessageTimestamp()
       });
       
       // Positive trust boost for successful treaty
-      modifyTrust('PLAYER', currentDiplomacyTarget, 15);
-      modifyTrust(currentDiplomacyTarget, 'PLAYER', 15);
+      modifyTrust('PLAYER', replyTarget, 15);
+      modifyTrust(replyTarget, 'PLAYER', 15);
       
       // Immediate UI update for successful treaty
       updateDiplomacyTarget(); // Refresh displays immediately
       updateDiplomacyUI(); // Update main diplomacy panel immediately
       
    } else {
-      messageHistory[currentDiplomacyTarget].push({
-        from: currentDiplomacyTarget,
+      messageHistory[replyTarget].push({
+        from: replyTarget,
         message: aiResponse.message,
         turn: turnNumber,
         timestamp: nextDiplomacyMessageTimestamp()
       });
       
       // Small negative trust for rejection
-      modifyTrust(currentDiplomacyTarget, 'PLAYER', -3);
+      modifyTrust(replyTarget, 'PLAYER', -3);
     }
     
     loadMessageHistory();
@@ -1725,7 +1735,7 @@ function breakAllTreaties() {
   );
   
   if (activeTreaties.length === 0) {
-    showPopup('No Treaties', `You have no active treaties with ${currentDiplomacyTarget}.`, 'info');
+    showPopup('No Treaties', `You have no active treaties with ${getTeamDisplayName(currentDiplomacyTarget)}.`, 'info');
     return;
   }
   
@@ -1740,7 +1750,7 @@ function breakAllTreaties() {
     treatyList += `• ${TREATY_TYPES[treaty.type].name}${costText}\n`;
   });
   
-  const confirmation = confirm(`Break all treaties with ${currentDiplomacyTarget}?\n\nTreaties to break:\n${treatyList}\nTotal cost: ${totalGoldCost} gold\n\nThis will:\n- End all diplomatic agreements\n- Damage trust and reputation\n- Pay compensation to ${currentDiplomacyTarget}\n- Allow war declarations if desired`);
+  const confirmation = confirm(`Break all treaties with ${getTeamDisplayName(currentDiplomacyTarget)}?\n\nTreaties to break:\n${treatyList}\nTotal cost: ${totalGoldCost} gold\n\nThis will:\n- End all diplomatic agreements\n- Damage trust and reputation\n- Pay compensation to ${getTeamDisplayName(currentDiplomacyTarget)}\n- Allow war declarations if desired`);
   
   if (confirmation) {
     let brokenCount = 0;
@@ -1755,7 +1765,7 @@ function breakAllTreaties() {
     });
     
     if (brokenCount > 0) {
-      showPopup('Treaties Broken', `Successfully broke ${brokenCount} treaties with ${currentDiplomacyTarget}.${failedCount > 0 ? ` ${failedCount} treaties could not be broken due to insufficient resources.` : ''}`, 'success');
+      showPopup('Treaties Broken', `Successfully broke ${brokenCount} treaties with ${getTeamDisplayName(currentDiplomacyTarget)}.${failedCount > 0 ? ` ${failedCount} treaties could not be broken due to insufficient resources.` : ''}`, 'success');
       updateDiplomacyTarget(); // Refresh displays
       updateDiplomacyUI(); // Update main diplomacy panel
     } else {
@@ -1772,16 +1782,16 @@ function declareWarOnTarget() {
   
   // Check if already at war
   if (isAtWar('PLAYER', currentDiplomacyTarget)) {
-    showPopup('Already At War', `You are already at war with ${currentDiplomacyTarget}!`, 'info');
+    showPopup('Already At War', `You are already at war with ${getTeamDisplayName(currentDiplomacyTarget)}!`, 'info');
     return;
   }
   
-  const confirmation = confirm(`Are you sure you want to declare war on ${currentDiplomacyTarget}?\n\nThis will:\n- Break all existing treaties\n- Allow attacks starting next turn\n- Severely damage diplomatic relations\n- Other factions may respond negatively`);
+  const confirmation = confirm(`Are you sure you want to declare war on ${getTeamDisplayName(currentDiplomacyTarget)}?\n\nThis will:\n- Break all existing treaties\n- Allow attacks starting next turn\n- Severely damage diplomatic relations\n- Other factions may respond negatively`);
   
   if (confirmation) {
     const success = declareWar('PLAYER', currentDiplomacyTarget);
     if (success) {
-      showPopup('War Declared', `War declared on ${currentDiplomacyTarget}! You may attack starting next turn.`, 'success');
+      showPopup('War Declared', `War declared on ${getTeamDisplayName(currentDiplomacyTarget)}! You may attack starting next turn.`, 'success');
       updateDiplomacyTarget(); // Refresh displays
       updateDiplomacyUI(); // Update main diplomacy panel
     }
@@ -1798,7 +1808,7 @@ function markAllMessagesRead() {
     // Refresh the faction buttons to update notification bubbles
     const targetButtons = document.getElementById('diplomacyTargetButtons');
     if (targetButtons) {
-      const activeTeams = getActiveTeams();
+      const activeTeams = typeof getConfiguredTeams==='function'?getConfiguredTeams():getActiveTeams();
       let buttonsHTML = '';
       
       activeTeams.forEach(team => {
@@ -1995,7 +2005,7 @@ function generateAIResponse(aiTeam, playerMessage, messageType = null, spamCheck
   }
   
   return {
-    message: responses[Math.floor(Math.random() * responses.length)],
+    message: varyDiplomacyResponse(responses),
     trustChange: Math.max(-5, Math.min(5, trustChange)) // Cap trust changes
   };
 }
@@ -2071,7 +2081,7 @@ function generateSpamResponse(messageType, personality, trust, recentCount) {
   }
   
   return {
-    message: spamResponses[Math.floor(Math.random() * spamResponses.length)],
+    message: varyDiplomacyResponse(spamResponses),
     trustChange: trustChange
   };
 }
@@ -2224,7 +2234,8 @@ function generateTypedResponse(aiTeam, messageType, personality, trust, reputati
   }
   
   // Select response - handle both strings and functions
-  const selectedResponse = responseSet[Math.floor(Math.random() * responseSet.length)];
+  const varied=responseSet.flatMap(item=>['Our council has considered your words. ','Let me be clear. ','You should understand our position. ','Our answer is this: ','I speak for my kingdom: '].map(intro=>()=>intro+(typeof item==='function'?item():item)));
+  const selectedResponse = varied[Math.floor(Math.random() * varied.length)];
   const message = typeof selectedResponse === 'function' ? selectedResponse() : selectedResponse;
   
   return {
@@ -2234,7 +2245,7 @@ function generateTypedResponse(aiTeam, messageType, personality, trust, reputati
 }
 
 function evaluateTreatyProposal(aiTeam, treatyType) {
-  if(treatyType==='NON_AGGRESSION'&&diplomacy.peaceBeggingFlags?.[aiTeam]>=turnNumber)return {accepted:true,message:'I accept. Let us honor the peace I proposed.'};
+  if(treatyType==='NON_AGGRESSION'&&diplomacy.peaceBeggingFlags?.[aiTeam]>=turnNumber)return {accepted:true,message:diplomaticPhrase('ACCEPT',aiTeam)};
   const personality = diplomacy.personalities[aiTeam] ? AI_PERSONALITIES[diplomacy.personalities[aiTeam]] : AI_PERSONALITIES.BALANCED;
   const trust = getTrust(aiTeam, 'PLAYER');
   const reputation = getReputation('PLAYER', aiTeam);
@@ -2338,5 +2349,105 @@ function evaluateTreatyProposal(aiTeam, treatyType) {
     }
   }
   
-  return { accepted, message };
+  return { accepted, message:diplomaticPhrase(accepted?'ACCEPT':'REJECT',aiTeam,message) };
+}
+
+// Session-local callbacks cannot deliver messages into a later game.
+let diplomacyEpoch=0;
+function scheduleDiplomacy(fn,delay){const epoch=diplomacyEpoch;return setTimeout(()=>{if(epoch===diplomacyEpoch)fn();},delay);}
+function restoreDiplomacyConversations(preserveTarget=false){
+ messageHistory=diplomacy.conversations||{};diplomacy.conversations=messageHistory;
+ recentMessageTypes=diplomacy.recentMessageTypes||{};diplomacy.recentMessageTypes=recentMessageTypes;
+ communicationLockouts=diplomacy.communicationLockouts||{};diplomacy.communicationLockouts=communicationLockouts;
+ if(!preserveTarget)currentDiplomacyTarget=null;
+}
+function resetDiplomacySession(){
+ diplomacyEpoch++;diplomacy={trust:{},reputation:{},personalities:{},treaties:[],warDeclarations:[],aiMessages:[],unreadMessages:0,espionage:{},diplomaticHistory:[]};
+ restoreDiplomacyConversations();
+ if(typeof document!=='undefined'){document.getElementById('diplomacyModal')?.remove();document.getElementById('battleAlerts')?.remove();}
+}
+function diplomacyDisplayText(text){return String(text||'').replace(/\bAI(?:\s*#?\s*(\d+))?\b/g,(full,n)=>getTeamDisplayName(!n||n==='1'?'AI':'AI'+n));}
+function isNationEliminated(team){return !!diplomacy?.eliminatedNations?.[team];}
+function refreshEliminatedNations(){
+ if((typeof isEditorMode!=='undefined'&&isEditorMode)||(typeof Endless!=='undefined'&&Endless.active))return;
+ const roster=typeof getConfiguredTeams==='function'?getConfiguredTeams():getActiveTeams();
+ for(const team of roster){
+  if(isNationEliminated(team)||units.some(u=>u.team===team&&u.hp>0&&!u.rogue&&!u.ruins)||settlements.some(s=>s?.owner===team))continue;
+  (diplomacy.eliminatedNations??={})[team]={turn:turnNumber};
+  if(typeof Territory!=='undefined')Territory.neutralize(team);
+  for(const pact of diplomacy.treaties||[])if(pact.participants.includes(team))pact.active=false;
+  for(const war of diplomacy.warDeclarations||[])if(war.attacker===team||war.target===team)war.active=false;
+  delete diplomacy.peaceBeggingFlags?.[team];delete diplomacy.crusades?.[team];delete activeResearch[team];
+  if(currentDiplomacyTarget===team)currentDiplomacyTarget=null;
+ }
+}
+
+// Five-turn military grievance window, serialized with diplomacy for host migration.
+function recordCrusadeCombat(attacker,defender,killed){
+ if(!isAITeam(defender.team)||isAITeam(attacker.team)||attacker.rogue||defender.rogue)return;
+ const log=(diplomacy.militaryGrievances??={}),events=(log[defender.team]??=[]);
+ events.push({turn:turnNumber,attacker:attacker.team,kills:killed?1:0});
+ log[defender.team]=events.filter(e=>e.turn>=turnNumber-4);
+}
+function militaryPower(team){return units.filter(u=>u.team===team&&u.hp>0&&!u.ruins&&!u.rogue&&u.dmg>0).reduce((n,u)=>n+u.dmg*Math.max(.4,u.hp/u.maxHp)+u.hp*.2,0);}
+function isCrusading(team){const c=diplomacy.crusades?.[team];return !!c&&turnNumber>=c.start&&turnNumber<c.until&&!isNationEliminated(c.target)&&canAttack(team,c.target);}
+function updateCrusade(team){
+ const records=(diplomacy.militaryObservations??={}),previous=records[team]||{},now={turn:turnNumber};
+ const humans=(typeof getActiveTeams==='function'?getActiveTeams():[...new Set(units.map(u=>u.team))]).filter(t=>!isAITeam(t)&&!areFriendlyTeams(team,t));
+ for(const human of humans)now[human]=militaryPower(human);
+ if(previous.turn===turnNumber)return;
+ records[team]=now;
+ if(isCrusading(team))return;
+ for(const human of humans){
+  const events=(diplomacy.militaryGrievances?.[team]||[]).filter(e=>e.attacker===human&&e.turn>=turnNumber-4&&e.turn>(diplomacy.crusades?.[team]?.lastEvidenceTurn??-1));
+  const attacked=new Set(events.map(e=>e.turn)),fiveTurns=Array.from({length:5},(_,i)=>turnNumber-i).every(t=>attacked.has(t));
+  if(!(now[human]>(previous[human]??Infinity))||now[human]>militaryPower(team)*1.25||(!fiveTurns&&events.reduce((n,e)=>n+e.kills,0)<5)||!canAttack(team,human))continue;
+  (diplomacy.crusades??={})[team]={target:human,start:turnNumber,until:turnNumber+5,lastEvidenceTurn:turnNumber};
+  addAIMessage(team,diplomaticPhrase('CRUSADE',team),'CRUSADE');break;
+ }
+}
+
+// Twenty semantic variants per category (five statements × four conclusions).
+// Acceptance/rejection and offers remain separate: wording never changes rules.
+const DIPLOMACY_PHRASES=(()=>{
+ const rows={
+  ACCEPT:[['We accept your terms.','Your proposal has our approval.','Our council agrees to this pact.','The agreement is acceptable to us.','We shall honor this treaty.'],['Let both kingdoms keep their word.','Our envoys will record the agreement.','May this serve our people well.','We expect the same commitment from you.']],
+  REJECT:[['We must decline these terms.','Our council cannot approve this proposal.','This agreement is not acceptable to us.','We are unwilling to enter this pact.','Your offer does not meet our needs.'],['Our position remains unchanged.','Perhaps different terms will fare better.','Do not mistake discussion for consent.','Our envoys will remain available for future talks.']],
+  WAR_DECLARATION:[['We declare war on your kingdom.','Our council has ordered war against you.','Diplomacy has failed; we now march against you.','We have raised our banners for war with you.','We formally declare hostilities against your realm.'],['Prepare your defenses.','Our armies will settle this dispute.','You will answer on the battlefield.','Steel will decide what words could not.']],
+  WAR_RESPONSE:[['Your declaration will be met with force.','We accept the war you have chosen.','Your invasion will not go unanswered.','You have brought war to our gates.','Our army stands ready to resist you.'],['We will defend every holding.','Our banners will not fall easily.','You will find no easy victory here.','Let the coming battles judge us.']],
+  THREAT_RESPONSE:[['Your threats do not frighten us.','We will not bow to intimidation.','Our council rejects your attempt to cow us.','A threat is no substitute for diplomacy.','You will not dictate our policy with insults.'],['Choose your next words carefully.','Our soldiers remain vigilant.','We are prepared to defend ourselves.','Restraint should not be mistaken for weakness.']],
+  PEACE_REQUEST:[['We propose a peace treaty.','Let us end this fighting with a pact.','Our kingdom offers an end to hostilities.','We ask you to agree to peace.','Our council seeks a non-aggression agreement.'],['Our people have suffered enough.','Send your assent through the treaty negotiations.','Both armies could use an end to bloodshed.','We will accept the peace we have offered.']],
+  PEACE_RESPONSE:[['An end to this bloodshed deserves discussion.','We are willing to discuss peace.','Your wish for peace has been heard.','Our council will consider a peaceful settlement.','Peace may yet be possible between us.'],['Present a formal treaty for consideration.','Let our envoys examine the terms.','Words alone do not settle an agreement.','We must find terms both nations can honor.']],
+  COMPLIMENT:[['Your kingdom has shown commendable resolve.','We respect the discipline of your people.','Your conduct has earned our notice.','Your efforts deserve recognition.','There is much to admire in your leadership.'],['May our dealings reflect that respect.','We welcome further conversation.','Such acts help build understanding.','We hope this goodwill continues.']],
+  WARNING:[['Your movements trouble our council.','Our border guards have reported cause for concern.','You are testing the patience of our kingdom.','Your recent actions have alarmed our people.','We must warn you against further provocation.'],['Show restraint near our holdings.','Do not force a confrontation.','We expect your conduct to improve.','Our defenses remain ready.']],
+  THREAT:[['Continue this course and you will face our armies.','We are prepared to answer your aggression with steel.','Our soldiers will make you regret further provocation.','You risk a costly reckoning with our kingdom.','We will bring force against you if this continues.'],['Take this warning seriously.','Our resolve is not in doubt.','Your next move will matter.','We have said all that needs saying.']],
+  GREETING:[['Your envoy is welcome at our court.','We acknowledge your greeting.','Our council is ready to hear you.','Greetings from our kingdom.','We have received your messenger.'],['What business brings you here?','Speak plainly of your intentions.','Let us hear your proposal.','May this conversation prove worthwhile.']],
+  ALLIANCE_OFFER:[['We would discuss a pact between our nations.','Our kingdoms may benefit from closer ties.','We invite you to consider an alliance.','A common defense may serve us both.','Our council sees value in mutual cooperation.'],['Send a formal proposal if you agree.','Let our envoys examine the possibilities.','A treaty would require both nations to consent.','Our shared interests deserve a hearing.']],
+  TRADE_OFFER:[['There may be useful trade between our kingdoms.','Our merchants would welcome an exchange.','We are interested in discussing commerce.','Your goods may answer needs in our realm.','Our council invites a trade proposal.'],['Present the exact goods in the trade menu.','Fair terms will receive consideration.','An exchange must benefit both sides.','Let our representatives discuss the price.']],
+  COALITION_WARNING:[['Your growing power concerns several nations.','Your expansion has drawn the attention of your neighbors.','Other courts are watching your strength with unease.','You risk uniting your neighbors against you.','Your ambitions threaten the balance among kingdoms.'],['Consider the consequences of further aggression.','No realm stands entirely alone.','Your neighbors may find common cause.','Restraint could prevent a wider conflict.']],
+  POWER_WARNING:[['Your army has become a matter of concern.','We have noticed your growing military strength.','Your buildup has not escaped our scouts.','Your forces are disturbing the balance of this war.','Our council is watching your military ambitions.'],['We will take measures to protect our people.','Our own preparations will continue.','We will not be caught unprepared.','Your intentions will be judged by your actions.']],
+  DOMINANCE_DISPLAY:[['Our armies hold the advantage.','Our strength should be clear to you now.','The balance of force favors our kingdom.','Our banners command respect on this battlefield.','We have the means to defend our interests.'],['Remember that in your dealings with us.','Do not underestimate our resolve.','Our soldiers stand ready.','We intend to preserve this advantage.']],
+  SETTLEMENT_LOST:[['You have taken one of our settlements.','Our people have been driven from their rightful holding.','The loss of our settlement will not be forgotten.','You have seized land our kingdom held.','Your conquest has wounded our realm.'],['We will seek its return.','Our council demands an answer.','Do not expect us to accept this quietly.','This will weigh heavily in our relations.']],
+  SETTLEMENT_CAPTURED:[['Our banners now fly over another settlement.','Our kingdom has secured a new holding.','Our forces have claimed the settlement.','Another settlement has come under our protection.','We have extended our rule to this holding.'],['Our soldiers will defend it.','Its future is now our concern.','Our position grows stronger.','We intend to keep what we have won.']],
+  UNIT_KILLED:[['You have killed one of our warriors.','Our fallen soldier will be remembered.','Your forces have spilled our soldiers’ blood.','Another of our fighters has fallen to you.','Our kingdom mourns a warrior you struck down.'],['There will be a reckoning.','We will not forget this loss.','Our resolve has only hardened.','Your victory has a cost you have yet to pay.']],
+  UNIT_VICTORY:[['One of your warriors has fallen before us.','Our soldiers have defeated another of yours.','Your army has suffered another loss.','Our forces have won this encounter.','Another enemy has fallen beneath our banners.'],['Consider what further fighting will cost.','Our advance continues.','Our soldiers remain determined.','Your commanders should take heed.']],
+  CRUSADE:[['You have attacked our people and encroached on our rightful lands.','Your repeated assaults have brought suffering to our kingdom.','Our citizens will no longer endure your relentless aggression.','The blood of our warriors and the loss of our lands demand an answer.','Your growing armies threaten our homes after all the harm you have done.'],['For the next five turns, our armies will hunt your forces.','We begin a five-turn crusade to break your attacking armies.','Our banners now march in a five-turn crusade against you.','You will face five turns of relentless retaliation from our armies.']],
+  POSITIVE:[['Your words are received in good faith.','We welcome your respectful approach.','Our council appreciates this gesture.','This is a promising conversation.','Your goodwill has been noticed.'],['Let our actions support our words.','We hope to build on this understanding.','Our envoys will remain in contact.','Mutual respect serves both kingdoms.']],
+  NEGATIVE:[['Your words do little to reassure us.','Our council remains deeply distrustful.','We have reason to doubt your intentions.','Your conduct has left little room for goodwill.','We remain unconvinced by your approach.'],['Trust must be earned through actions.','Do not expect easy concessions.','Our guards will remain alert.','You will need to demonstrate restraint.']],
+  NEUTRAL:[['Your message has been heard.','Our council has noted your position.','We acknowledge your envoy’s words.','Your intentions remain under consideration.','We shall weigh what you have said.'],['Deeds will tell us more than promises.','We make no commitment at this time.','Our next steps depend on your actions.','Further discussion may clarify matters.']]
+ };
+ const pools=Object.fromEntries(Object.entries(rows).map(([k,[a,b]])=>[k,a.flatMap(x=>b.map(y=>x+' '+y))]));
+ pools.DOMINANCE_FLEX=pools.DOMINANCE_DISPLAY;pools.TREATY_OFFER=pools.ALLIANCE_OFFER;
+ return pools;
+})();
+function diplomaticPhrase(category,team='',fallback=''){
+ const pool=DIPLOMACY_PHRASES[category];if(!pool)return fallback;
+ const ledger=(diplomacy.phraseChoices??={}),key=team+':'+category,last=ledger[key];
+ let i=Math.floor(Math.random()*pool.length);if(i===last)i=(i+1)%pool.length;ledger[key]=i;return pool[i];
+}
+
+// Vary phrasing without changing the acceptance, refusal or penalty meaning.
+function varyDiplomacyResponse(responses){
+ const openings=['Our answer is plain. ','Hear our position. ','Our council is agreed. ','On behalf of our people: ','We will speak frankly. ','There should be no doubt: ','Let our intentions be clear. '];
+ return openings[Math.floor(Math.random()*openings.length)]+responses[Math.floor(Math.random()*responses.length)];
 }

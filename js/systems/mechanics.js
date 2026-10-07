@@ -45,7 +45,7 @@ function canMoveTo(unit, targetCol, targetRow) {
 }
 
 function findMovementPath(unit, targetCol, targetRow) {
-  if(unit?.rogue||unit?.ruins)return false;
+  if(unit?.rogue||unit?.ruins||(unit?.name==='Catapult'&&unit.hasActed&&!Number.isFinite(unit.spawnMoveLimit)))return false;
   if(unit && (unit.fortress || ['Stockade','Castle','Heavy Fortress','Fortress'].includes(unit.name)))return false;
   const flying=unit?.name==='Dragon';
   if (!unit || !Number.isInteger(targetCol) || !Number.isInteger(targetRow) ||
@@ -93,6 +93,7 @@ function findMovementPath(unit, targetCol, targetRow) {
   const naval=['Sloop','Man-of-War','Battleship'].includes(unit.name);
   if (!flying && naval && targetTerrain !== 'WATER') return false;
   
+  if(Number.isFinite(unit.spawnMoveLimit))maxMove=Math.min(maxMove,unit.spawnMoveLimit);
   // Check if destination is within movement range
   const directDist = manhattan(startCol, startRow, targetCol, targetRow);
   //console.log('DEBUG: canMoveTo - Direct distance:', directDist, 'Max move:', maxMove, 'Use hex:', useHexGrid);

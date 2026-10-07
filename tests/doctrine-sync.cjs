@@ -23,4 +23,6 @@ for(let i=0;i<3;i++){
 actor.run(`startDoctrineResearch('${team}','spear_doctrine');advanceDoctrineResearch('${team}');OnlineMatch.publish()`);tick();
 for(const p of [host,guest]){assert.equal(p.run(`activeResearch['${team}'].id`),'spear_doctrine');assert.equal(p.run(`activeResearch['${team}'].progress`),1);}
 actor.run('OnlineMatch.publish()');tick();assert.equal(observer.run(`activeResearch['${team}'].progress`),1);
+actor.run(`const fighter=units.find(u=>u.team==='${team}');Object.assign(fighter,{streakBonus:.7,streakMisses:1,streakKilled:true,streakProcessedTurn:4,spawnMoveLimit:2,usedBonusAttack:true,hasMoved:false,hasActed:true});OnlineMatch.publish()`);tick();
+for(const p of [host,guest])for(const [field,value]of Object.entries({streakBonus:.7,streakMisses:1,streakKilled:true,streakProcessedTurn:4,spawnMoveLimit:2,usedBonusAttack:true,hasMoved:false,hasActed:true}))assert.equal(p.run(`units.find(u=>u.team==='${team}')['${field}']`),value,field+' sync');
 host.el('lobbyLeave').onclick();tick();console.log('Doctrines, upgraded unit stats and discounted future spawns survive repeated multiplayer synchronization.');

@@ -45,7 +45,7 @@ function aiMayLeave(u,tile) {
 }
 function aiTargets(u) {
   return units.filter(e=>e.hp>0&&aiEnemyUnit(u.team,e)&&aiDistance(u,e)<=u.atkRange)
-    .sort((a,b)=>aiAttackValue(u,b)-aiAttackValue(u,a));
+    .sort((a,b)=>aiAttackValue(u,b)-aiAttackValue(u,a)+(isCrusading(u.team)?(b.team===diplomacy.crusades[u.team].target?150:0)-(a.team===diplomacy.crusades[u.team].target?150:0):0));
 }
 function aiAttackValue(u,e) {
   if(typeof AICommander!=='undefined'&&AICommander.get(u.team)){
@@ -128,7 +128,7 @@ function aiChoosePosition(u) {
   const escort=units.filter(a=>a!==u&&a.hp>0&&a.team===u.team&&a.name!=='Cleric'&&!isFortressUnit(a));
   // Combat units press every hostile faction, even while ahead economically.
   // Clerics and mission targets retain their protective positioning.
-  const aggressive=(typeof hyperAggressiveMode!=='undefined'&&hyperAggressiveMode)||(!vip&&u.name!=='Cleric'),brave=group?.type==='VANGUARD'||hyperAggressiveMode;
+  const aggressive=(typeof hyperAggressiveMode!=='undefined'&&hyperAggressiveMode)||(!vip&&u.name!=='Cleric'),brave=group?.type==='VANGUARD'||(typeof hyperAggressiveMode!=='undefined'&&hyperAggressiveMode);
   const captures=objectives.filter(o=>o.capture);
   let best={col:u.col,row:u.row},bestScore=-Infinity;
   for(const tile of aiMoveOptions(u)){
@@ -177,7 +177,7 @@ function aiMoveWithGarrison(u,tile) {
   const col=u.col,row=u.row,home=settlements[row*COLS+col];
   const replacement=home?.owner===u.team?aiGarrisonReplacement(u):null;
   if(home?.owner===u.team&&!replacement&&!aiMayLeave(u,tile))return false;
-  ActionEffects.move(u,tile.col,tile.row);u.col=tile.col;u.row=tile.row;u.hasMoved=true;
+  ActionEffects.move(u,tile.col,tile.row);u.col=tile.col;u.row=tile.row;u.hasMoved=true;if(u.name==='Catapult')u.hasActed=true;
   // No await between departure and replacement: the town is never left open for a turn.
   if(replacement){
     deductResources(u.team,getEffectiveUnitCostForTeam(u.team,replacement));
@@ -230,6 +230,8 @@ function aiRecruitNaval(team,homes) {
 async function aiTakeTurn(team='AI') {
   if(gameOver||currentTeam!==team||!isAITeam(team)||(typeof OnlineMatch!=='undefined'&&OnlineMatch.active&&!OnlineMatch.canRunAI()))return;
   if(activeAITurn&&activeAITurn.team===team&&activeAITurn.turn===turnNumber)return;
+  if(typeof isNationEliminated==='function'&&isNationEliminated(team))return;
+  if(typeof updateCrusade==='function')updateCrusade(team);
   const token={team,turn:turnNumber};activeAITurn=token;
   const valid=()=>activeAITurn===token&&currentTeam===team&&turnNumber===token.turn&&!gameOver&&!(typeof watchGameMode!=='undefined'&&watchGameMode&&watchGamePaused)&&(typeof OnlineMatch==='undefined'||!OnlineMatch.active||OnlineMatch.canRunAI());
   clearTimeout(aiTurnTimeoutId);
@@ -254,6 +256,7 @@ async function aiTakeTurn(team='AI') {
       if(typeof Endless!=='undefined'&&Endless.active){Endless.check();if(gameOver)return;}
       aiHeal(u);
       if(u.name!=='Cleric'&&!aiRecoveryClerics(u).length&&!u.hasActed&&aiCanFire(u,u)){const target=aiTargets(u)[0];if(target){attackUnit(u,target);if(target.hp<=0&&plan)AICommander.invalidateRoutes();}}
+      if(u.name==='Knight'&&u.hp>0&&!u.hasActed&&u.usedBonusAttack){const extra=aiTargets(u)[0];if(extra)attackUnit(u,extra);}
       updateUI();checkEndGame();
       await new Promise(resolve=>setTimeout(resolve,typeof watchGameMode!=='undefined'&&watchGameMode?Math.max(0,watchGameDelay):180));
     }

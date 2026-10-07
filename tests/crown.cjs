@@ -67,7 +67,7 @@ console.log('Marsh allows attacks and halves damage for ordinary, specialist, fl
 // the ordinary combat loss instead of the Assassin's instant morale shatter.
 ctx.TERRAIN.SWAMP={getDefense:()=>.1,assassinBonus:true,noAttack:false};
 for(const [target,expectedDamage] of [['Stockade',4],['Castle',3],['Heavy Fortress',2]]){
- const assassin=unit('Assassin','PLAYER',1),fortress=unit(target,'AI',3);
+ const assassin=unit('Assassin','PLAYER',1),fortress=unit(target,'AI',2);
  fortress.hp=fortress.maxHp=1000;fortress.morale=100;
  ctx.terrain.fill(null);ctx.units=[assassin,fortress];ctx.attackUnit(assassin,fortress);
  assert.equal(1000-fortress.hp,expectedDamage,target+' takes only 10% of a normal Assassin hit');

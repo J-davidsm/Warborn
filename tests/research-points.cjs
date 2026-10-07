@@ -53,7 +53,7 @@ assert(c.startDoctrineResearch('PLAYER','forced_march'));c.awardResearchPoints('
 // Fortress response is opt-in, within actual range, and emits damage at both tiles.
 for(const [doctrine,range,name] of [[false,1,'Castle'],[true,1,'Castle'],[true,5,'Castle'],[true,1,'Soldier']]){
  reset();if(doctrine)c.restoreResearch({AI:['fieldworks','garrison_training']});const hits=[];c.ActionEffects.damage=(col,row,n)=>hits.push({col,n});
- const a=make('Soldier','PLAYER'),d=make(name,'AI',range);c.attackUnit(a,d);
+ const a=make('Soldier','PLAYER'),d=make(name,'AI',range);a.atkRange=range;c.attackUnit(a,d);
  const retaliates=doctrine&&name==='Castle'&&range<=d.atkRange;
  assert.equal(hits.some(h=>h.col===a.col&&h.n>0),retaliates);assert(hits.some(h=>h.col===d.col));assert.equal(a.hp<a.maxHp,retaliates);
 }

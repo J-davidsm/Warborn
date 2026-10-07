@@ -56,7 +56,7 @@ function aiFortressSite(team,p) {
   const dirs=q=>(useHexGrid?getHexNeighbors(q.col,q.row):[[1,0],[-1,0],[0,1],[0,-1]])
     .map(([dc,dr])=>({col:q.col+dc,row:q.row+dr})).filter(q=>q.col>=0&&q.row>=0&&q.col<COLS&&q.row<ROWS);
   const key=q=>q.row*COLS+q.col;
-  if(terrain[key(p)]||settlements[key(p)]||getUnitAt(p.col,p.row))return false;
+  if(['WATER','SWAMP','MARSH','VOID'].includes(terrain[key(p)])||settlements[key(p)]||getUnitAt(p.col,p.row))return false;
   if(dirs(p).some(q=>terrain[key(q)]==='BRIDGE'))return false;
   if(units.some(u=>u.hp>0&&isFortressUnit(u)&&aiDistance(u,p)<=2))return false;
   const blocked=new Set(units.filter(u=>u.hp>0&&isFortressUnit(u)).map(key));blocked.add(key(p));
