@@ -10,7 +10,7 @@ window.addEventListener('load',()=>{
   for(const name of Object.keys(UNIT_TEMPLATES))for(const [i,team]of getConfiguredTeams().entries()){const u=makeUnit(name,team,i,1,{id:name.replace(/\W/g,'')+team});units.push(u);const cell=document.createElement('article');cell.dataset.unit=name;cell.style.cssText='text-align:center;border:1px solid #45515e;border-radius:8px;padding:8px';cell.innerHTML=UnitPresentation.preview(u)+`<strong>${name} · ${getTeamDisplayName(team)}</strong>`;grid.appendChild(cell);}
   pane.querySelector('select').onchange=e=>{for(const cell of grid.children)cell.hidden=!!e.target.value&&cell.dataset.unit!==e.target.value;pane.scrollTop=0;};
   const neutralArt=new Set(['Swordsman','Assassin','Dragon']);
-  const results=[];for(const name of Object.keys(UNIT_TEMPLATES)){const fingerprints=new Set();for(const u of units.filter(u=>u.name===name)){const sprite=UnitPresentation.sprite(u);if(sprite?.getContext)fingerprints.add(sprite.toDataURL());}results.push({name,variants:fingerprints.size,expected:neutralArt.has(name)?1:5});}
+  const results=[];for(const name of Object.keys(UNIT_TEMPLATES)){const fingerprints=new Set();for(const u of units.filter(u=>u.name===name)){const sprite=UnitPresentation.sprite(u);if(sprite?.getContext)fingerprints.add(sprite.toDataURL());else if(sprite?.src)fingerprints.add(sprite.src);}results.push({name,variants:fingerprints.size,expected:neutralArt.has(name)?1:5});}
   const result=document.createElement('p');result.textContent=results.every(r=>r.variants===r.expected)?`PASS: ${results.length-neutralArt.size} unit types × 5 nation sprites plus ${neutralArt.size} neutral elite silhouettes.`:'FAIL: '+JSON.stringify(results.filter(r=>r.variants!==r.expected));pane.prepend(result);
   updateUI();
  });
