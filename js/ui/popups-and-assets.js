@@ -176,9 +176,9 @@ const DEFAULT_IMAGE_MAP = {
   'Sloop': 'assets/sloop.png',
   'Man-of-War': 'assets/man_of_war.png',
   'Battleship': 'assets/battleship.png',
-  'Fortress': 'assets/castle.png',
-  'Castle': 'assets/castle.png',
-  'Heavy Fortress': 'assets/heavy_fortress.png'
+  'Fortress': 'assets/castle.png?v=20261007-banners2',
+  'Castle': 'assets/castle.png?v=20261007-banners2',
+  'Heavy Fortress': 'assets/heavy_fortress.png?v=20261007-banners2'
   ,'Ruins': 'assets/ruins.png'
 };
 

@@ -2,13 +2,15 @@
 const BattleAlerts=(()=>{
  function refresh(){
   let box=document.getElementById('battleAlerts');if(!box){box=document.createElement('aside');box.id='battleAlerts';document.body.appendChild(box);}
+  let research=document.getElementById('researchAvailable');const dock=document.getElementById('turnActions'),undo=document.getElementById('undoMoveBtn');
+  if(!research&&dock&&undo){research=document.createElement('button');research.id='researchAvailable';research.textContent='Research Available';dock.insertBefore(research,undo);}if(research)research.hidden=true;
   const mine=getLocalPlayableTeam(),menu=document.getElementById('mainMenu');
   if(gameOver||isEditorMode||(typeof watchGameMode!=='undefined'&&watchGameMode)||(menu&&!menu.classList.contains('hidden'))){box.replaceChildren();delete box.dataset.signature;return;}
   const home=settlements.findIndex(s=>s?.owner===mine),available=home>=0&&!activeResearch[mine]&&getAvailableResearch(mine).length>0;
+  if(research){research.hidden=!available;research.onclick=()=>openSpawnMenu(home%COLS,Math.floor(home/COLS),settlements[home],'research');}
   const offers=Object.entries(diplomacy.peaceBeggingFlags||{}).filter(([t,expiry])=>expiry>=turnNumber&&!isNationEliminated(t)&&!hasTreaty(mine,t,'NON_AGGRESSION'));
   const signature=JSON.stringify([available,home,offers]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();
   const add=(label,action)=>{const b=document.createElement('button');b.textContent=label;b.onclick=action;box.appendChild(b);};
-  if(available)add('Research Available',()=>openSpawnMenu(home%COLS,Math.floor(home/COLS),settlements[home],'research'));
   for(const [team]of offers)add(getTeamDisplayName(team)+' offers treaty',()=>{openDiplomacyNegotiation();selectDiplomacyTarget(team);});
  }
  function preview(){

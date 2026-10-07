@@ -1059,3 +1059,18 @@ body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/do
 .doctrine-node .doctrine-study {bottom:6px;}
 
 .compact-hud #battleNotice {z-index:30010;}
+
+/* Flow the left HUD as a single stack, clear of the bottom action dock. */
+#battleStatusStack {position:fixed;left:12px;top:12px;width:226px;display:flex;flex-direction:column;gap:10px;overflow:auto;z-index:2210;pointer-events:none;scrollbar-width:thin;}
+.compact-hud #battleStatusStack > :is(#resourceBanner,#editorModeStatus,#endlessBar,#battleNotice,#armyUpkeep) {position:relative!important;inset:auto!important;width:100%;max-width:100%!important;flex-shrink:0;box-sizing:border-box;margin:0;}
+#researchAvailable {background:#252d36ed;color:#ffe6a1;border:1px solid #baa16e;animation:battle-alert-pulse 1.4s ease-in-out infinite;}
+#researchAvailable[hidden] {display:none!important;}
+#diplomacyModal {background:rgba(0,0,0,.48)!important;}
+#diplomacyModal > div {background:linear-gradient(#101a2b66,#101a2b88),url('assets/ui/menu-painted.png') center/cover!important;}
+@media(max-width:700px){#battleStatusStack{left:6px;width:138px;gap:6px;}}
+@media(prefers-reduced-motion:reduce){#researchAvailable{animation:none;}}
+/* Keep text legible on the brighter scene; modal controls sit above battle HUD. */
+#diplomacyModal {z-index:31000!important;}
+#messageHistory > div > div {background:rgba(13,20,31,.82)!important;}
+#messageHistory > div > div > div:nth-last-child(2) {color:#f2eadb;}
+#battleStatusStack {pointer-events:auto;}

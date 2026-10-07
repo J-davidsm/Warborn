@@ -20,6 +20,14 @@ const UnitPresentation=(()=>{
    for(let i=0;i<p.length;i+=4){
     const [r,g,b]=[p[i],p[i+1],p[i+2]],hi=Math.max(r,g,b),lo=Math.min(r,g,b);
     if(!p[i+3])continue;
+    // Fortress art reserves emerald hues for fabric: never tint masonry or wood.
+    if(isFortressUnit(u)){
+     if(g>r*1.2&&g>b*1.15&&g-Math.min(r,b)>18){
+      const light=Math.min(1.35,.35+g/190);
+      for(let n=0;n<3;n++)p[i+n]=Math.round(Math.min(255,rgb[n]*light));
+     }
+     continue;
+    }
     const px=(i/4%c.width)/c.width,py=Math.floor(i/4/c.width)/c.height;
     const warm=r>g*1.12&&g>b*1.15;
     const robe=['Cleric','Crown'].includes(u.name)&&py>.3&&hi>65&&hi-lo<40;
@@ -29,7 +37,7 @@ const UnitPresentation=(()=>{
     for(let n=0;n<3;n++)p[i+n]=Math.round(p[i+n]*(1-amount)+Math.min(255,rgb[n]*(.5+shade*1.25))*amount);
    }ctx.putImageData(data,0,0);
   }catch(e){/* Custom cross-origin art still renders with a nation pennant. */}
-  if(isFortressUnit(u)||u.isWaterUnit||u.name==='Catapult'){
+  if(u.name==='Stockade'||u.isWaterUnit||u.name==='Catapult'){
    const x=c.width*.66,y=c.height*.15,w=c.width*.23,h=c.height*.13;
    ctx.strokeStyle='#c6b691';ctx.lineWidth=Math.max(2,c.width*.012);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+h*2);ctx.stroke();
    ctx.fillStyle=rgba(rgb);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y+h*.15);ctx.lineTo(x+w*.78,y+h);ctx.lineTo(x,y+h*.8);ctx.fill();
