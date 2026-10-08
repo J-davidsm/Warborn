@@ -11,7 +11,9 @@ const OnlineMatch = (() => {
   try{sessionStorage.setItem(sessionKey,JSON.stringify({code,host,localName,sessionToken,localTeam,capacity,mode,difficulty,members,revision,state:accepted,credentials:host?[...credentials]:[]}));}catch{}
  }
  const visible=()=>!$('onlineLobby').hidden,status=text=>{$('lobbyStatus').textContent=text;};
- const tx=(c,d)=>{if(c?.open){try{c.send({...d,protocol:2});}catch{c.close();}}},send=d=>host?links.forEach(c=>tx(c,d)):tx(hostLink,d);
+ // A serialization/send error is not evidence that the peer disconnected.
+ // PeerJS binary mode chunks large snapshots; JSON mode rejects them at 16 KB.
+ const tx=(c,d)=>{if(c?.open){try{c.send({...d,protocol:2});}catch(error){console.warn('Online message could not be sent',error);}}},send=d=>host?links.forEach(c=>tx(c,d)):tx(hostLink,d);
  const connected=()=>host?members.length>=2&&members.slice(1).every(m=>m.connected&&links.get(m.team)?.open):!!hostLink?.open;
  const allReady=()=>members.length===capacity&&members.every(m=>m.ready&&m.connected);
  const presence=()=>{if(typeof PublicLobby!=='undefined')PublicLobby.update();};
@@ -46,7 +48,7 @@ const OnlineMatch = (() => {
  }
  function connectHost(){
   if(!active||host||!peer||peer.destroyed||peer.disconnected||hostLink)return;
-  const p=peer,c=p.connect('warborn-v2-'+code,{reliable:true,serialization:'json',metadata:{sessionToken}});
+  const p=peer,c=p.connect('warborn-v2-'+code,{reliable:true,serialization:'binary',metadata:{sessionToken}});
   if(!c)return;
   attach(c,p);
   setTimeout(()=>{if(peer===p&&hostLink===c&&!c.open){hostLink=null;c.close();retryHost();}},15000);
@@ -121,6 +123,7 @@ const OnlineMatch = (() => {
     else status('Signaling interrupted; the existing game connection is still active.');
     return;
    }
+   if(playing&&connected()){console.warn('Online signaling error; battle connection remains open',e);return;}
    failure(e.type==='peer-unavailable'?'Room not found or the host is offline.':e.type==='unavailable-id'?'Room code already in use. Leave and retry.':'Connection failed. Leave and retry; some networks block peer connections.');
   });
   p.on('disconnected',()=>{if(peer===p&&!p.destroyed){try{p.reconnect();}catch{}if(!host)retryHost();}});
@@ -137,7 +140,7 @@ const OnlineMatch = (() => {
     else{credentials.delete(slot);members=members.filter(m=>m.team!==slot);members.forEach(m=>m.ready=false);status('Player left. Everyone must ready up again.');}roster();}
    else{hostLink=null;if(playing){pauseForReconnect();retryHost();}else failure('The host disconnected. Leave and join or create another room.');}
   });
-  c.on('error',()=>{if(live())c.close();});
+  c.on('error',error=>{if(live())console.warn('Online data channel error',error);});
   if(host)setTimeout(()=>{if(live()&&!members.some(m=>m.team===slot&&m.connected))c.close();},15000);
  }
  function snapshot(){
@@ -160,7 +163,9 @@ const OnlineMatch = (() => {
    s.diplomacy&&s.victoryCondition&&typeof s.gameOver==='boolean'&&Array.isArray(s.turnOrder)&&s.turnOrder.length===teams.length&&new Set(s.turnOrder).size===teams.length&&s.turnOrder.every(t=>teams.includes(t))&&s.turnOrder[s.currentTurnIndex]===s.currentTeam;
  }
  function apply(s){
-  if(!valid(s))return false;applying=true;currentTheme=s.theme;ActionEffects.receive(s.effects);
+  if(!valid(s))return false;applying=true;
+  try {
+  currentTheme=s.theme;ActionEffects.receive(s.effects);
   const resized=COLS!==s.cols||ROWS!==s.rows;COLS=s.cols;ROWS=s.rows;mapSize={cols:COLS,rows:ROWS};useHexGrid=true;
   if(resized&&typeof updateHexSize==='function'){TILE=BOARD_SIZE/COLS;updateHexSize();resizeGameCanvas();}
   units=copy(s.units);terrain=copy(s.terrain);settlements=copy(s.settlements);resources=copy(s.resources);startingResources=copy(s.startingResources);
@@ -177,7 +182,10 @@ const OnlineMatch = (() => {
   if(typeof Endless!=='undefined')Endless.restore(mode==='coop'?copy(s.endless):null);
   if(typeof BattleGuide!=='undefined')BattleGuide.receiveIncome(s.incomeReceipt);
   accepted=copy(s);saveSession();pending=false;for(const id of [...pendingUpdates.keys()])confirmOptimisticUpdate(id);
-  updateUI();finish();render();applying=false;return true;
+  // Cosmetic failures must not prevent the host acknowledging a valid purchase.
+  try{updateUI();finish();render();}catch(error){console.warn('Online display refresh failed',error);}
+  return true;
+  } finally {applying=false;}
  }
  function fitBoard(){
   if(typeof getMapWorldBounds!=='function')return;
@@ -221,7 +229,10 @@ const OnlineMatch = (() => {
   if(!connected()||visible()||suspended||pending||(accepted.currentTeam!==localTeam&&!(host&&mode==='coop'&&isAITeam(accepted.currentTeam)))){if(actionId)rollbackOptimisticUpdate(actionId);return;}
   const s=snapshot();if(!valid(s))return;
   if(host){commit(s);if(actionId)confirmOptimisticUpdate(actionId);}
-  else{pending=true;const base=revision;send({type:'proposal',state:s,base});render();setTimeout(()=>{if(pending&&revision===base&&playing&&!document.hidden){pauseForReconnect();send({type:'syncRequest'});}},12000);}
+  else{pending=true;const base=revision;send({type:'proposal',state:s,base});render();setTimeout(()=>{if(pending&&revision===base&&playing&&!document.hidden){
+   // A slow acknowledgement needs an authoritative refresh, not a lobby kick.
+   if(connected())send({type:'syncRequest'});else pauseForReconnect();
+  }},12000);}
  }
  function lobby(){
   try{sessionStorage.removeItem(sessionKey);}catch{}

@@ -260,6 +260,9 @@ function setup(){
     // Update modal visibility on initial load
     try{ updateGameIdModal(); } catch(e){}
   } catch(e){ console.warn('Failed to create gameId badge', e); }
+  // Restore checkpoints once the canvas and assets are ready, never on purchase postMessages.
+  if(typeof StartupAssets!=='undefined')StartupAssets.setupComplete();
+  else {window.warbornReady=true;document.dispatchEvent(new Event('warborn:ready'));}
 }
 
 // Handle messages from parent
@@ -316,7 +319,4 @@ window.addEventListener('message',(ev)=>{
     // Update join-code modal visibility when players change
     try{ updateGameIdModal(); } catch(e){}
   }
-  // Restore online checkpoints only after the canvas and default setup exist.
-  window.warbornReady=true;
-  document.dispatchEvent(new Event('warborn:ready'));
 });

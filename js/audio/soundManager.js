@@ -162,6 +162,31 @@
     if (musicRequested) startBackgroundMusic();
   }
 
+  let musicPreparation=null;
+  function prepareMusic(){
+    preload();
+    if(musicPreparation)return musicPreparation;
+    musicPreparation=(async()=>{
+      if(location.protocol!=='file:'){
+        const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),60000);
+        try{
+          const response=await fetch(MUSIC_SRC,{signal:controller.signal});
+          if(!response.ok)throw new Error('Music download failed: '+response.status);
+          const blob=await response.blob();
+          // Use the complete download, avoiding a second streaming request later.
+          music.src=URL.createObjectURL(blob);music.load();
+        }finally{clearTimeout(timer);}
+      }else await new Promise((resolve,reject)=>{
+        if(music.readyState>=4){resolve();return;}
+        const finish=error=>{clearTimeout(timer);music.removeEventListener('canplaythrough',ready);music.removeEventListener('error',failed);error?reject(error):resolve();};
+        const ready=()=>finish(),failed=()=>finish(new Error('Music unavailable'));
+        const timer=setTimeout(()=>finish(new Error('Music load timed out')),45000);
+        music.addEventListener('canplaythrough',ready,{once:true});music.addEventListener('error',failed,{once:true});music.load();
+      });
+    })().catch(error=>{musicPreparation=null;throw error;});
+    return musicPreparation;
+  }
+
   function playBuffer(name, volume = 1) {
     if (musicMuted) return;
     preload();
@@ -216,6 +241,7 @@
   }
 
   const SoundManager = {
+    prepareMusic,
     preload,
     unlock,
     startBackgroundMusic,

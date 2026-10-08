@@ -5,10 +5,21 @@
   <title>Warborn — Turn-Based Strategy</title>
   <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=cross-platform-20261008">
+  <link rel="stylesheet" href="styles.css?v=loading-sync-20261008">
+  <script src="js/boot/startup-assets.js?v=loading-sync-20261008"></script>
   <script src="vendor/p5.min.js"></script>
 </head>
-<body>
+<body class="assets-loading">
+  <section id="startupLoading" role="dialog" aria-modal="true" aria-labelledby="startupTitle" tabindex="-1">
+    <div class="startup-card">
+      <h1 id="startupTitle">WARBORN</h1>
+      <p>Preparing the battlefield</p>
+      <progress id="startupProgress" max="1" value="0" aria-label="Game assets loaded"></progress>
+      <p id="startupStatus" role="status">Loading artwork and audio…</p>
+      <button id="startupRetry" type="button" hidden>Retry loading</button>
+      <button id="startupContinue" type="button" hidden>Continue with available assets</button>
+    </div>
+  </section>
   <div id="mainMenu">
     <div id="mainMenuShade"></div>
     <div id="mainMenuContent">
@@ -491,7 +502,7 @@
 
   <script src="js/core/settlement-spacing.js?v=banners-20261007"></script>
   <script src="js/core/state-and-grid.js?v=studio-20261008"></script>
-  <script src="js/audio/soundManager.js?v=credits-20261008"></script>
+  <script src="js/audio/soundManager.js?v=loading-sync-20261008"></script>
   <script src="js/net/connection-state.js?v=banners-20261007"></script>
   <script src="js/net/websocket-client.js?v=banners-20261007"></script>
   <script src="js/systems/economy-research.js?v=banners-20261007"></script>
@@ -530,7 +541,7 @@
   <script src="js/net/multiplayer-sync.js?v=banners-20261007"></script>
   <script src="vendor/peerjs-1.5.5.min.js"></script>
   <script src="js/net/fair-map.js?v=banners-20261007"></script>
-  <script src="js/net/online-lobby.js?v=cross-platform-20261008"></script>
+  <script src="js/net/online-lobby.js?v=loading-sync-20261008"></script>
   <script src="js/net/public-lobby.js?v=cross-platform-20261008"></script>
   <script src="js/systems/endless.js?v=banners-20261007"></script>
   <script src="js/ui/battle-alerts.js?v=banners-20261007"></script>
@@ -540,6 +551,6 @@
   <script src="js/data/example-scenarios.js?v=studio-20261008"></script>
   <script src="js/ui/editor-studio.js?v=studio-20261008"></script>
   <script src="js/ui/solo-menu.js?v=studio-20261008"></script>
-  <script src="js/boot/p5-setup.js?v=studio-20261008"></script>
+  <script src="js/boot/p5-setup.js?v=loading-sync-20261008"></script>
 </body>
 </html>

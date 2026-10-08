@@ -1,12 +1,15 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),{EventEmitter}=require('node:events');
 const registry=new Map(), peers=[], queue=[];
 const tick=()=>{while(queue.length)queue.shift()();};
-class Connection extends EventEmitter {constructor(){super();this.open=true;this.sent=[];}send(msg){this.sent.push(structuredClone(msg));const data=structuredClone(msg);queue.push(()=>this.other.emit('data',data));}close(){this.open=false;this.other.open=false;this.emit('close');this.other.emit('close');}}
+class Connection extends EventEmitter {constructor(){super();this.open=true;this.sent=[];this.serialization='binary';}send(msg){
+ // Match the bundled PeerJS JSON channel's real size limit. Binary chunks larger messages.
+ if(this.serialization==='json'&&Buffer.byteLength(JSON.stringify(msg))>=16300){this.emit('error',{type:'message-too-big'});return;}
+ this.sent.push(structuredClone(msg));const data=structuredClone(msg);queue.push(()=>this.other.emit('data',data));}close(){this.open=false;this.other.open=false;this.emit('close');this.other.emit('close');}}
 class Peer extends EventEmitter {
  constructor(id){super();this.id=id||`guest-${peers.length}`;this.connections=[];peers.push(this);
   if(registry.has(this.id)){queue.push(()=>this.emit('error',{type:'unavailable-id'}));return;}
   registry.set(this.id,this);queue.push(()=>{if(!this.destroyed)this.emit('open',this.id);});}
- connect(id,options={}){const a=new Connection(),b=new Connection();a.other=b;b.other=a;a.peer=id;b.peer=this.id;b.metadata=structuredClone(options.metadata);this.conn=a;this.connections.push(a);
+ connect(id,options={}){const a=new Connection(),b=new Connection();a.serialization=b.serialization=options.serialization||'binary';a.other=b;b.other=a;a.peer=id;b.peer=this.id;b.metadata=structuredClone(options.metadata);this.conn=a;this.connections.push(a);
   queue.push(()=>{const remote=registry.get(id);if(!remote){this.emit('error',{type:'peer-unavailable'});return;}remote.connections.push(b);remote.emit('connection',b);a.emit('open');b.emit('open');});return a;}
  destroy(){this.destroyed=true;if(registry.get(this.id)===this)registry.delete(this.id);for(const c of this.connections)if(c.open)c.close();}reconnect(){}
 }
