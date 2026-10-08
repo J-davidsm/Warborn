@@ -114,33 +114,6 @@ function setup(){
   select('#stockadeBtn').mousePressed(() => setPlacingUnit('Stockade', selectedTeam));
   select('#castleBtn').mousePressed(() => setPlacingUnit('Castle', selectedTeam));
   select('#heavyFortressBtn').mousePressed(() => setPlacingUnit('Heavy Fortress', selectedTeam));
-  // Update unit palette labels to include cost (read from makeUnit defaults)
-  try {
-    const paletteMap = [
-      ['#soldierBtn','Soldier'], ['#archerBtn','Archer'], ['#knightBtn','Knight'], ['#catapultBtn','Catapult'],
-      ['#spearmanBtn','Spearman'], ['#swordsmanBtn','Swordsman'], ['#assassinBtn','Assassin'], ['#dragonBtn','Dragon'], ['#clericBtn','Cleric'], 
-      ['#stockadeBtn','Stockade'], ['#castleBtn','Castle'], ['#heavyFortressBtn','Heavy Fortress']
-    ];
-    paletteMap.forEach(([sel,name])=>{
-      const btn = select(sel);
-      if(btn){
-        const unitCost = makeUnit(name,'PLAYER',0,0).cost || 1;
-        // Format cost display - handle both single cost and two-resource cost
-        let costDisplay;
-        if (typeof unitCost === 'number') {
-          costDisplay = unitCost; // Single resource cost
-        } else {
-          const parts = [];
-          if (unitCost.gold > 0) parts.push(`${unitCost.gold}G`);
-          if (unitCost.materials > 0) parts.push(`${unitCost.materials}M`);
-          costDisplay = parts.join('/') || '0';
-        }
-        // Keep existing emoji / label from HTML, but append cost
-        const text = btn.html().split('</')[0]; // attempt to preserve emoji label (best-effort)
-        btn.html(`${btn.html()} <span style="color:var(--muted);font-size:11px;">(${costDisplay})</span>`);
-      }
-    });
-  } catch(e){ /* ignore if makeUnit not available yet */ }
   // Initialize and wire team select
   const teamSelect = select('#teamSelect');
   if (teamSelect) {

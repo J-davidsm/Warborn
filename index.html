@@ -5,7 +5,7 @@
   <title>Warborn — Turn-Based Strategy</title>
   <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=credits-20261008">
+  <link rel="stylesheet" href="styles.css?v=studio-20261008">
   <script src="vendor/p5.min.js"></script>
 </head>
 <body>
@@ -14,17 +14,40 @@
     <div id="mainMenuContent">
       <h1 id="warbornTitle">WARBORN</h1>
       <div id="mainMenuActions">
-        <button id="menuPlayBtn" type="button">Play</button>
-        <button id="menuTutorialBtn" type="button" onclick="startIntroScenario(true)">Tutorial</button>
-        <button id="menuOnlineBtn" type="button">Multiplayer</button>
-        <button id="menuEndlessBtn" type="button">Endless Mode</button>
-        <button id="menuCampaignBtn" type="button">Campaigns</button>
-        <button type="button" onclick="openScenarioWorkshop()">Generate Scenario</button>
+        <button id="menuSoloBtn" type="button">Play solo</button>
         <button id="menuCreditsBtn" type="button">Credits</button>
+        <button id="menuOnlineBtn" type="button">Play multiplayer</button>
       </div>
-      <p class="web-menu-help">Select a unit, choose where to move, then End Turn.<br>Choose Campaigns for story missions or Generate Scenario for custom battles.</p>
     </div>
+    <section id="soloMenuPage" class="solo-page" hidden aria-labelledby="soloTitle">
+      <h2 id="soloTitle">Play solo</h2>
+      <div class="solo-actions">
+        <button id="menuSavedBtn">Play saved levels</button>
+        <button id="menuPlayBtn">Skirmish</button>
+        <button id="menuTutorialBtn" onclick="startIntroScenario(true)">Tutorial</button>
+        <button id="menuEndlessBtn">Endless</button>
+        <button id="menuCampaignBtn">Campaigns</button>
+        <button id="menuCustomBtn">Custom scenario</button>
+      </div>
+      <button class="menu-back" data-solo-back="mainMenuContent">Back to menu</button>
+    </section>
+    <section id="savedScenarioPage" class="solo-page" hidden aria-labelledby="savedScenarioTitle">
+      <h2 id="savedScenarioTitle">Play saved levels</h2>
+      <div id="scenarioLibrary"></div>
+      <button data-make-own>Make my own</button>
+      <button class="menu-back" data-solo-back="soloMenuPage">Back to solo</button>
+    </section>
+    <section id="customScenarioPage" class="solo-page" hidden aria-labelledby="customScenarioTitle">
+      <h2 id="customScenarioTitle">Custom scenario</h2>
+      <p>Generate a battlefield or build your own from an empty map.</p>
+      <div class="solo-actions">
+        <button onclick="openScenarioWorkshop()">Generate scenario</button>
+        <button data-make-own>Make my own</button>
+      </div>
+      <button class="menu-back" data-solo-back="soloMenuPage">Back to solo</button>
+    </section>
   </div>
+
 
   <dialog id="creditsPage" aria-labelledby="creditsTitle">
     <div class="credits-content">
@@ -465,7 +488,7 @@
   <!-- All the diplomacy, campaign editor and other modal content would continue here but keeping it brief for file size -->
 
   <script src="js/core/settlement-spacing.js?v=banners-20261007"></script>
-  <script src="js/core/state-and-grid.js?v=banners-20261007"></script>
+  <script src="js/core/state-and-grid.js?v=studio-20261008"></script>
   <script src="js/audio/soundManager.js?v=credits-20261008"></script>
   <script src="js/net/connection-state.js?v=banners-20261007"></script>
   <script src="js/net/websocket-client.js?v=banners-20261007"></script>
@@ -474,7 +497,7 @@
   <script src="js/ui/popups-and-assets.js?v=banners-20261007"></script>
   <script src="js/systems/territory.js?v=banners-20261007"></script>
   <script src="js/systems/leaders.js?v=banners-20261007"></script>
-  <script src="js/systems/save-editor-teams.js?v=scenario-camera-20261008"></script>
+  <script src="js/systems/save-editor-teams.js?v=studio-20261008"></script>
   <script src="js/systems/learning-ai.js?v=banners-20261007"></script>
   <script src="js/core/level-state.js?v=scenario-camera-20261008"></script>
   <script src="js/core/game-setup.js?v=banners-20261007"></script>
@@ -485,7 +508,7 @@
   <script src="js/systems/settlements.js?v=banners-20261007"></script>
   <script src="js/systems/diplomacy.js?v=banners-20261007"></script>
   <script src="js/systems/trade.js?v=banners-20261007"></script>
-  <script src="js/ui/editor-controls.js?v=banners-20261007"></script>
+  <script src="js/ui/editor-controls.js?v=studio-20261008"></script>
   <script src="js/rendering/action-effects.js?v=banners-20261007"></script>
   <script src="js/rendering/territory-overlay.js?v=banners-20261007"></script>
   <script src="js/rendering/unit-presentation.js?v=banners-20261007"></script>
@@ -501,7 +524,7 @@
   <script src="js/systems/ai-logistics.js?v=banners-20261007"></script>
   <script src="js/systems/ai-turn.js?v=banners-20261007"></script>
   <script src="js/systems/watch-game.js?v=banners-20261007"></script>
-  <script src="js/ui/endgame-and-ui.js?v=credits-20261008"></script>
+  <script src="js/ui/endgame-and-ui.js?v=studio-20261008"></script>
   <script src="js/net/multiplayer-sync.js?v=banners-20261007"></script>
   <script src="vendor/peerjs-1.5.5.min.js"></script>
   <script src="js/net/fair-map.js?v=banners-20261007"></script>
@@ -512,6 +535,9 @@
   <script src="js/ui/battle-guide.js?v=banners-20261007"></script>
 <script src="js/ui/command-menu.js?v=scenario-camera-20261008"></script>
   <!-- Start p5 only after every game subsystem has registered its setup hooks. -->
-  <script src="js/boot/p5-setup.js?v=banners-20261007"></script>
+  <script src="js/data/example-scenarios.js?v=studio-20261008"></script>
+  <script src="js/ui/editor-studio.js?v=studio-20261008"></script>
+  <script src="js/ui/solo-menu.js?v=studio-20261008"></script>
+  <script src="js/boot/p5-setup.js?v=studio-20261008"></script>
 </body>
 </html>

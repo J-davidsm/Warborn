@@ -1125,3 +1125,48 @@ body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/do
 .credits-content a { color: #ffe09b; overflow-wrap: anywhere; }
 .credits-content button { padding: 14px 32px; }
 #mainMenu { overflow-y: auto; }
+
+/* Solo navigation keeps all routes inside the existing menu backdrop. */
+#mainMenuContent[hidden], .solo-page[hidden] { display: none !important; }
+.solo-page { position: relative; z-index: 1; box-sizing: border-box; width: min(880px, 94vw); padding: 34px 16px 50px; text-align: center; }
+.solo-page h2 { font: bold clamp(32px, 6vw, 58px) Georgia, serif; color: var(--accent); margin: 12px 0 28px; }
+.solo-actions { display: flex; flex-direction: column; align-items: stretch; gap: 10px; max-width: 360px; margin: 0 auto 22px; }
+.solo-page button { min-height: 46px; padding: 10px 22px; font: bold 16px Georgia, serif; }
+.solo-page .menu-back { display: block; margin: 24px auto 0; font-size: 13px; }
+#scenarioLibrary { text-align: left; }
+#scenarioLibrary h3 { color: var(--accent); margin-top: 28px; }
+.saved-scenario-card { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; margin: 10px 0; padding: 16px; background: #0b1220e6; border: 1px solid #aa915e77; border-radius: 10px; }
+.saved-scenario-card h4 { margin: 0; font: bold 23px Georgia, serif; }
+.saved-scenario-card p { grid-column: 1; margin: 0; color: #bdc9cd; font-size: 13px; }
+.saved-scenario-card button { grid-row: 1 / span 2; }
+.saved-scenario-card button:nth-of-type(1) { grid-column: 2; }
+.saved-scenario-card button:nth-of-type(2) { grid-column: 3; }
+#savedScenarioPage > [data-make-own] { margin-top: 24px; }
+
+/* Illustrated editor brushes: the name overlays the image, leaving the art large. */
+#commandEditor .terrain-palette, #commandEditor .unit-palette, #commandEditor .settlement-palette { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px !important; }
+#commandEditor .editor-brush { position: relative; min-width: 0; width: 100%; height: 100px; padding: 0 !important; border: 1px solid #9b845055 !important; background: #101d29 !important; border-radius: 8px !important; overflow: hidden; }
+#commandEditor .editor-brush canvas { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+#commandEditor .editor-brush span { position: absolute; bottom: 4px; left: 2px; right: 2px; color: #fff7da; text-shadow: 0 1px 3px #000; background: #09101cbb; font: 600 11px/1.3 system-ui; padding: 3px 1px; pointer-events: none; }
+#commandEditor .editor-brush[aria-pressed="true"] { outline: 2px solid #ffe086; outline-offset: -2px; box-shadow: inset 0 0 18px #ffda5066; }
+#commandEditor .collapsible-content:not(.collapsed) { max-height: none !important; overflow: visible; }
+#editorSides h3 { margin: 4px 0 8px; color: #eed393; font-size: 14px; }
+#editorSidePicker { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }
+#commandEditor .editor-side { background: #0b1220 !important; padding: 0 !important; border: 3px solid var(--side-color) !important; border-radius: 8px !important; overflow: hidden; min-width: 0; }
+.editor-side img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.editor-side span { display: block; padding: 3px; font-size: 10px; line-height: 1.2; }
+.editor-side[aria-pressed="true"] { outline: 2px solid #fff3bc; outline-offset: 2px; box-shadow: 0 0 12px var(--side-color); }
+#editorSaveControls { display: flex; flex-direction: column; gap: 8px; }
+#editorCoach { position: fixed; z-index: 40000; bottom: 18px; left: 18px; box-sizing: border-box; width: min(460px, calc(100vw - 470px)); padding: 18px; color: #f4ead2; border: 1px solid #e2ba68; border-radius: 12px; background: #0b1729f5; box-shadow: 0 8px 30px #000a; }
+#editorCoach h3 { margin: 0 0 10px; color: #ffe09a; font-size: 18px; }
+#editorCoach p { line-height: 1.6; font-size: 14px; }
+#editorCoach button { padding: 9px 13px; }
+#editorCoach > div { display: flex; flex-wrap: wrap; gap: 6px; }
+#editorCoachHighlight { position: fixed; z-index: 39000; pointer-events: none; box-sizing: border-box; border: 3px solid #ffe36d; border-radius: 8px; box-shadow: 0 0 18px #ffdc6888; }
+@media(max-width:700px) {
+  #editorCoach { left: 8px; bottom: 8px; width: calc(100vw - 16px); max-height: 32vh; overflow: auto; padding: 10px; }
+  body:has(#editorCoach) #panel { bottom: 35vh; }
+  .saved-scenario-card { grid-template-columns: 1fr 1fr; }
+  .saved-scenario-card h4, .saved-scenario-card p { grid-column: 1 / -1; }
+  .saved-scenario-card button:nth-of-type(1), .saved-scenario-card button:nth-of-type(2) { grid-row: auto; grid-column: auto; }
+}

@@ -65,7 +65,7 @@ function saveLevel() {
 // A visible one-click checkpoint, using the existing quick-save/load slot.
 function saveScenario() {
   try {
-    const data = createLevelData();
+    const data = createLevelData(document.getElementById('levelNameInput')?.value.trim() || null);
     data.progressCheckpoint = !isEditorMode;
     data.resources = clonePlain(resources);
     data.scenarioPlayStarted = scenarioPlayStarted;
@@ -312,6 +312,7 @@ function toggleEditorMode() {
   if (editorDrawerTab) editorDrawerTab.style.display = isEditorMode ? 'block' : 'none';
   console.log('Editor mode is now:', isEditorMode);
   if (!isEditorMode) {
+    if(typeof EditorStudio!=='undefined')EditorStudio.stopTutorial();
     readVictoryConditionFromUI();
     captureScenarioSnapshot();
   }
@@ -464,7 +465,7 @@ function getStartingDiplomacyRelation(faction1, faction2) {
   ensureDiplomacyForActiveTeams();
   if (isAtWar(faction1, faction2)) return 'WAR';
   if (hasTreaty(faction1, faction2, 'DEFENSIVE_PACT')) return 'DEFENSIVE_PACT';
-  return 'WAR';
+  return 'NEUTRAL';
 }
 
 function setStartingDiplomacyRelation(faction1, faction2, relation) {

@@ -724,13 +724,14 @@ function setPlacingUnit(type, team) {
     placingUnitType = type;
     placingUnitTeam = team;
     // Highlight the selected button
-    const btnId = type.toLowerCase() + 'Btn';
-    select('#' + btnId).style('background', 'var(--accent)');
+    const btnId = type === 'Heavy Fortress' ? 'heavyFortressBtn' : type.toLowerCase() + 'Btn';
+    select('#' + btnId)?.style('background', 'var(--accent)');
     if(select('#placingLabel')) select('#placingLabel').html('Selected: ' + type + ' (' + team + ')');
   }
 }
 
 function setPlacingSettlement(type) {
+  placingTerrain = null;
   console.log('Setting placing settlement:', type);
   
   // Reset all button styles and clear unit placing
@@ -757,7 +758,7 @@ function setPlacingSettlement(type) {
       default: btnId = type.toLowerCase() + 'Btn'; break;
     }
     // Highlight the selected button, including Clear
-    select('#' + btnId).style('background', 'var(--accent)');
+    select('#' + btnId)?.style('background', 'var(--accent)');
     if(select('#placingLabel')) {
       const ownerText = type === 'CLEAR' ? '' : ` (${getTeamDisplayName(selectedTeam || 'PLAYER')})`;
       select('#placingLabel').html('Selected: ' + (type === 'CLEAR' ? 'Clear Settlement' : type + ownerText));
@@ -796,7 +797,7 @@ function setTerrainType(type) {
       default: btnId = type.toLowerCase() + 'Btn'; break;
     }
     // Highlight the selected button
-    select('#' + btnId).style('background', 'var(--accent)');
+    select('#' + btnId)?.style('background', 'var(--accent)');
     const displayName = type === 'CLEAR' ? 'Clear Terrain' : type;
     if(select('#placingLabel')) select('#placingLabel').html('Selected: ' + displayName + ' <span style="color:#888;font-size:11px;">(Shift+click to fill map)</span>');
   }

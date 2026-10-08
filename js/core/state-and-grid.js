@@ -118,7 +118,8 @@ function getMapOrigin() {
 function resizeGameCanvas() {
   if (typeof resizeCanvas !== 'function') return;
   const size = getGameCanvasSize();
-  resizeCanvas(size.w, size.h);
+  // Scenario loading can resize before terrain is installed; draw on the next frame.
+  resizeCanvas(size.w, size.h, true);
   clampPanToMap();
 }
 
