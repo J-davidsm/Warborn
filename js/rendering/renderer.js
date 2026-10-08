@@ -87,8 +87,9 @@ function clampPanToMap() {
   const z=Math.max(minimumMapZoom(),Math.min(maxZoom,targetZoom||1));
   targetZoom=z;zoomLevel=Math.max(minimumMapZoom(),Math.min(maxZoom,zoomLevel));
   const clampAxis=(value,start,end,origin,base,size)=>{
-    if(size*z<=end-start)return (start+end)/2-origin-(base+size/2)*z;
-    return constrain(value,end-origin-(base+size)*z,start-origin-base*z);
+    // Let any edge/corner reach the viewport center, even at fit-to-map zoom.
+    const center=(start+end)/2;
+    return constrain(value,center-origin-(base+size)*z,center-origin-base*z);
   };
   targetPanX=clampAxis(targetPanX,v.left,v.right,o.x,b.x,b.width);
   targetPanY=clampAxis(targetPanY,v.top,v.bottom,o.y,b.y,b.height);

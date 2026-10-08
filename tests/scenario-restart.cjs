@@ -35,3 +35,12 @@ Object.assign(c.units[0],{streakBonus:.6,streakMisses:1,streakKilled:true,streak
 const combatSave=c.createLevelData();c.applyLevelData(JSON.parse(JSON.stringify(combatSave)));
 for(const [field,value]of Object.entries({streakBonus:.6,streakMisses:1,streakKilled:true,streakProcessedTurn:8,spawnMoveLimit:2,usedBonusAttack:true,hasMoved:true,hasActed:false}))assert.equal(c.units[0][field],value,field+' save/load');
 assert.equal(c.turnNumber,9);assert.equal(c.currentTeam,'AI');
+// The visible Save Scenario checkpoint preserves current progress, unlike a fresh scenario.
+const store={};c.localStorage={setItem:(k,v)=>store[k]=v};c.isEditorMode=false;c.BattleGuide={notify(){}};c.select=()=>({style(){},html(){}});c.showPopup=()=>{throw Error('Save unexpectedly failed');};
+vm.runInContext(fs.readFileSync('js/systems/save-editor-teams.js','utf8').match(/function saveScenario\(\) \{[\s\S]*?\n\}/)[0],c);
+vm.runInContext('scenarioPlayStarted=true;resources.PLAYER.gold=42;resources.PLAYER.materials=13;',c);
+c.currentVictoryCondition.holdProgress=2;c.currentVictoryCondition.lastHoldTurn=9;
+c.saveScenario();const checkpoint=JSON.parse(store.customLevel);assert(checkpoint.progressCheckpoint);
+c.resources.PLAYER.gold=0;c.applyLevelData(checkpoint);
+assert.equal(c.resources.PLAYER.gold,42);assert.equal(c.resources.PLAYER.materials,13);assert.equal(c.currentVictoryCondition.holdProgress,2);assert.equal(vm.runInContext('scenarioPlayStarted',c),true);assert.equal(c.turnNumber,9);
+console.log('Save Scenario checkpoint restores resources, turn, objective progress and editor lock.');

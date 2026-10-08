@@ -34,6 +34,7 @@ const CommandMenu=(()=>{
   const status=document.createElement('div');status.id='editorModeStatus';status.textContent='In Editor Mode';status.hidden=true;status.setAttribute('role','status');document.body.append(status);
   const panel=$('panel'),toolbar=$('battleToolbar');document.body.append(toolbar);
   toolbar.insertAdjacentHTML('afterbegin','<button id="commandToggle" aria-expanded="false" aria-controls="panel">☰ Commands</button>');
+  const save=document.createElement('button');save.id='saveScenarioBtn';save.textContent='Save Scenario';save.title='Save progress; resume from Commands → Saved battles → Load Level';save.onclick=saveScenario;toolbar.append(save);
   const dock=document.createElement('div');dock.id='turnActions';const unitActions=document.createElement('div');unitActions.id='unitActions';dock.append(unitActions);dock.append($('endTurnBtn'));document.body.append(dock);
   const undo=document.createElement('button');undo.id='undoMoveBtn';undo.textContent='↶ Undo Move';undo.title='Undo your latest move before another action; restores captured settlements.';undo.disabled=true;undo.onclick=()=>MoveUndo.undo();dock.insertBefore(undo,unitActions);
   const stack=document.createElement('aside');stack.id='battleStatusStack';document.body.append(stack);
@@ -42,9 +43,9 @@ const CommandMenu=(()=>{
   const move=(target,ids)=>ids.forEach(id=>{if($(id))$(target).append($(id));});
   move('commandActions',['editorModeBtn','restartBtn','battleMenuBtn']);
   for(const [label,next]of [['Battle settings','settings'],['Saved battles','saves'],['Relations & treaties','diplomacy'],['Editor tools','editor']]){const b=document.createElement('button');b.textContent=label;if(next==='editor')b.className='editor-only-command';b.onclick=()=>open(next);$('commandActions').append(b);}
-  move('commandSettings',['aiPlayerControls','waitingBanner','connectionStatus']);
+  move('commandSettings',['waitingBanner','connectionStatus']);
   move('commandSaves',['levelNameInput','saveLevelBtn','saveNamedLevelBtn','loadLevelBtn','savedLevelsPanel']);
-  move('commandDiplomacy',['diplomacySection']);move('commandEditor',['editorControls','convertTeamsBtn']);
+  move('commandDiplomacy',['diplomacySection']);move('commandEditor',['aiPlayerControls','editorControls','convertTeamsBtn']);
   $('commandToggle').onclick=()=>page?close():open();$('commandClose').onclick=close;$('commandBack').onclick=()=>open();
   $('editorModeBtn').addEventListener('click',()=>setTimeout(()=>{if(isEditorMode)open('editor');else close();},0));
   $('restartBtn').addEventListener('click',close);$('battleMenuBtn').addEventListener('click',close);

@@ -62,6 +62,21 @@ function saveLevel() {
   select('#loadLevelBtn').style('display', 'block');
 }
 
+// A visible one-click checkpoint, using the existing quick-save/load slot.
+function saveScenario() {
+  try {
+    const data = createLevelData();
+    data.progressCheckpoint = !isEditorMode;
+    data.resources = clonePlain(resources);
+    data.scenarioPlayStarted = scenarioPlayStarted;
+    localStorage.setItem('customLevel', JSON.stringify(data));
+    select('#loadLevelBtn')?.style('display', 'block');
+    if (typeof BattleGuide !== 'undefined') BattleGuide.notify('Scenario saved. Resume from Commands → Saved battles → Load Level.');
+  } catch (error) {
+    showPopup('Save failed', 'Your browser could not save this scenario. Free some storage and try again.', 'error');
+  }
+}
+
 function loadLevel() {
   const savedLevel = localStorage.getItem('customLevel');
   if(!savedLevel) return;

@@ -309,6 +309,8 @@ function applyLevelData(data) {
     setAIPlayerCount(data.aiPlayerCount);
   }
   resetStartingEconomy();
+  if(data.progressCheckpoint && data.resources) resources = clonePlain(data.resources);
+  if(data.progressCheckpoint) scenarioPlayStarted = !!data.scenarioPlayStarted;
   if(typeof restoreResearch==='function')restoreResearch(data.researchedTechs,data.research,getActiveTeams());
   if(typeof restoreActiveResearch==='function')restoreActiveResearch(data.activeResearch);
   else researchedUnits = Object.fromEntries(getActiveTeams().map(team => [team, new Set(data.research?.[team] || ['Soldier'])]));
@@ -317,8 +319,10 @@ function applyLevelData(data) {
   if(typeof restoreDiplomacyConversations==='function')restoreDiplomacyConversations();
   if (hasAIDiplomacy()) ensureDiplomacyForActiveTeams();
   currentVictoryCondition = normalizeVictoryCondition(data.victoryCondition);
-  currentVictoryCondition.holdProgress = 0;
-  currentVictoryCondition.lastHoldTurn = 0;
+  if(!data.progressCheckpoint) {
+    currentVictoryCondition.holdProgress = 0;
+    currentVictoryCondition.lastHoldTurn = 0;
+  }
   
   units = (data.units || []).map(u => makeUnit(u.name, u.team, u.col, u.row, {
     id: u.id,
