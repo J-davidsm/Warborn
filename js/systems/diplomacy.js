@@ -1016,7 +1016,7 @@ function renderDiplomacyBannerButton(team, personality, unreadCount) {
   const label = typeof getTeamDisplayName==='function' ? getTeamDisplayName(team) : team;
   const partners=[...new Set((diplomacy.treaties||[]).filter(t=>t.active&&t.turnsRemaining>0&&t.participants.includes(team)).flatMap(t=>t.participants))].filter(t=>t!==team&&!isNationEliminated(t));
   const icons=partners.map(t=>`<i title="${escape(getTeamDisplayName(t))}" aria-label="${escape(getTeamDisplayName(t))}" style="background:${getTeamColorHex(t)}"></i>`).join('');
-  return `<button class="diplomacy-banner-button" ${isNationEliminated(team)?'disabled':''} onclick="selectDiplomacyTarget('${escape(team)}')" aria-pressed="${currentDiplomacyTarget===team}" aria-label="${escape(label)} diplomacy" title="${escape(personality)}"><img src="assets/ui/turn-banner.png" alt="" style="filter:hue-rotate(${hue}deg)"><span>${escape(label)}${isNationEliminated(team)?' · Eliminated':''}</span><small class="pact-indicators">${icons}</small>${unreadCount>0?`<b class="diplomacy-banner-unread">${unreadCount}</b>`:''}</button>`;
+  return `<button class="diplomacy-banner-button" ${isNationEliminated(team)?'disabled':''} onclick="selectDiplomacyTarget('${escape(team)}')" aria-pressed="${currentDiplomacyTarget===team}" aria-label="${escape(label)} diplomacy" title="${escape(personality)}"><img src="assets/ui/turn-banner.webp" alt="" style="filter:hue-rotate(${hue}deg)"><span>${escape(label)}${isNationEliminated(team)?' · Eliminated':''}</span><small class="pact-indicators">${icons}</small>${unreadCount>0?`<b class="diplomacy-banner-unread">${unreadCount}</b>`:''}</button>`;
 }
 
 function openDiplomacyNegotiation() {

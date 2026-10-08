@@ -40,7 +40,7 @@ const EditorStudio = (() => {
     if(sideSignature!==key){
       sideSignature=key;const host=$('editorSidePicker');host.replaceChildren();
       for(const team of teams){const name=getTeamDisplayName(team),button=document.createElement('button');button.type='button';button.className='editor-side';button.style.setProperty('--side-color',getTeamColorHex(team));button.setAttribute('aria-label',`Place for ${name}`);button.setAttribute('aria-pressed',String(team===selectedTeam));button.title=name;
-        const image=document.createElement('img');image.src=isAITeam(team)?`assets/leaders/${WarbornLeaders.get(team)[0]}.png`:'assets/leaders/player-crown.png';image.alt='';const text=document.createElement('span');text.textContent=name;button.append(image,text);button.onclick=()=>chooseSide(team);host.append(button);
+        const image=document.createElement('img');image.src=isAITeam(team)?`assets/leaders/${WarbornLeaders.get(team)[0]}.webp`:'assets/leaders/player-crown.webp';image.alt='';const text=document.createElement('span');text.textContent=name;button.append(image,text);button.onclick=()=>chooseSide(team);host.append(button);
       }
     }
     const next=selectedTeam+':'+TERRAIN_V2.revision+':'+Object.keys(IMAGES).length;

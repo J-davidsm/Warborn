@@ -460,7 +460,7 @@ function updateUI() {
     if (!buildWidget) {
       buildWidget = document.createElement('button');
       buildWidget.id = 'buildWidget'; buildWidget.type = 'button';
-      buildWidget.innerHTML = '<img src="assets/ui/fortress-button.png" alt="" draggable="false">';
+      buildWidget.innerHTML = '<img src="assets/ui/fortress-button.webp" alt="" draggable="false">';
       buildWidget.setAttribute('aria-label', 'Build fortresses and ships');
       buildWidget.onclick = function() {
         if (this.disabled) return;
@@ -483,7 +483,7 @@ function updateUI() {
     if (!waterUpgradeWidget) {
       waterUpgradeWidget = document.createElement('button');
       waterUpgradeWidget.id = 'waterUpgradeWidget'; waterUpgradeWidget.type = 'button';
-      waterUpgradeWidget.innerHTML = '<img src="assets/ui/anchor-button.png" alt="" draggable="false">';
+      waterUpgradeWidget.innerHTML = '<img src="assets/ui/anchor-button.webp" alt="" draggable="false">';
       waterUpgradeWidget.onclick = function() { if (!this.disabled) upgradeSelectedUnitToWater(); };
       (document.getElementById('unitActions') || document.body).appendChild(waterUpgradeWidget);
     }

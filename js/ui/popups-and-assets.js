@@ -149,7 +149,7 @@ const IMAGES = {};
 const IMAGE_LOAD_STATUS = {}; // 'loading' | 'loaded' | 'error'
 
 function preloadImages(mapping){
-  // mapping: { 'Soldier': 'assets/soldier.png?v=20261007', ... }
+  // mapping: { 'Soldier': 'assets/soldier.webp?v=20261007', ... }
   Object.keys(mapping).forEach(name => {
     const url = mapping[name];
     IMAGE_LOAD_STATUS[name] = 'loading';
@@ -162,33 +162,33 @@ function preloadImages(mapping){
 
 // Default mapping for Warborn's unit art.
 const DEFAULT_IMAGE_MAP = {
-  'Soldier': 'assets/soldier.png?v=20261007',
-  'Archer': 'assets/archer.png',
-  'Knight': 'assets/knight.png',
-  'Catapult': 'assets/catapult.png',
-  'Spearman': 'assets/spearman.png',
-  'Swordsman': 'assets/swordsman.png',
-  'Assassin': 'assets/assassin.png',
-  'Dragon': 'assets/dragon.png',
-  'Cleric': 'assets/cleric.png',
-  'Crown': 'assets/crown.png',
-  'Stockade': 'assets/stockade.png',
-  'Sloop': 'assets/sloop.png',
-  'Man-of-War': 'assets/man_of_war.png',
-  'Battleship': 'assets/battleship.png',
-  'Fortress': 'assets/castle.png?v=20261007-banners2',
-  'Castle': 'assets/castle.png?v=20261007-banners2',
-  'Heavy Fortress': 'assets/heavy_fortress.png?v=20261007-banners2'
-  ,'Ruins': 'assets/ruins.png'
+  'Soldier': 'assets/soldier.webp?v=20261007',
+  'Archer': 'assets/archer.webp',
+  'Knight': 'assets/knight.webp',
+  'Catapult': 'assets/catapult.webp',
+  'Spearman': 'assets/spearman.webp',
+  'Swordsman': 'assets/swordsman.webp',
+  'Assassin': 'assets/assassin.webp',
+  'Dragon': 'assets/dragon.webp',
+  'Cleric': 'assets/cleric.webp',
+  'Crown': 'assets/crown.webp',
+  'Stockade': 'assets/stockade.webp',
+  'Sloop': 'assets/sloop.webp',
+  'Man-of-War': 'assets/man_of_war.webp',
+  'Battleship': 'assets/battleship.webp',
+  'Fortress': 'assets/castle.webp?v=20261007-banners2',
+  'Castle': 'assets/castle.webp?v=20261007-banners2',
+  'Heavy Fortress': 'assets/heavy_fortress.webp?v=20261007-banners2'
+  ,'Ruins': 'assets/ruins.webp'
 };
 
 try{ preloadImages(DEFAULT_IMAGE_MAP); } catch(e){ console.warn('Image preload failed', e); }
 
 // Settlement tiers share the unit loader, but use their own namespaced keys.
 const SETTLEMENT_IMAGE_MAP = {
-  'settlement_HAMLET': 'assets/settlements/hamlet.png',
-  'settlement_VILLAGE': 'assets/settlements/town.png',
-  'settlement_CITY': 'assets/settlements/city.png'
+  'settlement_HAMLET': 'assets/settlements/hamlet.webp',
+  'settlement_VILLAGE': 'assets/settlements/town.webp',
+  'settlement_CITY': 'assets/settlements/city.webp'
 };
 try{ preloadImages(SETTLEMENT_IMAGE_MAP); } catch(e){ console.warn('Settlement preload failed', e); }
 
@@ -198,16 +198,16 @@ try { preloadImages(FACTION_FLAG_MAP); } catch(e) { console.warn('Flag preload f
 const INDICATOR_IMAGES = {};
 const INDICATOR_IMAGE_STATUS = {};
 const INDICATOR_IMAGE_MAP = {
-  rank_0: 'assets/indicators/rank_0.png',
-  rank_1: 'assets/indicators/rank_1.png',
-  rank_2: 'assets/indicators/rank_2.png',
-  rank_3: 'assets/indicators/rank_3.png',
-  rank_4: 'assets/indicators/rank_4.png',
-  morale_0: 'assets/indicators/morale_0.png',
-  morale_1: 'assets/indicators/morale_1.png',
-  morale_2: 'assets/indicators/morale_2.png',
-  morale_3: 'assets/indicators/morale_3.png',
-  morale_4: 'assets/indicators/morale_4.png'
+  rank_0: 'assets/indicators/rank_0.webp',
+  rank_1: 'assets/indicators/rank_1.webp',
+  rank_2: 'assets/indicators/rank_2.webp',
+  rank_3: 'assets/indicators/rank_3.webp',
+  rank_4: 'assets/indicators/rank_4.webp',
+  morale_0: 'assets/indicators/morale_0.webp',
+  morale_1: 'assets/indicators/morale_1.webp',
+  morale_2: 'assets/indicators/morale_2.webp',
+  morale_3: 'assets/indicators/morale_3.webp',
+  morale_4: 'assets/indicators/morale_4.webp'
 };
 
 function preloadIndicatorImages() {

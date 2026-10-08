@@ -75,3 +75,20 @@ for(const name of ['pointerdown','pointerup','mousedown','mouseup','touchstart',
   assert.equal(event.propagationStopped,true,`${name} should not leak into game controls`);
 }
 console.log('Music mute persists, pauses playback, and resumes when turned back on.');
+
+// Startup owns one complete music download, without an initial media-range load.
+let mediaLoads=0,downloads=0;
+const startup={...sandbox,StartupAssets:{},location:{protocol:'https:'},AbortController,setTimeout,clearTimeout,
+ Audio:class extends FakeAudio{load(){mediaLoads++;}},
+ URL:{createObjectURL:()=> 'blob:preloaded-music'},
+ fetch:async()=>{downloads++;return {ok:true,blob:async()=>({})};},
+ window:{addEventListener(){}}
+};
+vm.runInNewContext(fs.readFileSync(require('path').join(__dirname,'../js/audio/soundManager.js'),'utf8'),startup);
+assert.equal(mediaLoads,0,'No duplicate media request before startup fetch');
+const ready=startup.window.SoundManager.prepareMusic();
+assert.equal(startup.window.SoundManager.prepareMusic(),ready,'Concurrent callers share the download');
+ready.then(()=>{
+ assert.equal(downloads,1);assert.equal(mediaLoads,1);assert.equal(tracks.at(-1).src,'blob:preloaded-music');
+ console.log('Startup downloads music once and reuses the complete local blob.');
+}).catch(error=>{console.error(error);process.exitCode=1;});

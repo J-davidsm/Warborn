@@ -616,7 +616,7 @@ function renderDoctrineTree(container,team,refresh) {
   const tree=document.createElement('div');tree.className='doctrine-tree';
   const paths=document.createElement('nav');paths.className='doctrine-paths';paths.setAttribute('aria-label','Doctrine branches');container.appendChild(paths);
   const selectedBranch=container.dataset?.researchBranch||(job?RESEARCH_TREE[job.id].branch:'warfare');
-  const backdrop=branch=>{const menu=document.getElementById('spawnMenu');if(menu)menu.style.setProperty('--doctrine-background',`url(assets/doctrines/${branch}-background.png)`);};backdrop(selectedBranch);
+  const backdrop=branch=>{const menu=document.getElementById('spawnMenu');if(menu)menu.style.setProperty('--doctrine-background',`url(assets/doctrines/${branch}-background.webp)`);};backdrop(selectedBranch);
   for(const branch of ['warfare','command','defense','engineering']){
     const section=document.createElement('section');section.className='doctrine-branch doctrine-'+branch;
     section.hidden=branch!==selectedBranch;

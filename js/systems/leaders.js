@@ -10,7 +10,7 @@ const WarbornLeaders=(()=>{
   if(typeof document==='undefined'||!currentDiplomacyTarget)return;
   const host=document.getElementById('diplomacyTargetInfo');if(!host)return;
   document.getElementById('leaderPortrait')?.remove();document.getElementById('peaceProposal')?.remove();
-  const [id,name]=get(currentDiplomacyTarget),img=document.createElement('img');img.id='leaderPortrait';img.src=`assets/leaders/${id}.png`;img.alt=name;host.prepend(img);
+  const [id,name]=get(currentDiplomacyTarget),img=document.createElement('img');img.id='leaderPortrait';img.src=`assets/leaders/${id}.webp`;img.alt=name;host.prepend(img);
   if(diplomacy.peaceBeggingFlags?.[currentDiplomacyTarget]>=turnNumber&&isAtWar(currentDiplomacyTarget,'PLAYER')){
    const team=currentDiplomacyTarget,box=document.createElement('div');box.id='peaceProposal';box.textContent='Peace proposal: 20-turn non-aggression pact. ';
    const b=document.createElement('button');b.textContent='Accept peace';b.disabled=currentTeam!=='PLAYER';b.onclick=()=>acceptPeace(team);box.appendChild(b);host.appendChild(box);
@@ -23,7 +23,7 @@ const WarbornLeaders=(()=>{
   for(const team of getActiveTeams().filter(isAITeam)){
    const field=document.createElement('fieldset'),legend=document.createElement('legend');legend.textContent=get(team)[1];field.appendChild(legend);
    for(const [id,name] of choices){const b=document.createElement('button');b.type='button';b.className='leader-choice'+(get(team)[0]===id?' chosen':'');b.title=name;b.setAttribute('aria-label',name);b.disabled=!isEditorMode||scenarioPlayStarted;
-    const img=document.createElement('img');img.src=`assets/leaders/${id}.png`;img.alt=name;b.appendChild(img);b.onclick=()=>{if(!isEditorMode||scenarioPlayStarted)return;(diplomacy.leaders||={})[team]=id;editor();if(typeof updateTeamSelector==='function')updateTeamSelector();};field.appendChild(b);
+    const img=document.createElement('img');img.src=`assets/leaders/${id}.webp`;img.alt=name;b.appendChild(img);b.onclick=()=>{if(!isEditorMode||scenarioPlayStarted)return;(diplomacy.leaders||={})[team]=id;editor();if(typeof updateTeamSelector==='function')updateTeamSelector();};field.appendChild(b);
    }section.appendChild(field);
   }host.appendChild(section);
  }

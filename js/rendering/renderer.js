@@ -131,6 +131,9 @@ function drawTerrainInfo() {
 }
 
 function draw(){
+  // The full-screen loader hides the board. Don't repeatedly rebuild terrain
+  // caches as individual images arrive; leave that CPU time for decoding assets.
+  if(typeof StartupAssets!=='undefined'&&!StartupAssets.ready)return;
   ensureGridValid();
   background(14,20,30);
 

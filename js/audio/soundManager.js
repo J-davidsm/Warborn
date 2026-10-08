@@ -149,9 +149,11 @@
 
     music = new Audio(MUSIC_SRC);
     music.loop = true;
-    music.preload = 'auto';
+    // The startup loader owns the full download. Avoid a simultaneous media
+    // range request followed by another fetch of the same song.
+    music.preload = typeof StartupAssets==='undefined'?'auto':'none';
     music.volume = 0.32;
-    music.load();
+    if(typeof StartupAssets==='undefined')music.load();
   }
 
   function unlock() {
@@ -181,7 +183,7 @@
         const finish=error=>{clearTimeout(timer);music.removeEventListener('canplaythrough',ready);music.removeEventListener('error',failed);error?reject(error):resolve();};
         const ready=()=>finish(),failed=()=>finish(new Error('Music unavailable'));
         const timer=setTimeout(()=>finish(new Error('Music load timed out')),45000);
-        music.addEventListener('canplaythrough',ready,{once:true});music.addEventListener('error',failed,{once:true});music.load();
+        music.addEventListener('canplaythrough',ready,{once:true});music.addEventListener('error',failed,{once:true});music.preload='auto';music.load();
       });
     })().catch(error=>{musicPreparation=null;throw error;});
     return musicPreparation;

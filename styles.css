@@ -44,7 +44,7 @@ html, body {
 #undoMoveBtn {padding:10px 18px;min-height:42px;}
 
 #mainMenu {
-  background: url("assets/ui/menu-painted.png") center center / cover no-repeat;
+  background: url("assets/ui/menu-painted.webp") center center / cover no-repeat;
 }
 
 #endScreen {
@@ -889,7 +889,7 @@ body:not(.editor-mode) .editor-only-command{display:none;}#editorDrawerTab{displ
 /* Painted cloth buttons keep live, accessible labels and the existing handlers. */
 body button {
   background-color: transparent !important;
-  background-image: url('assets/ui/button-banner.png') !important;
+  background-image: url('assets/ui/button-banner.webp') !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
   background-size: 100% 165% !important;
@@ -999,14 +999,14 @@ body #diplomacyTargetButtons .diplomacy-banner-button {position:relative;width:1
 body .doctrine-paths .doctrine-path-button {height:82px;padding:12px 8px 12px 35%;padding-left:90px;min-width:220px;background-size:100% 100%!important;font-size:14px;font-weight:bold;transition:filter .15s;}
 body .doctrine-paths .doctrine-path-button[aria-pressed="true"] {filter:brightness(1.22);outline:1px solid #d2b574;outline-offset:2px;}
 .doctrine-branch::before {inset:0;background-size:100% 100%;background-repeat:no-repeat;opacity:.85;}
-body .doctrine-paths .doctrine-path-warfare {background-image:url("assets/doctrines/warfare-button.png")!important;}
-.doctrine-warfare::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/warfare-background.png");}
-body .doctrine-paths .doctrine-path-command {background-image:url("assets/doctrines/command-button.png")!important;}
-.doctrine-command::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/command-background.png");}
-body .doctrine-paths .doctrine-path-defense {background-image:url("assets/doctrines/defense-button.png")!important;}
-.doctrine-defense::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/defense-background.png");}
-body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/doctrines/engineering-button.png")!important;}
-.doctrine-engineering::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/engineering-background.png");}
+body .doctrine-paths .doctrine-path-warfare {background-image:url("assets/doctrines/warfare-button.webp")!important;}
+.doctrine-warfare::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/warfare-background.webp");}
+body .doctrine-paths .doctrine-path-command {background-image:url("assets/doctrines/command-button.webp")!important;}
+.doctrine-command::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/command-background.webp");}
+body .doctrine-paths .doctrine-path-defense {background-image:url("assets/doctrines/defense-button.webp")!important;}
+.doctrine-defense::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/defense-background.webp");}
+body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/doctrines/engineering-button.webp")!important;}
+.doctrine-engineering::before {background-image:linear-gradient(#080e1922,#080e1922),url("assets/doctrines/engineering-background.webp");}
 
 /* Territory capacity stays visible beside the battlefield, without covering menus. */
 #armyUpkeep { position:fixed; left:12px; top:110px; z-index:2210; width:202px; box-sizing:border-box; padding:12px; color:#e8dfc9; background:#151b22ed; border:1px solid #85704b; border-radius:7px; font:13px/1.5 system-ui; pointer-events:none; }
@@ -1084,7 +1084,7 @@ body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/do
   50% {filter:brightness(1.65) drop-shadow(0 0 9px #ffe28a);opacity:.72;transform:scale(1.03);}
 }
 #diplomacyModal {background:rgba(0,0,0,.48)!important;}
-#diplomacyModal > div {background:linear-gradient(#101a2b66,#101a2b88),url('assets/ui/menu-painted.png') center/cover!important;}
+#diplomacyModal > div {background:linear-gradient(#101a2b66,#101a2b88),url('assets/ui/menu-painted.webp') center/cover!important;}
 @media(max-width:700px){#battleStatusStack{left:6px;width:138px;gap:6px;}}
 @media(prefers-reduced-motion:reduce){#researchAvailable{animation:none;}}
 
@@ -1125,7 +1125,7 @@ body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/do
   border: 0;
   overflow: auto;
   color: #e6eef6;
-  background: linear-gradient(#07101bba, #07101be8), url("assets/ui/menu-painted.png") center / cover;
+  background: linear-gradient(#07101bba, #07101be8), url("assets/ui/menu-painted.webp") center / cover;
 }
 #creditsPage::backdrop { background: #000; }
 .credits-content { max-width: 720px; margin: auto; text-align: center; line-height: 1.7; }

@@ -8,10 +8,10 @@ const StartupAssets=(()=>{
   const urls=[...Object.values(DEFAULT_IMAGE_MAP),...Object.values(SETTLEMENT_IMAGE_MAP),...Object.values(FACTION_FLAG_MAP),...Object.values(INDICATOR_IMAGE_MAP)];
   for(const type of TERRAIN_V2_TYPES.filter(t=>t!=='BRIDGE'))for(let i=1;i<=6;i++)urls.push(`assets/terrain/v2/${type.toLowerCase()}-${i}.jpg${['WOODS','SWAMP'].includes(type)?'?v=training1':''}`);
   urls.push('assets/terrain/v3/bridge-stone.png','assets/terrain/v3/bridge-timber.png');
-  for(const [id] of WarbornLeaders.choices)urls.push(`assets/leaders/${id}.png`);
-  urls.push('assets/leaders/player-crown.png');
-  for(const branch of ['warfare','command','defense','engineering'])for(const suffix of ['-background.png','-button.png','.svg'])urls.push(`assets/doctrines/${branch}${suffix}`);
-  for(const name of ['anchor-button','fortress-button','turn-banner','menu-painted','button-banner','captain-garran'])urls.push(`assets/ui/${name}.png`);
+  for(const [id] of WarbornLeaders.choices)urls.push(`assets/leaders/${id}.webp`);
+  urls.push('assets/leaders/player-crown.webp');
+  for(const branch of ['warfare','command','defense','engineering'])for(const suffix of ['-background.webp','-button.webp','.svg'])urls.push(`assets/doctrines/${branch}${suffix}`);
+  for(const name of ['anchor-button','fortress-button','turn-banner','menu-painted','button-banner','captain-garran'])urls.push(`assets/ui/${name}.webp`);
   urls.push('assets/menu.jpg','assets/victory.jpg','assets/defeat.jpg');
   return [...new Set(urls)];
  }
@@ -35,7 +35,8 @@ const StartupAssets=(()=>{
  }
  async function start(){
   if(running)return;running=true;
-  const jobs=[...images().map(url=>[url,()=>loadImage(url)]),['music',()=>SoundManager.prepareMusic()]];
+  // Start the large audio transfer immediately instead of after every image.
+  const jobs=[['music',()=>SoundManager.prepareMusic()],...images().map(url=>[url,()=>loadImage(url)])];
   const failed=[];let next=0;
   $('startupRetry').hidden=true;$('startupContinue').hidden=true;
   const progress=()=>{$('startupProgress').max=jobs.length;$('startupProgress').value=completed.size;$('startupStatus').textContent=`Loading artwork and audio… ${completed.size} / ${jobs.length}`;};
@@ -57,5 +58,5 @@ const StartupAssets=(()=>{
  },{once:true});
  // Do not let menu shortcuts start a game behind the loading screen.
  window.addEventListener('keydown',event=>{if(!loaded&&!event.target.closest('#startupLoading')){event.preventDefault();event.stopImmediatePropagation();}},true);
- return {images,start,setupComplete(){setupDone=true;finish();}};
+ return {images,start,get ready(){return loaded&&setupDone;},setupComplete(){setupDone=true;finish();}};
 })();
