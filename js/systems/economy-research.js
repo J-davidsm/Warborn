@@ -105,7 +105,7 @@ function awardCaptureResearch(settlement,team,previousOwner) {
 }
 const RESEARCH_TREE = Object.fromEntries([
   ['spear_doctrine','Spear Doctrine','warfare',2,[],'Unlock Spearman.','Spearman'],
-  ['steel_arms','Steel Arms','warfare',2,['spear_doctrine'],'Soldiers and Swordsmen gain +2 damage.',null,{units:['Soldier','Swordsman'],dmg:2}],
+  ['steel_arms','Iron Strength','warfare',2,['spear_doctrine'],'Swordsmen deal full damage even when wounded.'],
   ['archery','Archery','warfare',2,['spear_doctrine'],'Unlock Archer.','Archer'],
   ['cavalry_training','Cavalry Training','warfare',4,['steel_arms'],'Unlock Knight.','Knight'],
   ['longbows','Longbows','warfare',3,['archery'],'Archer range increases to 3. Shots at distance 3 deal 25% less damage.',null,{units:['Archer'],atkRange:1}],
@@ -139,6 +139,13 @@ const UNIT_DOCTRINES = Object.fromEntries(Object.values(RESEARCH_TREE).filter(t=
 const RESEARCH_COSTS = Object.fromEntries(Object.entries(UNIT_DOCTRINES).map(([name,id])=>[name,RESEARCH_TREE[id].cost]));
 
 function hasTech(team,id) { return researchedTechs[team]?.has(id) || false; }
+// Older saved units already include Steel Arms' retired +2 stat increase.
+// Stamp the migration so promotions and repeated saves cannot subtract it twice.
+function migrateIronStrength(unit) {
+  if(unit.ironStrengthVersion===1)return;
+  if(['Soldier','Swordsman'].includes(unit.name)&&hasTech(unit.team,'steel_arms')&&unit.dmg>=UNIT_TEMPLATES[unit.name].dmg+2)unit.dmg-=2;
+  unit.ironStrengthVersion=1;
+}
 function getDoctrineAttackMultiplier(attacker,defender) {
   return attacker.name==='Archer'&&hasTech(attacker.team,'longbows')&&manhattan(attacker.col,attacker.row,defender.col,defender.row)===3?.75:1;
 }

@@ -33,7 +33,9 @@ function calculateCombatDamage(a,d) {
   apply('Assassin against Crown',a.name==='Assassin'&&d.name==='Crown'?2:1,false);
   apply('Siege against fortress',a.name==='Catapult'&&isFortressUnit(d)?2:1,false);
   apply('Swordsman kill streak',a.name==='Swordsman'?1+(a.streakBonus||0):1,false);
-  const health=Math.max(a.hp/a.maxHp,.4);apply('Attacker health',health);damage=Math.floor(damage);
+  const ironStrength=a.name==='Swordsman'&&hasTech(a.team,'steel_arms');
+  const health=ironStrength?1:Math.max(a.hp/a.maxHp,.4);apply('Attacker health',health);damage=Math.floor(damage);
+  if(ironStrength&&a.hp<a.maxHp)modifiers.push({label:'Iron Strength: no wound penalty',multiplier:1,before:damage,after:damage});
   if(a.name!=='Dragon')apply('Morale',a.morale<=30?.6:a.morale>=120?1.4:1);
   apply('Knight against Dragon',a.name==='Knight'&&d.name==='Dragon'?2:1);
   apply('Dragon against Catapult',a.name==='Dragon'&&d.name==='Catapult'?2:1);

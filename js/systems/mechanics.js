@@ -44,6 +44,13 @@ function canMoveTo(unit, targetCol, targetRow) {
   return !!findMovementPath(unit, targetCol, targetRow);
 }
 
+// Shared with strategic pathfinding: pay on entry, even when starting on grass.
+function movementStepCost(unit,fromTerrain,toTerrain) {
+  if(unit.name==='Dragon')return 1;
+  if(unit.name==='Crown')return (!fromTerrain||fromTerrain==='GRASS')&&(!toTerrain||toTerrain==='GRASS')?1:2;
+  return toTerrain==='MOUNTAIN'?2:1;
+}
+
 function findMovementPath(unit, targetCol, targetRow) {
   if(unit?.rogue||unit?.ruins||(unit?.name==='Catapult'&&unit.hasActed&&!Number.isFinite(unit.spawnMoveLimit)))return false;
   if(unit && (unit.fortress || ['Stockade','Castle','Heavy Fortress','Fortress'].includes(unit.name)))return false;
@@ -71,10 +78,8 @@ function findMovementPath(unit, targetCol, targetRow) {
   const grass=t=>!t||t==='GRASS';
   if(crown)maxMove=2;
   
-  // Mountain still restricts to 1 space
-  if (!flying && !crown && startTerrain === 'MOUNTAIN') {
-    maxMove = 1;
-  }
+  // Mountains consume two points per entered tile, rather than imposing a
+  // flat one-tile turn or halving the budget a second time.
   
   // Swamp movement rules: 1 step through swamp terrain, except Assassins get full range
   if (!flying && !crown && startTerrain === 'SWAMP') {
@@ -106,10 +111,12 @@ function findMovementPath(unit, targetCol, targetRow) {
   const queue = [{col: startCol, row: startRow, steps: 0}];
   const visited = new Set();
   const costs = new Map([[`${startCol},${startRow}`,0]]);
+  const gains = new Map([[`${startCol},${startRow}`,0]]);
+  const owners=typeof Territory!=='undefined'&&Territory.eligible(unit)?Territory.ownership():null;
   const paths = new Map([[`${startCol},${startRow}`, [{col:startCol,row:startRow}]]]);
   
   while (queue.length > 0) {
-    queue.sort((a,b)=>a.steps-b.steps);
+    queue.sort((a,b)=>a.steps-b.steps||(gains.get(`${b.col},${b.row}`)||0)-(gains.get(`${a.col},${a.row}`)||0));
     const {col, row, steps} = queue.shift();
     const currentKey=`${col},${row}`;
     if(visited.has(currentKey))continue;
@@ -169,18 +176,13 @@ function findMovementPath(unit, targetCol, targetRow) {
         }
       }
       
-      // Calculate movement cost for this terrain
-      let moveCost = 1; // Default cost
-      
-      // Swamp terrain costs: 1 movement per swamp tile, except Assassins move normally
-      if (terrainType === 'SWAMP' && unit.name !== 'Assassin') {
-        moveCost = 1; // Each swamp tile costs 1 movement point for non-Assassins
-      }
-      
-      if(crown)moveCost=grass(startTerrain)&&grass(terrainType)?1:2;
+      const moveCost=movementStepCost(unit,crown?startTerrain:terrain[row*COLS+col],terrainType);
       const total=steps+moveCost;
-      if(total>maxMove||total>=(costs.get(key)??Infinity))continue;
+      const gain=(gains.get(currentKey)||0)+(owners&&owners[terrainIdx]!==unit.team?1:0);
+      const previousCost=costs.get(key)??Infinity;
+      if(total>maxMove||total>previousCost||total===previousCost&&gain<=(gains.get(key)||0))continue;
       costs.set(key,total);
+      gains.set(key,gain);
       paths.set(key, [...paths.get(`${col},${row}`), {col:newCol,row:newRow}]);
       queue.push({col: newCol, row: newRow, steps: steps + moveCost});
     }

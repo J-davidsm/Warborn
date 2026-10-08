@@ -15,13 +15,13 @@ const UnitPresentation=(()=>{
   if(variants.has(key))return variants.get(key);
   const c=document.createElement('canvas'),ratio=Math.min(1,384/Math.max(source.width,source.height));c.width=Math.max(1,Math.round(source.width*ratio));c.height=Math.max(1,Math.round(source.height*ratio));const ctx=c.getContext('2d');ctx.drawImage(source,0,0,c.width,c.height);
   // Recolor saturated cloth, shields and scales, preserving shading and neutral steel.
-  // Warm skin/leather hues are retained on humanoids. Siege/ships receive a pennant.
+  // Warm skin/leather hues are retained on humanoids; siege fabric is masked below.
   try{const data=ctx.getImageData(0,0,c.width,c.height),p=data.data;
    for(let i=0;i<p.length;i+=4){
     const [r,g,b]=[p[i],p[i+1],p[i+2]],hi=Math.max(r,g,b),lo=Math.min(r,g,b);
     if(!p[i+3])continue;
     // Fortress art reserves emerald hues for fabric: never tint masonry or wood.
-    if(isFortressUnit(u)){
+    if(isFortressUnit(u)||u.name==='Catapult'){
      if(g>r*1.2&&g>b*1.15&&g-Math.min(r,b)>18){
       const light=Math.min(1.35,.35+g/190);
       for(let n=0;n<3;n++)p[i+n]=Math.round(Math.min(255,rgb[n]*light));
@@ -36,8 +36,8 @@ const UnitPresentation=(()=>{
     const shade=(hi+lo)/510,amount=robe?.75:assassin?.65:Math.min(.96,(hi-lo)/Math.max(1,hi)*3);
     for(let n=0;n<3;n++)p[i+n]=Math.round(p[i+n]*(1-amount)+Math.min(255,rgb[n]*(.5+shade*1.25))*amount);
    }ctx.putImageData(data,0,0);
-  }catch(e){/* Custom cross-origin art still renders with a nation pennant. */}
-  if(u.name==='Stockade'||u.isWaterUnit||u.name==='Catapult'){
+  }catch(e){/* Custom cross-origin art still renders on its nation-colored hex. */}
+  if(['Sloop','Man-of-War','Battleship'].includes(u.name)){
    const x=c.width*.66,y=c.height*.15,w=c.width*.23,h=c.height*.13;
    ctx.strokeStyle='#c6b691';ctx.lineWidth=Math.max(2,c.width*.012);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+h*2);ctx.stroke();
    ctx.fillStyle=rgba(rgb);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+w,y+h*.15);ctx.lineTo(x+w*.78,y+h);ctx.lineTo(x,y+h*.8);ctx.fill();

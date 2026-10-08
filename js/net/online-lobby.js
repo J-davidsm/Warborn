@@ -174,6 +174,7 @@ const OnlineMatch = (() => {
   if(typeof Territory!=='undefined')Territory.restore(s.territory);
   currentTeam=s.currentTeam;turnNumber=s.turnNumber;currentTurnIndex=s.currentTurnIndex;turnOrder=copy(s.turnOrder);
   if(typeof restoreResearch==='function')restoreResearch(s.researchedTechs,s.research,Object.keys(s.research));
+  if(typeof migrateIronStrength==='function')units.forEach(migrateIronStrength);
   if(typeof restoreActiveResearch==='function')restoreActiveResearch(s.activeResearch);
   else researchedUnits=Object.fromEntries(Object.entries(s.research).map(([k,v])=>[k,new Set(v)]));
   if(typeof restoreResearchPoints==='function')restoreResearchPoints(s.researchPoints,s.researchPointReceipts,true);

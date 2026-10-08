@@ -34,7 +34,7 @@ const AICommander = (() => {
         for(const q of neighbors(p)){
           const j=key(q);if(!passable(u,q)||(blockers.has(j)&&j!==key(target)))continue;
           const t=terrain[j],dest=terrain[i];
-          const cost=u.name==='Crown'?((!t||t==='GRASS')&&(!dest||dest==='GRASS')?1:2):u.name!=='Dragon'&&(t==='MOUNTAIN'||t==='SWAMP'&&u.name!=='Assassin')?Math.max(1,u.move):1;
+          const cost=movementStepCost(u,t,dest)+(u.name!=='Dragon'&&u.name!=='Assassin'&&u.name!=='Crown'&&t==='SWAMP'?Math.max(0,u.move-1):0);
           if(d+cost<dist[j]){dist[j]=d+cost;push(j,d+cost);}
         }
       }

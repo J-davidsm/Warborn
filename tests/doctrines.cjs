@@ -7,7 +7,14 @@ const reset=()=>{c.units=[];c.terrain.fill(null);c.settlements.fill(null);run("r
 const buy=(id,team='PLAYER')=>{for(const next of c.getResearchPath(team,id))assert(c.researchTech(team,next),next);};
 const make=(name,team='PLAYER')=>{const u=c.makeUnit(name,team,0,0);c.units.push(u);return u;};
 reset();assert(c.isUnitUnlocked('PLAYER','Soldier'));assert(c.isUnitUnlocked('PLAYER','Swordsman'));assert(!c.isUnitUnlocked('PLAYER','Archer'));assert(!c.researchTech('PLAYER','archery'));assert.equal(c.getGold('PLAYER'),1000);assert(!c.researchTech('PLAYER','unknown'));
-const soldier=make('Soldier'),sword=make('Swordsman');buy('steel_arms');assert.equal(c.getGold('PLAYER'),1000);assert.equal(c.getResearchPoints('PLAYER'),996);assert.equal(soldier.dmg,17);assert.equal(sword.dmg,22);assert(!c.researchTech('PLAYER','steel_arms'));assert.equal(soldier.dmg,17);assert.equal(c.makeUnit('Soldier','PLAYER',0,0).dmg,17);
+const soldier=make('Soldier'),sword=make('Swordsman');buy('steel_arms');assert.equal(c.getGold('PLAYER'),1000);assert.equal(c.getResearchPoints('PLAYER'),996);assert.equal(soldier.dmg,15);assert.equal(sword.dmg,20);assert(!c.researchTech('PLAYER','steel_arms'));assert.equal(soldier.dmg,15);assert.equal(c.makeUnit('Soldier','PLAYER',0,0).dmg,15);
+const defender=c.makeUnit('Soldier','AI',1,0);c.units=[sword,defender];sword.hp=1;
+assert.equal(c.calculateCombatDamage(sword,defender).damage,20,'Iron Strength ignores wounds');
+assert(c.calculateCombatDamage(sword,defender).modifiers.some(m=>m.label.includes('Iron Strength')));
+sword.morale=20;assert.equal(c.calculateCombatDamage(sword,defender).damage,12,'morale penalties still apply');
+const oldSteelSword=c.makeUnit('Swordsman','PLAYER',0,0,{id:'legacy',dmg:28,promotionLevel:3});assert.equal(oldSteelSword.dmg,26,'remove retired +2, preserve veteran damage');
+const ironReload=c.makeUnit('Swordsman','PLAYER',0,0,JSON.parse(JSON.stringify(oldSteelSword)));assert.equal(ironReload.dmg,26,'migration runs once');
+c.units=[soldier,sword];sword.morale=100;
 buy('field_training');assert.equal(soldier.maxHp,60);assert.equal(soldier.hp,60);buy('forced_march');assert.equal(soldier.move,4);assert(c.canMoveTo(soldier,4,0),'pathfinding sees real movement bonus');
 buy('volley_fire');const archer=make('Archer');assert.equal(archer.atkRange,3);assert.equal(archer.dmg,20);
 const knight=make('Knight');buy('heavy_cavalry');assert.equal(knight.move,3);buy('maneuver_warfare');assert.equal(knight.move,3);assert.equal(c.makeUnit('Knight','PLAYER',1,1).move,3);assert.equal(c.makeUnit('Assassin','PLAYER',1,1).move,5);

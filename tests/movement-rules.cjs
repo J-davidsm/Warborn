@@ -42,3 +42,20 @@ const sample=vm.runInContext('ActionEffects.position(units[0],p=>({x:p.col,y:p.r
 assert.equal(sample.x,(route[1].col+route[2].col)/2);assert.equal(sample.y,(route[1].row+route[2].row)/2);
 ctx.sampleTime=1000;assert.equal(vm.runInContext('ActionEffects.position(units[0],p=>({x:p.col,y:p.row}),sampleTime).x',ctx),2);
 console.log('Movement animation follows the safe detour and finishes at the destination.');
+
+p=unit('player',0);p.name='Assassin';p.move=5;
+ctx=game({terrain:['GRASS','GRASS','MOUNTAIN','MOUNTAIN','MOUNTAIN','GRASS'],units:[p]});
+assert(ctx.canMoveTo(p,3,0),'1 grass + 2 mountain steps cost 5');assert(!ctx.canMoveTo(p,4,0),'cannot walk five mountain tiles from grass');
+ctx.terrain.fill('MOUNTAIN');assert(ctx.canMoveTo(p,2,0),'five points allow two mountain steps');assert(!ctx.canMoveTo(p,3,0));
+p.move=6;assert(ctx.canMoveTo(p,3,0));p.spawnMoveLimit=3;assert(!ctx.canMoveTo(p,2,0),'new-unit reduced budget still applies');delete p.spawnMoveLimit;
+p.name='Dragon';p.move=5;assert(ctx.canMoveTo(p,5,0),'flying still ignores terrain costs');
+// Equal-cost square routes prefer fresh claims, without buying a longer route.
+p=unit('player',0);p.row=1;p.move=4;ctx=game({terrain:Array(9).fill('GRASS'),units:[p]});ctx.COLS=3;ctx.ROWS=3;ctx.terrain[4]='WATER';
+ctx.Territory={eligible:u=>!['Cleric','Assassin'].includes(u.name),ownership:()=>[null,null,null,'PLAYER','PLAYER','PLAYER','PLAYER','PLAYER','PLAYER']};
+assert(ctx.findMovementPath(p,2,1).some(t=>t.row===0),'choose unowned upper detour over owned lower detour');
+ctx.terrain[4]='GRASS';assert.equal(ctx.findMovementPath(p,2,1).length,3,'territory never justifies extra cost');
+console.log('Mountain entry costs, mixed routes, flying, spawn budgets and equal-cost territory tie-breaks pass.');
+p.col=0;p.row=0;p.move=3;ctx.useHexGrid=true;ctx.getHexNeighbors=()=>[[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]];ctx.hexDistance=(a,b,c,d)=>Math.max(Math.abs(a-c),Math.abs(b-d),Math.abs(a+b-c-d));
+ctx.Territory.ownership=()=>['PLAYER','PLAYER','PLAYER',null,null,'PLAYER','PLAYER','PLAYER','PLAYER'];
+assert(ctx.findMovementPath(p,2,1).some(t=>t.col===0&&t.row===1),'hex paths also choose more claims');
+ctx.terrain[1]='MOUNTAIN';ctx.terrain[3]='MOUNTAIN';assert(!ctx.canMoveTo(p,2,1),'hex entry cost consumes the same budget');

@@ -35,6 +35,7 @@ function makeUnit(name, team, col, row, opts={}) {
     // preserve an explicit id when provided (used during snapshot rehydrate)
     id: opts.id || Math.random().toString(36).slice(2,9),
     name, team, col, row, rogue:opts.rogue===true, ruins:opts.ruins===true,
+    ironStrengthVersion:opts.ironStrengthVersion,
     // allow callers to set current HP via opts.hp; fall back to opts.maxHp or defaults
     hp: (typeof opts.hp !== 'undefined') ? opts.hp : (opts.maxHp ?? defaultStats.maxHp),
     maxHp: opts.maxHp ?? defaultStats.maxHp,
@@ -56,6 +57,8 @@ function makeUnit(name, team, col, row, opts={}) {
   for(const key of ['streakBonus', 'streakMisses', 'streakKilled', 'streakProcessedTurn', 'spawnMoveLimit', 'usedBonusAttack', 'hasMoved', 'hasActed'])if(opts[key]!==undefined)unit[key]=opts[key];
   if(opts.justSpawned&&hasTech(team,'rapid_mobilization')){unit.spawnMoveLimit=Math.floor(unit.move/2);unit.hasMoved=unit.spawnMoveLimit===0;unit.hasActed=true;}
   ensureVeteranName(unit, false, opts.id ? null : `${team}:${col}:${row}:${name}`);
+  if(typeof migrateIronStrength==='function'&&Number.isFinite(opts.dmg))migrateIronStrength(unit);
+  unit.ironStrengthVersion=1;
   return unit;
 }
 
@@ -120,6 +123,7 @@ function serializeUnits() {
     move: u.move,
     atkRange: u.atkRange,
     dmg: u.dmg,
+    ironStrengthVersion:u.ironStrengthVersion,
     cost: u.cost || 1,
     morale: u.morale,
     aiRecovering: u.aiRecovering === true,
@@ -331,6 +335,7 @@ function applyLevelData(data) {
     move: u.move,
     atkRange: u.atkRange,
     dmg: u.dmg,
+    ironStrengthVersion:u.ironStrengthVersion,
     cost: u.cost,
     morale: u.morale,
     aiRecovering: u.aiRecovering === true,

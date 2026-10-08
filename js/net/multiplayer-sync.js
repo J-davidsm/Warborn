@@ -43,7 +43,7 @@ function postGameState(actionId = null, retryCount = 0){
         id: u.id, name: u.name, team: u.team, col: u.col, row: u.row, rogue:u.rogue===true, ruins:u.ruins===true,
         hp: u.hp, maxHp: u.maxHp, morale: u.morale, 
         hasMoved: u.hasMoved, hasActed: u.hasActed, 
-        cost: u.cost, atkRange: u.atkRange, move: u.move, dmg: u.dmg,
+        cost: u.cost, atkRange: u.atkRange, move: u.move, dmg: u.dmg, ironStrengthVersion:u.ironStrengthVersion,
         experience: u.experience, promotionLevel: u.promotionLevel,
         personalName: u.personalName, streakBonus:u.streakBonus, streakMisses:u.streakMisses, streakKilled:u.streakKilled, streakProcessedTurn:u.streakProcessedTurn, spawnMoveLimit:u.spawnMoveLimit, usedBonusAttack:u.usedBonusAttack, hasMoved:u.hasMoved, hasActed:u.hasActed, isWaterUnit: u.isWaterUnit
       })),
@@ -231,7 +231,7 @@ window.addEventListener('message', (ev) => {
         const opts = {
           rogue:inc.rogue, ruins:inc.ruins, experience: inc.experience, promotionLevel: inc.promotionLevel,
           personalName: inc.personalName, streakBonus:inc.streakBonus, streakMisses:inc.streakMisses, streakKilled:inc.streakKilled, streakProcessedTurn:inc.streakProcessedTurn, spawnMoveLimit:inc.spawnMoveLimit, usedBonusAttack:inc.usedBonusAttack, hasMoved:inc.hasMoved, hasActed:inc.hasActed, isWaterUnit: inc.isWaterUnit,
-          move: inc.move, atkRange: inc.atkRange, dmg: inc.dmg,
+          move: inc.move, atkRange: inc.atkRange, dmg: inc.dmg, ironStrengthVersion:inc.ironStrengthVersion,
           id: ('id' in inc) ? inc.id : undefined,
           hp: (typeof inc.hp !== 'undefined') ? inc.hp : (typeof inc.maxHp !== 'undefined' ? inc.maxHp : 1),
           maxHp: (typeof inc.maxHp !== 'undefined') ? inc.maxHp : ((typeof inc.hp !== 'undefined') ? inc.hp : 1),
