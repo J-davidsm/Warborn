@@ -1,7 +1,10 @@
 /* Live visitor directory. A browser holds a rendezvous ID; another takes over
    if it leaves. PeerJS Cloud brokers connections; no names are stored on GitHub. */
 const PublicLobby=(()=>{
- const ROOT='warborn-j-davidsm-public-v2'+(new URL(location.href).hostname==='j-davidsm.github.io'?'':'-preview'),$=id=>document.getElementById(id);
+ // Packaged desktop builds load from file:// and share the live website directory.
+ // Local development servers retain their separate preview directory.
+ const address=new URL(location.href);
+ const ROOT='warborn-j-davidsm-public-v2'+(address.protocol==='file:'||address.hostname==='j-davidsm.github.io'?'':'-preview'),$=id=>document.getElementById(id);
  let peer=null,upstream=null,leader=false,online=false,retry=null,epoch=0,rows=[],records=new Map(),links=new Map();
  let lastSent='',inviteAt=0;
  const name=()=>$('lobbyName').value.trim().slice(0,24)||'Commander';

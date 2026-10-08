@@ -271,7 +271,7 @@ const OnlineMatch = (() => {
   $('lobbyMode').onchange=render;$('menuOnlineBtn').onclick=open;$('lobbyCreate').onclick=()=>createPeer(true);$('lobbyJoin').onclick=()=>createPeer(false);
   $('lobbyLeave').onclick=leave;$('lobbyReady').onclick=()=>{const m=members.find(m=>m.team===localTeam);if(!m||playing)return;m.ready=!m.ready;if(host)roster();else{send({type:'ready',ready:m.ready});render();}};
   $('lobbyStart').onclick=start;$('onlineReturnLobby').onclick=returnLobby;$('lobbyReturn').onclick=returnLobby;
-  $('lobbyCopy').onclick=async()=>{const url=new URL(location.href);url.search='';url.searchParams.set('room',code);try{await navigator.clipboard.writeText(url.href);status('Invite link copied.');}catch{status('Invite link: '+url.href);}};
+  $('lobbyCopy').onclick=async()=>{const url=new URL(location.href.startsWith('file:')?'https://j-davidsm.github.io/Warborn/':location.href);url.search='';url.hash='';url.searchParams.set('room',code);try{await navigator.clipboard.writeText(url.href);status('Invite link copied.');}catch{status('Invite link: '+url.href);}};
   $('lobbyName').addEventListener('input',presence);
   let restored=null;try{restored=JSON.parse(sessionStorage.getItem(sessionKey)||'null');}catch{}
   if(restored&&/^[A-HJ-NP-Z2-9]{8}$/.test(restored.code)&&typeof restored.host==='boolean'&&typeof restored.sessionToken==='string'&&Array.isArray(restored.members)&&Array.isArray(restored.credentials)&&Number.isInteger(restored.revision)){

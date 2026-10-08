@@ -5,6 +5,17 @@
   --muted: #9aa6b2;
 }
 
+/* Dragging the battlefield or repeatedly clicking controls must not select the page. */
+html, body, body * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* Keep names, room codes and editor fields editable with normal keyboard controls. */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 html, body {
   margin: 0;
   padding: 0;
