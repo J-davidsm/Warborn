@@ -39,6 +39,8 @@ const sandbox={
 vm.runInNewContext(fs.readFileSync(require('path').join(__dirname,'../js/audio/soundManager.js'),'utf8'),sandbox);
 const sound=sandbox.window.SoundManager;
 const music=tracks[0];
+assert.equal(music.src,'assets/audio/oppressive-gloom.mp3');
+assert.equal(music.loop,true);
 function clickButton(){
   const event={propagationStopped:false,stopPropagation(){this.propagationStopped=true}};
   for(const handler of handlers.click)handler(event);

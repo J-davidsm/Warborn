@@ -1099,3 +1099,29 @@ body .doctrine-paths .doctrine-path-engineering {background-image:url("assets/do
 #messageHistory > div > div {background:rgba(13,20,31,.82)!important;}
 #messageHistory > div > div > div:nth-last-child(2) {color:#f2eadb;}
 #battleStatusStack {pointer-events:auto;}
+
+/* Credits use the menu's artwork and native modal keyboard/focus behavior. */
+#creditsPage {
+  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: clamp(20px, 5vh, 60px) 20px;
+  border: 0;
+  overflow: auto;
+  color: #e6eef6;
+  background: linear-gradient(#07101bba, #07101be8), url("assets/ui/menu-painted.png") center / cover;
+}
+#creditsPage::backdrop { background: #000; }
+.credits-content { max-width: 720px; margin: auto; text-align: center; line-height: 1.7; }
+.credits-content h2 { margin: 0 0 24px; font: bold clamp(36px, 7vw, 64px) Georgia, serif; color: var(--accent); }
+.credits-content section { margin: 24px 0; padding: 16px; background: #0b1220bb; border: 1px solid #ad8c4c66; border-radius: 10px; }
+.credits-content h3 { color: var(--accent); margin: 0; }
+.credits-name { font-size: 22px; font-weight: 700; }
+.credits-content a { color: #ffe09b; overflow-wrap: anywhere; }
+.credits-content button { padding: 14px 32px; }
+#mainMenu { overflow-y: auto; }

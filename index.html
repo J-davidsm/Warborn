@@ -5,7 +5,7 @@
   <title>Warborn — Turn-Based Strategy</title>
   <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=banners-20261007">
+  <link rel="stylesheet" href="styles.css?v=credits-20261008">
   <script src="vendor/p5.min.js"></script>
 </head>
 <body>
@@ -20,10 +20,32 @@
         <button id="menuEndlessBtn" type="button">Endless Mode</button>
         <button id="menuCampaignBtn" type="button">Campaigns</button>
         <button type="button" onclick="openScenarioWorkshop()">Generate Scenario</button>
+        <button id="menuCreditsBtn" type="button">Credits</button>
       </div>
       <p class="web-menu-help">Select a unit, choose where to move, then End Turn.<br>Choose Campaigns for story missions or Generate Scenario for custom battles.</p>
     </div>
   </div>
+
+  <dialog id="creditsPage" aria-labelledby="creditsTitle">
+    <div class="credits-content">
+      <p class="campaign-kicker">WARBORN</p>
+      <h2 id="creditsTitle">Credits</h2>
+      <section aria-labelledby="creditsCreator">
+        <h3 id="creditsCreator">Created by</h3>
+        <p class="credits-name">Joseph Thomas Davidsmeier</p>
+        <p>With the help of Codex GPT-6 Astra and GitHub Copilot.</p>
+      </section>
+      <section aria-labelledby="creditsMusic">
+        <h3 id="creditsMusic">Music</h3>
+        <p>“Evil March” by Kevin MacLeod (<a href="https://incompetech.com/" target="_blank" rel="noopener noreferrer">incompetech.com</a>)</p>
+        <p>“Oppressive Gloom” by Kevin MacLeod (<a href="https://incompetech.com/" target="_blank" rel="noopener noreferrer">incompetech.com</a>)</p>
+        <p>Licensed under Creative Commons: Attribution 4.0<br>
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">https://creativecommons.org/licenses/by/4.0/</a>
+        </p>
+      </section>
+      <form method="dialog"><button type="submit" autofocus>Back to menu</button></form>
+    </div>
+  </dialog>
 
   <section id="onlineLobby" class="lobby-overlay" hidden aria-label="Multiplayer lobby">
     <div class="lobby-card">
@@ -444,7 +466,7 @@
 
   <script src="js/core/settlement-spacing.js?v=banners-20261007"></script>
   <script src="js/core/state-and-grid.js?v=banners-20261007"></script>
-  <script src="js/audio/soundManager.js?v=banners-20261007"></script>
+  <script src="js/audio/soundManager.js?v=credits-20261008"></script>
   <script src="js/net/connection-state.js?v=banners-20261007"></script>
   <script src="js/net/websocket-client.js?v=banners-20261007"></script>
   <script src="js/systems/economy-research.js?v=banners-20261007"></script>
@@ -479,7 +501,7 @@
   <script src="js/systems/ai-logistics.js?v=banners-20261007"></script>
   <script src="js/systems/ai-turn.js?v=banners-20261007"></script>
   <script src="js/systems/watch-game.js?v=banners-20261007"></script>
-  <script src="js/ui/endgame-and-ui.js?v=banners-20261007"></script>
+  <script src="js/ui/endgame-and-ui.js?v=credits-20261008"></script>
   <script src="js/net/multiplayer-sync.js?v=banners-20261007"></script>
   <script src="vendor/peerjs-1.5.5.min.js"></script>
   <script src="js/net/fair-map.js?v=banners-20261007"></script>

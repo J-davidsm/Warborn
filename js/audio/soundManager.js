@@ -2,7 +2,7 @@
 // Sounds are generated once, kept in memory, then played through WebAudio.
 (function () {
   const SAMPLE_RATE = 44100;
-  const MUSIC_SRC = 'assets/audio/evil-march.mp3';
+  const MUSIC_SRC = 'assets/audio/oppressive-gloom.mp3';
 
   const ATTACK_PRESETS = {
     Soldier: { wave: 'square', volume: 0.42, frequency: 190, attack: 0.004, decay: 0.055, sustain: 0.025, release: 0.08, slide: -720, noise: 0.08, bitcrush: 3 },

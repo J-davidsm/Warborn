@@ -6,6 +6,16 @@ function wireMainMenu() {
   const playBtn = document.getElementById('menuPlayBtn');
   const campaignBtn = document.getElementById('menuCampaignBtn');
   const backCampaignBtn = document.getElementById('campaignBackBtn');
+  const creditsBtn = document.getElementById('menuCreditsBtn');
+  const creditsPage = document.getElementById('creditsPage');
+  if (creditsBtn && creditsPage && !creditsBtn.dataset.wired) {
+    creditsBtn.dataset.wired = 'true';
+    creditsBtn.addEventListener('click', () => creditsPage.showModal());
+    // Keep menu shortcuts (including Watch Game) from firing while reading credits.
+    ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'touchstart', 'touchend', 'wheel', 'keydown', 'keyup', 'keypress'].forEach(eventName => {
+      creditsPage.addEventListener(eventName, event => event.stopPropagation());
+    });
+  }
   const mainMenu = document.getElementById('mainMenu');
   if (mainMenu && !mainMenu.dataset.inputGuarded) {
     mainMenu.dataset.inputGuarded = 'true';
