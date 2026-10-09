@@ -1,0 +1,10 @@
+const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
+const c={currentTeam:'PLAYER',gameOver:false,isEditorMode:false,opponentType:'HUMAN',getLocalPlayableTeam:()=> 'PLAYER',isAITeam:t=>t.startsWith('AI'),units:[],terrain:Array(25).fill(null),COLS:5,TERRAIN:{},normalizeTerrainType:t=>t,canAttack:(a,b)=>a!==b,manhattan:(a,b,x,y)=>Math.abs(a-x)+Math.abs(b-y)};
+vm.createContext(c);for(const p of ['js/rendering/renderer.js','js/rendering/unit-presentation.js'])vm.runInContext(fs.readFileSync(p,'utf8'),c);
+c.myRole='P1';
+const u={name:'Soldier',team:'PLAYER',col:0,row:0,hp:50,morale:100,move:3,atkRange:1,hasMoved:false,hasActed:false};c.units=[u];c.u=u;
+const ready=()=>vm.runInContext('UnitPresentation.ready(u)',c);
+assert(ready());u.hasMoved=true;assert(!ready(),'moved without a target');c.units.push({team:'PLAYER2',col:1,row:0,hp:50});assert(ready(),'moved but can still attack');
+u.hasActed=true;u.hasMoved=false;assert(!ready(),'attacked but unmoved');u.hasActed=false;u.morale=0;assert(!ready(),'broken morale');u.morale=100;u.name='Archer';u.hasMoved=true;u.atkRange=3;c.units[1].col=3;assert(ready(),'ranged targets count');
+u.name='Catapult';assert(!ready(),'moved catapult cannot attack');u.name='Soldier';u.hasMoved=false;u.rogue=true;assert(!ready());
+console.log('Dashed outlines require an unspent attack and remaining movement or a legal target; broken, rogue and moved catapults stay solid.');

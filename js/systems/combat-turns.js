@@ -274,10 +274,11 @@ let lastHumanEndTurn=0;
 function endTurn(expectedAITeam = null) {
   if (typeof watchGameMode!=='undefined' && watchGameMode && watchGamePaused) return;
   if (typeof watchGameMode!=='undefined' && watchGameMode && watchGamePaused) return;
-  if(!expectedAITeam&&typeof BattleGuide!=='undefined'&&BattleGuide.blocking)return;
+  const clockExpired=typeof OnlineMatch!=='undefined'&&OnlineMatch.timingOut;
+  if(!clockExpired&&!expectedAITeam&&typeof BattleGuide!=='undefined'&&BattleGuide.blocking)return;
   if(gameOver || (isAITeam(currentTeam) && expectedAITeam!==currentTeam))return;
   if(expectedAITeam && expectedAITeam!==currentTeam)return;
-  if(!expectedAITeam){if(Date.now()-lastHumanEndTurn<350)return;lastHumanEndTurn=Date.now();}
+  if(!expectedAITeam&&!clockExpired){if(Date.now()-lastHumanEndTurn<350)return;lastHumanEndTurn=Date.now();}
   if (typeof OnlineMatch !== "undefined" && !OnlineMatch.canAct()&&!(expectedAITeam&&OnlineMatch.canRunAI())) return;
   if(typeof markScenarioPlaying==='function')markScenarioPlaying();
   console.log('endTurn called. currentTeam before switch:', currentTeam, 'opponentType:', opponentType);
@@ -298,7 +299,7 @@ function endTurn(expectedAITeam = null) {
   // Clean up expired trade proposals
   cleanupExpiredTradeProposals();
   // In multiplayer, validate that it's actually this player's turn
-  if (opponentType === 'HUMAN'&&!expectedAITeam) {
+  if (opponentType === 'HUMAN'&&!expectedAITeam&&!clockExpired) {
     const isMyTurn = currentTeam===getLocalPlayableTeam();
     if (!isMyTurn) {
       console.warn('Attempted to end turn when it\'s not our turn. Role:', myRole, 'currentTeam:', currentTeam);

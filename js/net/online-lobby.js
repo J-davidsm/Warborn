@@ -5,23 +5,25 @@ const OnlineMatch = (() => {
  let code='',localName='',localTeam='PLAYER',capacity=2,revision=0,accepted=null,timeout=null,currentTheme='',mode='competitive',difficulty='medium',aiScheduled=false,members=[],links=new Map(),hostLink=null;
  // Rejoin credentials stay private: roster broadcasts must never expose them.
  let recovery=false,retry=null,sessionToken='',credentials=new Map();
+ let generation=typeof BattleGenerator!=='undefined'?{settings:BattleGenerator.defaults(),revision:0,seed:null,suggestion:null,error:''}:null;
+ let turnDeadline=0,clockKey='',pausedRemaining=120000,timingOut=false,clockOffset=0;
  const lastHeard=new WeakMap(),heartbeatPeers=new WeakSet(),sessionKey='warborn.online-session.v1';
  function saveSession(){
   if(!playing||!accepted)return;
-  try{sessionStorage.setItem(sessionKey,JSON.stringify({code,host,localName,sessionToken,localTeam,capacity,mode,difficulty,members,revision,state:accepted,credentials:host?[...credentials]:[]}));}catch{}
+  try{sessionStorage.setItem(sessionKey,JSON.stringify({code,host,localName,sessionToken,localTeam,capacity,mode,difficulty,members,revision,generation,clockRemaining:suspended?pausedRemaining:Math.max(0,turnDeadline-Date.now()-clockOffset),state:accepted,credentials:host?[...credentials]:[]}));}catch{}
  }
  const visible=()=>!$('onlineLobby').hidden,status=text=>{$('lobbyStatus').textContent=text;};
  // A serialization/send error is not evidence that the peer disconnected.
  // PeerJS binary mode chunks large snapshots; JSON mode rejects them at 16 KB.
- const tx=(c,d)=>{if(c?.open){try{c.send({...d,protocol:2});}catch(error){console.warn('Online message could not be sent',error);}}},send=d=>host?links.forEach(c=>tx(c,d)):tx(hostLink,d);
+ const tx=(c,d)=>{if(c?.open){try{c.send({...d,protocol:2,sentAt:Date.now()});}catch(error){console.warn('Online message could not be sent',error);}}},send=d=>host?links.forEach(c=>tx(c,d)):tx(hostLink,d);
  const connected=()=>host?members.length>=2&&members.slice(1).every(m=>m.connected&&links.get(m.team)?.open):!!hostLink?.open;
- const allReady=()=>members.length===capacity&&members.every(m=>m.ready&&m.connected);
+ const allReady=()=>members.length===capacity&&members.every(m=>m.ready&&m.connected)&&(!generation||mode==='coop'||!!generation.seed);
  const presence=()=>{if(typeof PublicLobby!=='undefined')PublicLobby.update();};
  function render(){
   $('lobbyRoom').textContent=code||'Not connected';$('lobbyPlayers').replaceChildren();
   for(const m of members){const row=document.createElement('li');row.textContent=m.name+' — Player '+(TEAMS.indexOf(m.team)+1)+(m.team===localTeam?' (you)':'')+' — '+(!m.connected?'Disconnected':m.ready?'Ready':'Not ready');$('lobbyPlayers').append(row);}
-  $('lobbyReady').disabled=!active||playing||!members.some(m=>m.team===localTeam);
-  $('lobbyReady').textContent=members.find(m=>m.team===localTeam)?.ready?'Not ready':'Ready';
+  $('lobbyReady').disabled=!active||playing||!members.some(m=>m.team===localTeam)||(generation&&mode!=='coop'&&!generation.seed);
+  $('lobbyReady').textContent=members.find(m=>m.team===localTeam)?.ready?'Withdraw agreement':'Agree to settings';
   $('lobbyStart').hidden=!host;$('lobbyStart').disabled=!connected()||!allReady()||playing;
   for(const id of ['lobbyCreate','lobbyJoin','lobbyName','lobbyCode','lobbyCapacity','lobbyMode','lobbyDifficulty'])$(id).disabled=active;
   if(active){$('lobbyCapacity').value=String(capacity);$('lobbyMode').value=mode;$('lobbyDifficulty').value=difficulty;}
@@ -30,13 +32,42 @@ const OnlineMatch = (() => {
   $('onlineMatchBar').hidden=!playing;$('endTurnBtn').disabled=gameOver||isAITeam(currentTeam)||(playing&&!canAct());
   $('onlineMatchStatus').textContent='Room '+code+' · '+currentTheme+' · '+members.length+' players · '+(currentTeam===localTeam?'Your turn':(members.find(m=>m.team===currentTeam)?.name||currentTeam)+'’s turn')+(pending?' · Syncing…':'');
   presence();
+  if(typeof BattleSetup!=='undefined')BattleSetup.render({active,playing,host,mode,generation,capacity});
  }
- function roster(){send({type:'roster',members,capacity,mode,difficulty});render();}
+ function roster(){send({type:'roster',members,capacity,mode,difficulty,generation});render();}
+ function changeSettings(settings){
+  if(!active||playing||mode==='coop'||!generation||!BattleGenerator.valid(settings))return;
+  if(!host){send({type:'settingsSuggestion',settings,base:generation.revision});status('Suggestion sent to the host.');return;}
+  generation={settings:copy(settings),revision:generation.revision+1,seed:null,suggestion:null,error:''};members.forEach(m=>m.ready=false);roster();
+ }
+ function generateBattle(){
+  if(!host||playing||!generation)return;
+  const seed=crypto.randomUUID();
+  try{BattleGenerator.generate(seed,capacity,generation.settings);generation.seed=seed;generation.error='';}
+  catch(error){generation.seed=null;generation.error=error.message;}
+  generation.revision++;members.forEach(m=>m.ready=false);roster();
+ }
+ function clockTick(){
+  if(!playing||gameOver)return;
+  const seconds=Math.max(0,Math.ceil((suspended?pausedRemaining:turnDeadline-Date.now()-clockOffset)/1000));
+  $('onlineTurnClock').textContent=isAITeam(currentTeam)?'AI turn':`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}${suspended?' · paused':''}`;
+  if(!host||suspended||!connected()||isAITeam(currentTeam)||!turnDeadline||Date.now()<turnDeadline||timingOut)return;
+  // Expiration executes the normal turn pipeline on the authority, including
+  // healing, income, research and upkeep. No dependence on the guest's tab.
+  apply(accepted);timingOut=true;const previousRevision=revision;
+  try{endTurn();if(revision===previousRevision)commit(snapshot());}finally{timingOut=false;}
+ }
+ function syncClock(s){
+  const key=s.currentTeam+':'+s.turnNumber+':'+s.currentTurnIndex;
+  if(key!==clockKey||!turnDeadline){clockKey=key;turnDeadline=Date.now()+120000;}
+  s.turnDeadline=turnDeadline;
+ }
  function open(){$('onlineLobby').hidden=false;render();}
  function failure(message){pending=false;suspended=true;status(message);if(playing)open();render();}
  // A temporary transport failure preserves the room, seats, and accepted battle.
  function pauseForReconnect(){
   if(!playing)return;
+  if(!suspended)pausedRemaining=Math.max(0,turnDeadline-Date.now()-(host?0:clockOffset));
   recovery=true;suspended=true;pending=false;
   if(host){activeAITurn=null;aiScheduled=false;if(accepted)apply(accepted);send({type:'pause'});}
   status('Connection interrupted. Reconnecting players… Your battle is preserved.');open();render();
@@ -44,6 +75,7 @@ const OnlineMatch = (() => {
  function resumeRoom(){
   if(!host||!playing||!recovery||!connected())return;
   recovery=false;suspended=false;$('onlineLobby').hidden=true;
+  turnDeadline=Date.now()+pausedRemaining;if(accepted)accepted.turnDeadline=turnDeadline;
   send({type:'state',state:accepted,revision,resume:true,paused:false});render();scheduleAI();
  }
  function connectHost(){
@@ -74,7 +106,7 @@ const OnlineMatch = (() => {
  function createPeer(isHost,joinCode,restored=null){
   if(active)return;
   localName=$('lobbyName').value.trim().slice(0,24)||'Commander';host=isHost;capacity=Number($('lobbyCapacity').value)||2;
-  if(![2,3,4].includes(capacity))capacity=2;
+  if(!(generation?[2,4]:[2,3,4]).includes(capacity))capacity=2;
   mode=$('lobbyMode').value==='coop'?'coop':'competitive';difficulty=['easy','medium','hard','impossible'].includes($('lobbyDifficulty').value)?$('lobbyDifficulty').value:'medium';
   code=restored?restored.code:isHost?Array.from(crypto.getRandomValues(new Uint8Array(8)),n=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[n%32]).join(''):(joinCode||$('lobbyCode').value).trim().toUpperCase();
   if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code)){status('Enter an 8-character room code.');return;}
@@ -82,9 +114,13 @@ const OnlineMatch = (() => {
   sessionToken=crypto.randomUUID();
   if(!isHost){try{const key='warborn-seat:'+code;sessionToken=sessionStorage.getItem(key)||sessionToken;sessionStorage.setItem(key,sessionToken);}catch{}}
   active=true;suspended=false;localTeam=isHost?'PLAYER':null;members=isHost?[{team:'PLAYER',name:localName,ready:false,connected:true}]:[];
+  clockKey='';turnDeadline=0;clockOffset=0;
+  if(generation&&!restored)generation={settings:BattleGenerator.defaults(),revision:0,seed:null,suggestion:null,error:''};
   if(restored){
    localName=restored.localName;sessionToken=restored.sessionToken;localTeam=restored.localTeam;
    capacity=restored.capacity;mode=restored.mode;difficulty=restored.difficulty;
+   if(restored.generation&&typeof BattleGenerator!=='undefined'&&BattleGenerator.valid(restored.generation.settings))generation=restored.generation;
+   turnDeadline=Number(restored.state?.turnDeadline)||Date.now()+120000;pausedRemaining=Math.max(0,Math.min(120000,restored.clockRemaining??120000));clockKey=restored.state.currentTeam+':'+restored.state.turnNumber+':'+restored.state.currentTurnIndex;
    members=restored.members.map(m=>({...m,connected:host&&m.team==='PLAYER'}));
    credentials=new Map(host?restored.credentials:[]);
    if(!valid(restored.state)){active=false;try{sessionStorage.removeItem(sessionKey);}catch{}status('Saved online session could not be restored.');render();return;}
@@ -144,18 +180,20 @@ const OnlineMatch = (() => {
   if(host)setTimeout(()=>{if(live()&&!members.some(m=>m.team===slot&&m.connected))c.close();},15000);
  }
  function snapshot(){
-  return copy({incomeReceipt:typeof BattleGuide!=='undefined'?BattleGuide.incomeReceipt:null,effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
+  return copy({generation:mode==='competitive'&&generation?{settings:generation.settings,seed:generation.seed}:null,turnDeadline,incomeReceipt:typeof BattleGuide!=='undefined'?BattleGuide.incomeReceipt:null,effects:ActionEffects.snapshot(),mode,difficulty,endless:mode==='coop'?Endless.snapshot():null,playerCount:capacity,theme:currentTheme,cols:COLS,rows:ROWS,units,terrain,settlements,resources,startingResources,currentTeam,turnNumber,currentTurnIndex,turnOrder,
    researchPoints:typeof researchPoints!=='undefined'?researchPoints:undefined,researchPointReceipts:typeof researchPointReceipts!=='undefined'?researchPointReceipts:undefined,
     activeResearch:typeof activeResearch!=='undefined'?JSON.parse(JSON.stringify(activeResearch)):undefined,
    researchedTechs:typeof serializeResearch==='function'?serializeResearch():undefined,territory:typeof Territory!=='undefined'?Territory.snapshot():undefined,aiCommander:typeof AICommander!=='undefined'?AICommander.snapshot():undefined,doubleUpkeepMode:(typeof doubleUpkeepMode!=='undefined'&&doubleUpkeepMode),hyperAggressiveMode:(typeof hyperAggressiveMode!=='undefined'&&hyperAggressiveMode),research:Object.fromEntries(Object.entries(researchedUnits).map(([k,v])=>[k,[...v]])),diplomacy,victoryCondition:currentVictoryCondition,gameOver});
  }
  function valid(s){
-  const teams=mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity),cols=mode==='coop'?8*capacity+2:capacity===2?20:21,rows=mode==='coop'?20:capacity===2?16:21;
+  const custom=mode==='competitive'&&generation?.seed;
+  if(custom&&(!s?.generation||s.generation.seed!==generation.seed||JSON.stringify(s.generation.settings)!==JSON.stringify(generation.settings)))return false;
+  const teams=mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity),cols=mode==='coop'?8*capacity+2:custom?generation.settings.size:capacity===2?20:21,rows=mode==='coop'?20:custom?cols:capacity===2?16:21;
   if(mode==='coop'&&(!s?.endless||s.endless.difficulty!==difficulty||!Number.isInteger(s.endless.seed)||!Number.isInteger(s.endless.wave)||s.endless.wave<1||s.endless.lastAdvance!==s.turnNumber||JSON.stringify(s.endless.players)!==JSON.stringify(TEAMS.slice(0,capacity))||typeof s.endless.lossReason!=='string'))return false;
   if(s?.territory&&(s.territory.cols!==cols||s.territory.rows!==rows||!Array.isArray(s.territory.claims)||s.territory.claims.length!==cols*rows||!s.territory.claims.every(t=>t===null||teams.includes(t))))return false;
   if(s?.researchPoints&&typeof validResearchPoints==='function'&&!validResearchPoints(s.researchPoints))return false;
   if(s?.researchedTechs&&typeof validResearchState==='function'&&!validResearchState(s.researchedTechs))return false;
-  return s&&(s.mode||'competitive')===mode&&s.playerCount===capacity&&(mode==='coop'?s.theme==='Cooperative Endless':FairMap.themes.some(t=>t.name===s.theme))&&s.cols===cols&&s.rows===rows&&
+  return s&&(s.mode||'competitive')===mode&&s.playerCount===capacity&&(mode==='coop'?s.theme==='Cooperative Endless':custom?s.theme==='Generated '+generation.settings.terrain.toLowerCase()+' battlefield':FairMap.themes.some(t=>t.name===s.theme))&&s.cols===cols&&s.rows===rows&&
    Array.isArray(s.terrain)&&s.terrain.length===cols*rows&&s.terrain.every(t=>[null,'GRASS','WOODS','MOUNTAIN','SWAMP','DESERT','WATER','BRIDGE','FARM','FOUNTAIN','VOID'].includes(t))&&
    Array.isArray(s.settlements)&&s.settlements.length===cols*rows&&s.settlements.every(t=>t===null||(['HAMLET','VILLAGE','CITY','PORT'].includes(t.type)&&[null,...teams].includes(t.owner)))&&
    Array.isArray(s.units)&&s.units.length<=1000&&new Set(s.units.map(u=>u?.id)).size===s.units.length&&s.units.every(u=>u&&typeof u.id==='string'&&Object.hasOwn(UNIT_TEMPLATES,u.name)&&(!u.rogue||u.name==='Dragon')&&(!u.ruins||(u.team===null&&['Stockade','Castle','Heavy Fortress','Fortress'].includes(u.name)))&&(teams.includes(u.team)||(u.ruins===true&&u.team===null&&['Stockade','Castle','Heavy Fortress','Fortress'].includes(u.name)))&&Number.isInteger(u.col)&&Number.isInteger(u.row)&&u.col>=0&&u.col<cols&&u.row>=0&&u.row<rows&&s.terrain[u.row*cols+u.col]!=='VOID'&&Number.isFinite(u.hp)&&u.hp>0&&Number.isFinite(u.dmg))&&
@@ -173,6 +211,7 @@ const OnlineMatch = (() => {
   if(typeof ensureVeteranName==='function')units.forEach(u=>ensureVeteranName(u));
   if(typeof Territory!=='undefined')Territory.restore(s.territory);
   currentTeam=s.currentTeam;turnNumber=s.turnNumber;currentTurnIndex=s.currentTurnIndex;turnOrder=copy(s.turnOrder);
+  if(!host&&Number.isFinite(s.turnDeadline))turnDeadline=s.turnDeadline;
   if(typeof restoreResearch==='function')restoreResearch(s.researchedTechs,s.research,Object.keys(s.research));
   if(typeof migrateIronStrength==='function')units.forEach(migrateIronStrength);
   if(typeof restoreActiveResearch==='function')restoreActiveResearch(s.activeResearch);
@@ -204,22 +243,24 @@ const OnlineMatch = (() => {
  }
  function start(){
   if(!host||!connected()||!allReady()||playing)return;
+  clockKey='';turnDeadline=0;
   if(mode==='coop'){
    configure();Endless.start(difficulty,crypto.getRandomValues(new Uint32Array(1))[0],TEAMS.slice(0,capacity));currentTheme='Cooperative Endless';
    turnOrder=[...TEAMS.slice(0,capacity),'AI'];currentTeam='PLAYER';currentTurnIndex=0;
-   LEARNING_AI.enabled=false;playing=true;suspended=false;revision=0;accepted=snapshot();saveSession();pending=false;updateUI();fitBoard();render();send({type:'start',state:accepted,revision});status('Cooperative Endless started. Hold the line together!');return;
+   LEARNING_AI.enabled=false;playing=true;suspended=false;revision=0;accepted=snapshot();syncClock(accepted);saveSession();pending=false;updateUI();fitBoard();render();send({type:'start',state:accepted,revision});status('Cooperative Endless started. Hold the line together!');return;
   }
-  const seed=crypto.randomUUID(),map=FairMap.generateForPlayers(seed,capacity);currentTheme=map.theme.name;
+  const seed=generation?.seed||crypto.randomUUID(),map=generation?BattleGenerator.generate(seed,capacity,generation.settings):FairMap.generateForPlayers(seed,capacity);currentTheme=map.theme.name;
   configure();COLS=map.cols;ROWS=map.rows;mapSize={cols:COLS,rows:ROWS};useHexGrid=true;setupGame();stopHeartbeat();LEARNING_AI.enabled=false;
   if(typeof resetResearch==='function')resetResearch(TEAMS.slice(0,capacity));
   terrain=map.terrain;settlements=map.settlements;units=map.units.map(u=>makeUnit(u.name,u.team,u.col,u.row,{id:u.id}));
+  if(typeof Territory!=='undefined')Territory.reset();
   const teams=TEAMS.slice(0,capacity);resources=map.resources;startingResources=copy(map.resources);researchedUnits=Object.fromEntries(teams.map(t=>[t,new Set(['Soldier'])]));
   if(typeof resetDiplomacySession==='function')resetDiplomacySession();diplomacy=createDefaultWarDiplomacy(teams);currentTeam=map.firstTeam;const first=teams.indexOf(currentTeam);turnOrder=[...teams.slice(first),...teams.slice(0,first)];currentTurnIndex=0;turnNumber=1;
   currentVictoryCondition=normalizeVictoryCondition({type:'ANNIHILATE_ALL'});gameOver=false;communicationLockouts={};
-  playing=true;suspended=false;revision=0;accepted=snapshot();saveSession();pending=false;selectedUnit=null;updateUI();fitBoard();render();
+  playing=true;suspended=false;revision=0;accepted=snapshot();syncClock(accepted);saveSession();pending=false;selectedUnit=null;updateUI();fitBoard();render();
   send({type:'start',state:accepted,revision,seed});status('Fresh '+capacity+'-player '+currentTheme+' map generated.');
  }
- function commit(s){revision++;accepted=copy(s);saveSession();send({type:'state',state:s,revision});render();scheduleAI();}
+ function commit(s){syncClock(s);revision++;accepted=copy(s);saveSession();send({type:'state',state:s,revision});render();scheduleAI();}
  function canRunAI(){return host&&playing&&mode==='coop'&&connected()&&!suspended&&!visible()&&!gameOver;}
  function scheduleAI(){
   if(!canRunAI()||!isAITeam(currentTeam)||aiScheduled)return;
@@ -227,7 +268,8 @@ const OnlineMatch = (() => {
  }
  function publish(actionId){
   if(!playing||applying)return;
-  if(!connected()||visible()||suspended||pending||(accepted.currentTeam!==localTeam&&!(host&&mode==='coop'&&isAITeam(accepted.currentTeam)))){if(actionId)rollbackOptimisticUpdate(actionId);return;}
+  if(host&&!timingOut&&!isAITeam(accepted.currentTeam)&&turnDeadline&&Date.now()>=turnDeadline){clockTick();return;}
+  if(!connected()||visible()||suspended||pending||(accepted.currentTeam!==localTeam&&!timingOut&&!(host&&mode==='coop'&&isAITeam(accepted.currentTeam)))){if(actionId)rollbackOptimisticUpdate(actionId);return;}
   const s=snapshot();if(!valid(s))return;
   if(host){commit(s);if(actionId)confirmOptimisticUpdate(actionId);}
   else{pending=true;const base=revision;send({type:'proposal',state:s,base});render();setTimeout(()=>{if(pending&&revision===base&&playing&&!document.hidden){
@@ -241,24 +283,28 @@ const OnlineMatch = (() => {
   hideEndScreen();open();status('Ready up for a fresh match. Vacant slots must be filled.');render();
  }
  function receive(msg,c,slot){
+  if(!host&&Number.isFinite(msg.sentAt))clockOffset=msg.sentAt-Date.now();
+  if(msg.type==='welcome'&&!host&&msg.generation&&typeof BattleGenerator!=='undefined'&&BattleGenerator.valid(msg.generation.settings))generation=copy(msg.generation);
+  if(msg.type==='settingsSuggestion'&&host&&!playing&&generation&&msg.base===generation.revision&&BattleGenerator.valid(msg.settings)){generation.suggestion={team:slot,settings:copy(msg.settings)};roster();return;}
   if(msg.type==='syncRequest'&&host&&playing){if(accepted.currentTeam===localTeam||isAITeam(accepted.currentTeam))publish();tx(c,{type:'state',state:accepted,revision,resume:true,paused:suspended});scheduleAI();return;}
   if(msg.type==='full'){failure('Room full or already playing. Leave and choose another.');return;}
   if(msg.type==='hello'&&host&&members.some(m=>m.team===slot)){
    const m=members.find(m=>m.team===slot);m.connected=true;
-   tx(c,{type:'welcome',team:slot,capacity,mode,difficulty,playing});
+   tx(c,{type:'welcome',team:slot,capacity,mode,difficulty,playing,generation});
    if(playing){tx(c,{type:'state',state:accepted,revision,rejoin:true,resume:true,paused:!connected()});resumeRoom();}
    saveSession();roster();return;
   }
   if(msg.type==='hello'&&host&&!playing){
    if(typeof msg.name!=='string'||msg.name.length>24||members.some(m=>m.team===slot))return;
    members.push({team:slot,name:msg.name||'Commander',ready:false,connected:true});members.sort((a,b)=>TEAMS.indexOf(a.team)-TEAMS.indexOf(b.team));members.forEach(m=>m.ready=false);
-   tx(c,{type:'welcome',team:slot,capacity,mode,difficulty,playing});roster();status('Everyone must be ready to start.');return;
+   tx(c,{type:'welcome',team:slot,capacity,mode,difficulty,playing,generation});roster();status('Everyone must agree to start.');return;
   }
   if(msg.type==='welcome'&&!host&&TEAMS.includes(msg.team)&&[2,3,4].includes(msg.capacity)){localTeam=msg.team;capacity=msg.capacity;mode=msg.mode==='coop'?'coop':'competitive';difficulty=['easy','medium','hard','impossible'].includes(msg.difficulty)?msg.difficulty:'medium';clearTimeout(timeout);if(playing&&msg.playing===false)lobby();render();return;}
-  if(msg.type==='roster'&&!host&&Array.isArray(msg.members)&&msg.members.length<=4){members=msg.members.map(m=>({team:m.team,name:String(m.name).slice(0,24),ready:!!m.ready,connected:!!m.connected}));render();return;}
-  if(msg.type==='ready'&&host&&!playing){const m=members.find(m=>m.team===slot);if(m)m.ready=!!msg.ready;roster();return;}
+  if(msg.type==='roster'&&!host&&Array.isArray(msg.members)&&msg.members.length<=4){if(msg.generation&&typeof BattleGenerator!=='undefined'&&BattleGenerator.valid(msg.generation.settings))generation=copy(msg.generation);members=msg.members.map(m=>({team:m.team,name:String(m.name).slice(0,24),ready:!!m.ready,connected:!!m.connected}));render();return;}
+  if(msg.type==='ready'&&host&&!playing){const m=members.find(m=>m.team===slot);if(m&&(!generation||msg.settingsRevision===generation.revision))m.ready=!!msg.ready;roster();return;}
   if(msg.type==='start'&&!host&&!playing&&allReady()&&valid(msg.state)){configure();playing=true;suspended=false;revision=0;apply(msg.state);fitBoard();return;}
   if(msg.type==='proposal'&&host&&playing){
+   if(turnDeadline&&Date.now()>=turnDeadline){clockTick();tx(c,{type:'state',state:accepted,revision});return;}
    // Only the authoritative AI host may change strategic orders.
    if(JSON.stringify(msg.state?.aiCommander)!==JSON.stringify(accepted.aiCommander)){tx(c,{type:'state',state:accepted,revision});return;}
    if(suspended||msg.base!==revision||accepted.currentTeam!==slot||!valid(msg.state)||JSON.stringify(msg.state.terrain)!==JSON.stringify(accepted.terrain)||JSON.stringify(msg.state.turnOrder)!==JSON.stringify(accepted.turnOrder)||(mode==='coop'&&(JSON.stringify({...msg.state.endless,lossReason:''})!==JSON.stringify({...accepted.endless,lossReason:''})||msg.state.turnNumber!==accepted.turnNumber))){tx(c,{type:'state',state:accepted,revision});return;}
@@ -276,12 +322,12 @@ const OnlineMatch = (() => {
   if(!playing)return false;if(mode==='coop'){if(gameOver)showEndScreen({outcome:'defeat',explanation:(Endless.lossReason||'The allied kingdoms have fallen.')+' Your team survived '+(Endless.wave-1)+' rounds on '+difficulty+'.'});return true;}const alive=TEAMS.slice(0,capacity).filter(t=>!eliminated(t));if(alive.length>1)return true;
   gameOver=true;const winner=alive[0];showEndScreen({outcome:winner===localTeam?'victory':'defeat',explanation:winner?winner===localTeam?'You are the last kingdom standing!':'The last kingdom standing is '+(members.find(m=>m.team===winner)?.name||winner)+'.':'Draw. No kingdom remains.'});return true;
  }
- const canAct=()=>!visible()&&(!active||(playing&&connected()&&!suspended&&!pending&&!eliminated(localTeam)&&currentTeam===localTeam));
+ const canAct=()=>timingOut||!visible()&&(!active||(playing&&connected()&&!suspended&&!pending&&!eliminated(localTeam)&&currentTeam===localTeam&&(!turnDeadline||Date.now()+clockOffset<turnDeadline)));
  function invite(id){if(!active)createPeer(true);if(active&&host&&!playing&&typeof PublicLobby!=='undefined')PublicLobby.invite(id,code);}
  document.addEventListener('DOMContentLoaded',()=>{
   for(const id of ['onlineLobby','onlineMatchBar'])for(const event of ['pointerdown','pointerup','mousedown','mouseup','click','touchstart','touchend'])$(id).addEventListener(event,e=>e.stopPropagation());
   $('lobbyMode').onchange=render;$('menuOnlineBtn').onclick=open;$('lobbyCreate').onclick=()=>createPeer(true);$('lobbyJoin').onclick=()=>createPeer(false);
-  $('lobbyLeave').onclick=leave;$('lobbyReady').onclick=()=>{const m=members.find(m=>m.team===localTeam);if(!m||playing)return;m.ready=!m.ready;if(host)roster();else{send({type:'ready',ready:m.ready});render();}};
+  $('lobbyLeave').onclick=leave;$('lobbyReady').onclick=()=>{const m=members.find(m=>m.team===localTeam);if(!m||playing||generation&&mode!=='coop'&&!generation.seed)return;m.ready=!m.ready;if(host)roster();else{send({type:'ready',ready:m.ready,settingsRevision:generation?.revision});render();}};
   $('lobbyStart').onclick=start;$('onlineReturnLobby').onclick=returnLobby;$('lobbyReturn').onclick=returnLobby;
   $('lobbyCopy').onclick=async()=>{const url=new URL(location.href.startsWith('file:')?'https://j-davidsm.github.io/Warborn/':location.href);url.search='';url.hash='';url.searchParams.set('room',code);try{await navigator.clipboard.writeText(url.href);status('Invite link copied.');}catch{status('Invite link: '+url.href);}};
   $('lobbyName').addEventListener('input',presence);
@@ -310,11 +356,12 @@ const OnlineMatch = (() => {
    if(playing&&!host&&!hostLink)retryHost();
   },15000);
   setInterval(()=>{if(playing&&!applying&&!pending&&connected()&&!visible()&&!suspended&&(accepted?.currentTeam===localTeam||(host&&mode==='coop'&&isAITeam(accepted?.currentTeam||'')))&&JSON.stringify(snapshot())!==JSON.stringify(accepted))publish();},300);
+  setInterval(clockTick,250);
  });
  function resume(){if(!playing||document.hidden)return;$('mainMenu').classList.add('hidden');if(!host&&!hostLink){retryHost();return;}if(host){publish();scheduleAI();}else send({type:'syncRequest'});updateUI();}
  document.addEventListener('visibilitychange',resume);window.addEventListener('focus',resume);window.addEventListener('pageshow',resume);
  window.addEventListener('beforeunload',()=>peer?.destroy());
- return {canRunAI,returnLobby,get isHost(){return host;},get coop(){return mode==='coop'&&playing;},get active(){return active;},get playing(){return playing;},get localTeam(){return localTeam;},playerName:team=>members.find(m=>m.team===team)?.name||(team==='AI'?'Invaders':team),get teams(){return mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity);},get turnOrder(){return accepted?.turnOrder||(mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity));},
+ return {changeSettings,generateBattle,acceptSuggestion(){if(host&&generation?.suggestion)changeSettings(generation.suggestion.settings);},dismissSuggestion(){if(host&&generation){generation.suggestion=null;roster();}},get timingOut(){return timingOut;},get generation(){return copy(generation);},canRunAI,returnLobby,get isHost(){return host;},get coop(){return mode==='coop'&&playing;},get active(){return active;},get playing(){return playing;},get localTeam(){return localTeam;},playerName:team=>members.find(m=>m.team===team)?.name||(team==='AI'?'Invaders':team),get teams(){return mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity);},get turnOrder(){return accepted?.turnOrder||(mode==='coop'?[...TEAMS.slice(0,capacity),'AI']:TEAMS.slice(0,capacity));},
   get publicInfo(){return {room:active?code:'',host:active&&host,count:members.length,capacity,playing,mode,difficulty,where:playing?'In battle':active?'In a room':visible()?'In lobby':'Browsing'};},
   blocksMapInput:()=>visible()||(active&&!playing),canAct,publish,finish,open,eliminated,invite,join:code=>{open();createPeer(false,code);}};
 })();

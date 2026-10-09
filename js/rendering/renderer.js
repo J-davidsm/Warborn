@@ -599,7 +599,7 @@ function shouldShowUnitTurnIndicator(unit) {
 function canUnitAttackFromCurrentPosition(unit) {
   if(unit.rogue||unit.ruins||unit.morale<=0)return false;
   if (!shouldShowUnitTurnIndicator(unit)) return false;
-  if (unit.hasActed || unit.name === 'Cleric' || !unit.atkRange || unit.atkRange <= 0) return false;
+  if (unit.hasActed || unit.name==='Catapult'&&unit.hasMoved || unit.name === 'Cleric' || !unit.atkRange || unit.atkRange <= 0) return false;
 
   const attackerTerrain = normalizeTerrainType(terrain[unit.row * COLS + unit.col]);
   if (attackerTerrain === 'SWAMP' && TERRAIN.SWAMP && TERRAIN.SWAMP.noAttack && unit.name !== 'Assassin' && unit.name !== 'Dragon') {

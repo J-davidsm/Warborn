@@ -1190,3 +1190,20 @@ body.assets-loading > :not(#startupLoading) {visibility:hidden;}
 #startupProgress {width:100%;height:12px;accent-color:#cfaf68;}
 #startupStatus {font-size:14px;min-height:2.5em;line-height:1.5;}
 #startupLoading button {margin:6px;}
+.lobby-mode-buttons {display:flex;gap:12px;margin:16px 0;}
+.lobby-mode-buttons button {flex:1;padding:14px;}
+.lobby-mode-buttons button[aria-pressed="true"] {outline:2px solid #d1ad60;background-color:#514329;}
+.generation-open .public-lobby {display:none;}
+.generation-open .lobby-card {max-width:860px;}
+#battleSetup {border-top:1px solid #867044;margin-top:20px;padding-top:12px;}
+#battleSetup button {padding:12px 20px;min-height:44px;}
+.battle-settings {display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.battle-settings select {display:block;width:100%;padding:8px;color:#eee;background:#101b25;}
+.battle-counts {border:1px solid #756545;border-radius:8px;min-width:0;}
+.battle-counts label {display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0;}
+.battle-counts input {width:70px;}
+.battle-suggestion {padding:12px;background:#374238;border:1px solid #d1ad60;border-radius:8px;}
+.battle-suggestion button {margin-right:8px;}
+#battleSetup canvas {display:block;max-width:100%;margin:12px auto;border:1px solid #867044;}
+#onlineTurnClock {font-variant-numeric:tabular-nums;white-space:nowrap;font-size:17px;color:#ffe1a1;}
+@media(max-width:560px){.battle-settings{grid-template-columns:1fr;}.lobby-mode-buttons{flex-direction:column;}}

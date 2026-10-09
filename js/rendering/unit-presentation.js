@@ -2,6 +2,7 @@
 const UnitPresentation=(()=>{
  const variants=new Map();
  const rgba=(rgb,a=1)=>`rgba(${rgb.join(',')},${a})`;
+ function ready(u){return u.hp>0&&u.morale>0&&!u.ruins&&!u.rogue&&u.team===currentTeam&&!u.hasActed&&(!u.hasMoved&&u.move>0||canUnitAttackFromCurrentPosition(u));}
  function sprite(u){
   const source=IMAGES[u.ruins?'Ruins':u.name]||IMAGES[u.name==='Fortress'?'Castle':''];
   if(!source?.width)return null;if(u.ruins)return source;
@@ -48,13 +49,13 @@ const UnitPresentation=(()=>{
  function fit(ctx,img,x,y,w,h){if(!img?.width)return;const s=Math.min(w/img.width,h/img.height);ctx.drawImage(img,x-img.width*s/2,y-img.height*s/2,img.width*s,img.height*s);}
  function draw(ctx,u,x,y){
   const scale=getUnitRenderScale(),r=useHexGrid?HEX_SIZE*.82:TILE*.49;
-  const broken=u.morale<=0&&!u.rogue,ready=!broken&&!u.ruins&&!u.rogue&&u.team===currentTeam&&(!u.hasMoved&&u.move>0||!u.hasActed&&(u.atkRange>0||u.name==='Cleric'));
+  const broken=u.morale<=0&&!u.rogue;
   const flashing=!broken&&!u.ruins&&canUnitAttackFromCurrentPosition(u),pulse=flashing?.5+.5*Math.sin(frameCount*.18):0;
   let colors=getTeamColor(u.team),unrest=u.name==='Dragon'&&typeof Territory!=='undefined'?Territory.warning(u.team):0;
   if(u.ruins)colors={fill:[110,110,110],stroke:[190,190,190]};
   else if(u.rogue)colors={fill:[255,0,0],stroke:[255,40,40]};
   else if(unrest){const f=Math.min(1,unrest/3);colors={fill:colors.fill.map((v,i)=>v*(1-f)+(i===0?255:0)*f),stroke:[255,90,70]};}
-  ctx.save();ctx.fillStyle=rgba(colors.fill,u.rogue?1:u.ruins?.8:flashing?.35+pulse*.45:.38);ctx.strokeStyle=rgba(colors.stroke,.85);ctx.lineWidth=2+pulse*2;ctx.setLineDash(ready?[5,4]:[]);shape(ctx,x,y,r);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+  ctx.save();ctx.fillStyle=rgba(colors.fill,u.rogue?1:u.ruins?.8:flashing?.35+pulse*.45:.38);ctx.strokeStyle=rgba(colors.stroke,.85);ctx.lineWidth=2+pulse*2;ctx.setLineDash(ready(u)?[5,4]:[]);shape(ctx,x,y,r);ctx.fill();ctx.stroke();ctx.setLineDash([]);
   if(!u.ruins&&u.name==='Swordsman'&&u.streakBonus>0){for(let i=0;i<3;i++){const t=((frameCount*.018+i/3)%1);ctx.strokeStyle=`rgba(255,45,40,${(1-t)*(.16+u.streakBonus*.6)})`;ctx.lineWidth=1+u.streakBonus*3;ctx.beginPath();ctx.ellipse(x,y,r*(.7+t*.65),r*(.55+t*.5),0,0,Math.PI*2);ctx.stroke();}}
   if(!u.ruins&&u.name==='Spearman'&&spearmanDefense(u)>.25){ctx.save();ctx.shadowColor='#ffe24c';ctx.shadowBlur=12;ctx.strokeStyle='#ffe24c';ctx.fillStyle='rgba(255,220,60,.16)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-r*.8,y-r*.65);ctx.lineTo(x,y-r*.85);ctx.lineTo(x+r*.8,y-r*.65);ctx.quadraticCurveTo(x+r*.8,y+r*.45,x,y+r*.9);ctx.quadraticCurveTo(x-r*.8,y+r*.45,x-r*.8,y-r*.65);ctx.fill();ctx.stroke();ctx.restore();}
   const img=sprite(u),bob=broken?0:getUnitMoveBobOffset(u),size=TILE*(isFortressUnit(u)?.9:.84)*scale;
@@ -79,5 +80,5 @@ const UnitPresentation=(()=>{
    const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(130,115);const s=170/(TILE*getUnitRenderScale());ctx.scale(s,s);draw(ctx,u,0,0);ctx.restore();
   }
  }
- return {draw,sprite,preview,refresh,variants};
+ return {draw,sprite,preview,refresh,variants,ready};
 })();

@@ -32,9 +32,9 @@ assert(peers[1].conn.sent.some(m=>m.type==='ping'));
 assert(peers[1].conn.sent.some(m=>m.type==='pong'));
 // Run fifteen minutes of idle connection checks using a deterministic clock.
 let now=Date.now();for(const c of [h,...guests])c.ctx.Date=class extends Date{static now(){return now;}};
-for(let i=0;i<60;i++){now+=15000;for(const c of [h,...guests])c.intervals[0]();tick();verify();}
+for(let i=0;i<60;i++){now+=15000;for(const c of [h,...guests]){c.intervals[0]();c.intervals.at(-1)();}tick();verify();}
 // A sleeping local browser must not evict all its healthy remote peers on wake.
-now+=360000;for(const c of [h,...guests])c.intervals[0]();tick();verify();
+now+=360000;for(const c of [h,...guests]){c.intervals[0]();c.intervals.at(-1)();}tick();verify();
 // Detect a silently dead channel, then recover the same seat and game.
 peers[1].conn.send=()=>{};
 for(let i=0;i<8;i++){now+=15000;h.intervals[0]();tick();}
