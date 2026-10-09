@@ -21,7 +21,7 @@ git pull --ff-only
 node scripts/install.cjs
 ```
 
-Pulling `main` does not guarantee a newer desktop release: releases are published only after all platform builds pass. Saves are preserved but are local to each computer. Export/import scenarios to move them.
+Pulling `main` does not guarantee a newer desktop release: automated releases are published only after all platform builds pass. See each release’s validation notes for locally built releases. Saves are preserved but are local to each computer. Export/import scenarios to move them.
 
 Supported packages: Mac Intel/Apple Silicon; Ubuntu/Debian x64/ARM64; Windows x64 (Windows on ARM through x64 emulation). This does not support phones, Chromebooks, 32-bit PCs, or every Linux distribution. Windows ARM emulation is not a native ARM build.
 

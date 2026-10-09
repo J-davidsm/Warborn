@@ -4,7 +4,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),cryp
 function assetFor(platform,arch){
  if(!['x64','arm64'].includes(arch))throw Error('Warborn desktop supports 64-bit Intel/AMD and ARM computers only.');
  if(platform==='darwin')return `Warborn-mac-${arch}.zip`;
- if(platform==='linux')return `Warborn-linux-${arch}.deb`;
+ if(platform==='linux')return `Warborn-linux-${arch==='x64'?'amd64':arch}.deb`;
  if(platform==='win32')return 'Warborn-win-x64.exe'; // Windows on ARM can run the x64 build.
  throw Error('Supported systems: macOS, Windows and Ubuntu/Debian.');
 }
@@ -40,7 +40,7 @@ async function main(){
   if(!fs.existsSync(path.join(source,'Contents','MacOS','Warborn')))throw Error('Invalid Mac package.');
   fs.mkdirSync(path.dirname(destination),{recursive:true});
   // Copy to a sibling before replacing, so downloads never damage the old app.
-  const staged=destination+'.installing';if(fs.existsSync(staged))throw Error(`Remove the incomplete staging folder first: ${staged}`);
+  const staged=destination.replace(/\.app$/,'.installing.app');if(fs.existsSync(staged))throw Error(`Remove the incomplete staging folder first: ${staged}`);
   run('ditto',[source,staged]);run('codesign',['--verify','--deep','--strict',staged]);
   fs.rmSync(destination,{recursive:true,force:true});fs.renameSync(staged,destination);
   console.log(`Installed ${destination}`);
