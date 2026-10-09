@@ -165,7 +165,7 @@ const DEFAULT_IMAGE_MAP = {
   'Soldier': 'assets/soldier.webp?v=20261007',
   'Archer': 'assets/archer.webp',
   'Knight': 'assets/knight.webp',
-  'Catapult': 'assets/catapult.webp?v=hanging-banners-20261008',
+  'Catapult': 'assets/catapult.webp?v=dark-banners-20261008',
   'Spearman': 'assets/spearman.webp',
   'Swordsman': 'assets/swordsman.webp',
   'Assassin': 'assets/assassin.webp',
