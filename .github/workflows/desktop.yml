@@ -1,0 +1,63 @@
+name: Desktop builds
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: macos-15, platform: mac, arch: arm64}
+          - {runner: macos-15-intel, platform: mac, arch: x64}
+          - {runner: windows-latest, platform: win, arch: x64}
+          - {runner: ubuntu-24.04, platform: linux, arch: x64}
+          - {runner: ubuntu-24.04-arm, platform: linux, arch: arm64}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:desktop
+      - if: runner.os != 'Linux'
+        run: npm run test:desktop
+      - run: npm run dist -- --${{ matrix.platform }} --${{ matrix.arch }}
+      - if: runner.os == 'Linux'
+        run: xvfb-run -a node scripts/smoke.cjs --packaged
+      - if: runner.os != 'Linux'
+        run: node scripts/smoke.cjs --packaged
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            dist/*.zip
+            dist/*.exe
+            dist/*.deb
+          if-no-files-found: error
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: release
+          merge-multiple: true
+      - run: sha256sum Warborn-* > SHA256SUMS
+        working-directory: release
+      - run: gh release create "$TAG" release/* --verify-tag --title "Warborn $TAG" --notes-file docs/desktop-release.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}

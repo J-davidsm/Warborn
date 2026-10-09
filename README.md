@@ -4,6 +4,10 @@ A browser-based fantasy strategy game. No installation or server is needed to pl
 
 **[Play Warborn](https://j-davidsm.github.io/Warborn/)**
 
+## Desktop app: Windows, Ubuntu and Mac
+
+Download an installer from [GitHub Releases](https://github.com/J-davidsm/Warborn/releases/latest), or use the [platform-detecting terminal installer](docs/desktop-install.md). Desktop builds share the website's multiplayer lobby. Release checks cover Windows x64, Ubuntu x64/ARM64 and Mac Intel/Apple Silicon.
+
 ## Play
 
 - Choose **Play** for a quick battle against the AI.

@@ -1,0 +1,72 @@
+{
+  "name": "warborn",
+  "productName": "Warborn",
+  "version": "1.1.0",
+  "description": "Warborn fantasy turn-based strategy",
+  "author": {
+    "name": "Joseph Davidsmeier",
+    "email": "superkrakdebehemoth@gmail.com"
+  },
+  "homepage": "https://j-davidsm.github.io/Warborn/",
+  "private": true,
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node scripts/test.cjs",
+    "test:desktop": "node scripts/smoke.cjs",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.warborn.game",
+    "productName": "Warborn",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "styles.css",
+      "js/**/*",
+      "vendor/**/*",
+      "assets/**/*",
+      "desktop/main.cjs",
+      "package.json",
+      "!assets/**/* alias",
+      "!assets/**/*.md",
+      "!assets/**/*.txt"
+    ],
+    "artifactName": "Warborn-${os}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.strategy-games",
+      "icon": "assets/app/warborn.icns",
+      "target": [
+        "zip"
+      ],
+      "identity": "-"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/app/warborn-icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        "deb"
+      ],
+      "icon": "assets/app/warborn-icon.png",
+      "category": "Game",
+      "maintainer": "Joseph Davidsmeier <superkrakdebehemoth@gmail.com>"
+    }
+  }
+}
