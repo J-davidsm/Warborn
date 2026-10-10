@@ -2364,7 +2364,14 @@ function restoreDiplomacyConversations(preserveTarget=false){
 function resetDiplomacySession(){
  diplomacyEpoch++;diplomacy={trust:{},reputation:{},personalities:{},treaties:[],warDeclarations:[],aiMessages:[],unreadMessages:0,espionage:{},diplomaticHistory:[]};
  restoreDiplomacyConversations();
- if(typeof document!=='undefined'){document.getElementById('diplomacyModal')?.remove();document.getElementById('battleAlerts')?.remove();}
+ if(typeof document!=='undefined'){
+  // AI turns temporarily place the shared HUD ribbon inside this modal.
+  // Preserve it across replay/new-game resets so BattleGuide can restore the HUD.
+  const modal=document.getElementById('diplomacyModal');
+  const ribbon=document.getElementById('turnRibbon');
+  if(ribbon&&modal?.contains(ribbon))document.body.append(ribbon);
+  modal?.remove();document.getElementById('battleAlerts')?.remove();
+ }
 }
 function diplomacyDisplayText(text){return String(text||'').replace(/\bAI(?:\s*#?\s*(\d+))?\b/g,(full,n)=>getTeamDisplayName(!n||n==='1'?'AI':'AI'+n));}
 function isNationEliminated(team){return !!diplomacy?.eliminatedNations?.[team];}
