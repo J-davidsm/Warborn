@@ -1,5 +1,6 @@
 // Warborn terrain art v2. Six original paintings per surface, blended in map space.
 // Cached separately from units, selection and UI: no per-frame image processing.
+const TERRAIN_V2_BRIDGE_IMAGE = 'assets/terrain/v3/bridge-stone.png';
 const TERRAIN_V2_TYPES = ['GRASS', 'WOODS', 'MOUNTAIN', 'SWAMP', 'DESERT', 'WATER', 'FOUNTAIN', 'BRIDGE', 'FARM'];
 // New bridge paintings all run edge-to-edge from left to right.
 const TERRAIN_V2_BRIDGE_DECK_ANGLES = [0, 0, 0, 0, 0, 0];
@@ -15,8 +16,9 @@ function terrainV2Type(value) {
 
 function preloadTerrainV2() {
   for (const type of TERRAIN_V2_TYPES) {
-    TERRAIN_V2.images[type] = Array(6).fill(null);
-    for (let variant = 0; variant < 6; variant++) {
+    const count = type === 'BRIDGE' ? 1 : 6;
+    TERRAIN_V2.images[type] = Array(count).fill(null);
+    for (let variant = 0; variant < count; variant++) {
       const img = new Image();
       img.onload = () => {
         // Retain a game-resolution surface, not 54 full-resolution bitmaps.
@@ -26,7 +28,7 @@ function preloadTerrainV2() {
         context.imageSmoothingQuality = 'high';
         context.drawImage(img, 0, 0, 384, 384);
         TERRAIN_V2.images[type][variant] = surface;
-        if (TERRAIN_V2.images[type].every(Boolean)) terrainV2MatchPalette(type);
+        if (type !== 'BRIDGE' && TERRAIN_V2.images[type].every(Boolean)) terrainV2MatchPalette(type);
         TERRAIN_V2.loaded++;
         TERRAIN_V2.revision++;
         TERRAIN_V2.stamps.clear();
@@ -37,7 +39,7 @@ function preloadTerrainV2() {
         console.warn('Terrain v2 image missing:', type, variant + 1);
       };
       img.src = type === 'BRIDGE'
-        ? `assets/terrain/v3/bridge-${variant % 2 ? 'stone' : 'timber'}.png`
+        ? TERRAIN_V2_BRIDGE_IMAGE
         : `assets/terrain/v2/${type.toLowerCase()}-${variant + 1}.jpg${['WOODS','SWAMP'].includes(type) ? '?v=training1' : ''}`;
     }
   }
@@ -292,20 +294,18 @@ function terrainV2BridgePaths(cols,rows,hex,values,parity=0) {
   return paths;
 }
 
+// Bridges are ordinary, opaque terrain tiles: one complete edge-to-edge image
+// per cell, with no material variants, rotation, cropping or crossing stretching.
 function drawTerrainV2BridgeDecks(ctx,cols,rows,hex,values,parity,radius) {
+  const art=TERRAIN_V2.images.BRIDGE[0];
+  if(!art)return;
   ctx.save();ctx.globalCompositeOperation='source-over';
-  for(const crossing of terrainV2BridgePaths(cols,rows,hex,values,parity)){
-    const [from,to]=crossing.points,variant=crossing.variant;
-    const art=TERRAIN_V2.images.BRIDGE[variant]||TERRAIN_V2.images.BRIDGE.find(Boolean);
-    const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy)*radius,deckWidth=radius*.48;
-    ctx.save();
-    const left=Math.min(from.x,to.x)*radius, topEdge=Math.min(from.y,to.y)*radius;
-    const spanX=Math.max(deckWidth,Math.abs(dx)*radius), spanY=Math.max(deckWidth,Math.abs(dy)*radius);
-    ctx.translate(left-(Math.abs(dx)*radius<deckWidth?deckWidth/2:0),topEdge-(Math.abs(dy)*radius<deckWidth?deckWidth/2:0));
-    // Stretch the actual complete bridge artwork once, including both rails.
-    // Water beneath it is the very same blended water surface as other tiles.
-    if(art){const top=variant%2?.35:.36,h=variant%2?.28:.25;ctx.drawImage(art,0,art.height*top,art.width,art.height*h,0,0,spanX,spanY);}
-    else{ctx.fillStyle='#91754f';ctx.fillRect(0,0,spanX,spanY);}
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    if(terrainV2Type(values[r*cols+c])!=='BRIDGE')continue;
+    const x=hex?(1+1.5*c)*radius:(2*c+1)*radius;
+    const y=hex?(Math.sqrt(3)/2+Math.sqrt(3)*(r+.5*((c-parity)&1)))*radius:(2*r+1)*radius;
+    ctx.save();ctx.beginPath();terrainV2CellPath(ctx,x,y,radius,hex);ctx.clip();
+    ctx.drawImage(art,x-radius,y-radius,2*radius,2*radius);
     ctx.restore();
   }
   ctx.restore();
@@ -372,7 +372,7 @@ function buildTerrainV2Layer(cols, rows, hex, values, parity = 0, requestedRadiu
 function drawBlendedTerrainBoard() {
   if (!terrain || !Number.isFinite(COLS) || !Number.isFinite(ROWS) || COLS < 1 || ROWS < 1) return false;
   const parity = useHexGrid ? cameraX & 1 : 0;
-  const artRevision = TERRAIN_V2.loaded + TERRAIN_V2.failed === 54 ? TERRAIN_V2.revision : 0;
+  const artRevision = TERRAIN_V2.loaded + TERRAIN_V2.failed === 49 ? TERRAIN_V2.revision : 0;
   const key = `${COLS}:${ROWS}:${useHexGrid}:${parity}:${artRevision}:${terrain.join('|')}`;
   const worldRadius = useHexGrid ? HEX_SIZE : TILE / 2;
   const transform = drawingContext.getTransform();

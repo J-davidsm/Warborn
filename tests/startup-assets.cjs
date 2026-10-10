@@ -10,7 +10,7 @@ const assets=fs.readFileSync('js/ui/popups-and-assets.js','utf8');
 for(const name of ['DEFAULT_IMAGE_MAP','SETTLEMENT_IMAGE_MAP','FACTION_FLAG_MAP','INDICATOR_IMAGE_MAP']){
  const pattern=new RegExp('const '+name+' = ([\\s\\S]*?);');vm.runInContext(assets.match(pattern)[0],c);
 }
-vm.runInContext("const TERRAIN_V2_TYPES=['GRASS','WOODS','MOUNTAIN','SWAMP','DESERT','WATER','FOUNTAIN','BRIDGE','FARM'];",c);
+vm.runInContext("const TERRAIN_V2_BRIDGE_IMAGE='assets/terrain/v3/bridge-stone.png';const TERRAIN_V2_TYPES=['GRASS','WOODS','MOUNTAIN','SWAMP','DESERT','WATER','FOUNTAIN','BRIDGE','FARM'];",c);
 vm.runInContext(fs.readFileSync('js/systems/leaders.js','utf8'),c);
 vm.runInContext(fs.readFileSync('js/boot/startup-assets.js','utf8'),c);
 (async()=>{

@@ -7,7 +7,7 @@ const StartupAssets=(()=>{
  function images(){
   const urls=[...Object.values(DEFAULT_IMAGE_MAP),...Object.values(SETTLEMENT_IMAGE_MAP),...Object.values(FACTION_FLAG_MAP),...Object.values(INDICATOR_IMAGE_MAP)];
   for(const type of TERRAIN_V2_TYPES.filter(t=>t!=='BRIDGE'))for(let i=1;i<=6;i++)urls.push(`assets/terrain/v2/${type.toLowerCase()}-${i}.jpg${['WOODS','SWAMP'].includes(type)?'?v=training1':''}`);
-  urls.push('assets/terrain/v3/bridge-stone.png','assets/terrain/v3/bridge-timber.png');
+  urls.push(TERRAIN_V2_BRIDGE_IMAGE);
   for(const [id] of WarbornLeaders.choices)urls.push(`assets/leaders/${id}.webp`);
   urls.push('assets/leaders/player-crown.webp','assets/ui/acadania-title.png');
   for(const branch of ['warfare','command','defense','engineering'])for(const suffix of ['-background.webp','-button.webp','.svg'])urls.push(`assets/doctrines/${branch}${suffix}`);

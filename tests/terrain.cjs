@@ -4,7 +4,8 @@ const assert = require('assert/strict');
 const sources=[];
 const ctx=vm.createContext({console,Image:class {set src(v){sources.push(v)}},normalizeTerrainType:t=>t&&String(t).toUpperCase(),terrainHash:(c,r,s)=>((Math.imul(c+1,374761393)^Math.imul(r+1,668265263)^s)>>>0)});
 vm.runInContext(fs.readFileSync(require('path').join(__dirname, '../js/rendering/terrain-blend.js'),'utf8'),ctx);
-assert.equal(sources.length,54);assert.equal(new Set(sources).size,50);
+assert.equal(sources.length,49);assert.equal(new Set(sources).size,49);
+assert.deepEqual(sources.filter(s=>s.includes('bridge-')), ['assets/terrain/v3/bridge-stone.png']);
 assert.equal(ctx.terrainV2FadeWeight('GRASS',0),1);
 assert.equal(ctx.terrainV2FadeWeight('WOODS',1.62),0);
 assert(ctx.terrainV2FadeWeight('MOUNTAIN',1.2)>0.25,'nature biomes should crossfade broadly beyond their hex edge');
@@ -86,3 +87,13 @@ for (const hex of [false,true]) {
   assert.equal(ctx.terrainV2Resolution(12,10,hex,0,150).radius,ctx.terrainV2Resolution(12,10,hex,0,160).radius,'nearby zoom values share a cache tier');
 }
 console.log('Terrain resolution scales with zoom and bounds large-map memory.');
+
+// The rendered board uses complete tiles, not cropped strips or stretched paths.
+vm.runInContext('TERRAIN_V2.images.BRIDGE=[{width:384,height:384}]',ctx);
+for(const hex of [false,true])for(const parity of [0,1]){
+ const draws=[];let clips=0;
+ const painter={save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},rect(){},clip(){clips++;},drawImage(...args){draws.push(args);}};
+ ctx.drawTerrainV2BridgeDecks(painter,3,2,hex,['BRIDGE','BRIDGE','WATER','GRASS','BRIDGE','GRASS'],parity,70);
+ assert.equal(draws.length,3);assert.equal(clips,3);
+ assert(draws.every(d=>d.length===5&&d[0]===draws[0][0]&&d[3]===140&&d[4]===140),'each bridge uses the same full image at exactly one tile size');
+}
