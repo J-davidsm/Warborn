@@ -43,38 +43,92 @@ generated.terrain.forEach((t,i)=>{if(t==='BRIDGE')crossingAngles.push(ctx.terrai
 assert.equal(new Set(crossingAngles).size,1);
 assert(crossingAngles.every(angle=>Math.abs(Math.sin(angle*Math.PI/180))<.27),'generated bridges cross the north-south river');
 console.log('Connected generated bridges share an across-river orientation.');
-const adjacent=Array(81).fill('GRASS');for(let col=2;col<=6;col++)adjacent[4*9+col]='BRIDGE';
-const joined=Array.from({length:5},(_,i)=>ctx.terrainV2BridgeVariant(i+2,4,9,9,false,adjacent));assert.equal(new Set(joined).size,1,'adjacent bridges share an image');
-for(let col=2;col<=6;col++)assert.equal(ctx.terrainV2BridgeAngle(col,4,9,9,false,adjacent),0,'bridge line stays straight without water neighbors');
-
-// Offset-column rows must form a connected zigzag, not disjoint horizontal stamps.
-for(const hex of [true,false])for(const parity of [0,1]){
- const map=Array(81).fill('WATER');
- const path=[[2,4],[3,4],[4,4],[4,5],[5,5]];
- for(const [c,r] of path)map[r*9+c]='BRIDGE';
- for(const [c,r] of path){
-  const links=ctx.terrainV2BridgeConnections(c,r,9,9,hex,map,parity);
-  for(const link of links.filter(l=>l.to.type==='BRIDGE')){
-   const back=ctx.terrainV2BridgeConnections(link.to.c,link.to.r,9,9,hex,map,parity);
-   assert(back.some(l=>l.to.x===link.from.x&&l.to.y===link.from.y&&l.from.x===link.to.x&&l.from.y===link.to.y),'every bridge joins exactly at the adjacent deck');
-   if(hex&&link.to.c!==c)assert.notEqual(link.from.y,link.to.y,'cross-column deck follows the staggered hex height');
+// Deck geometry follows the actual shared cell edges. This catches the old
+// fixed-horizontal stamps (vertical crossings) and offset-row gaps (hex runs).
+const epsilon=1e-8;
+const close=(a,b,message)=>assert(Math.abs(a-b)<epsilon,`${message}: ${a} != ${b}`);
+const key=(c,r)=>`${c},${r}`;
+const point=(c,r,hex,parity)=>hex
+ ? {x:1+1.5*c,y:Math.sqrt(3)*(r+.5*((c-parity)&1))+Math.sqrt(3)/2}
+ : {x:2*c+1,y:2*r+1};
+const directions=(c,hex,parity)=>!hex?[[1,0],[-1,0],[0,1],[0,-1]]:((c-parity)&1)
+ ? [[1,1],[1,0],[0,-1],[-1,0],[-1,1],[0,1]]
+ : [[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[0,1]];
+const samePoint=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)<epsilon;
+function inwardTangent(tile,port){
+ const path=tile.paths.find(p=>samePoint(p.from,port)||samePoint(p.to,port));
+ assert(path,'each port is reached by a rendered deck path');
+ return {x:path.control.x-port.x,y:path.control.y-port.y};
+}
+function checkDecks(name,cells,hex,parity=0,banks=[]){
+ const cols=12,rows=12,map=Array(cols*rows).fill('WATER');
+ for(const [c,r]of cells)map[r*cols+c]='BRIDGE';
+ for(const [c,r]of banks)map[r*cols+c]='GRASS';
+ const tiles=ctx.terrainV2BridgeTiles(cols,rows,hex,map,parity);
+ assert.equal(tiles.length,cells.length,`${name}: exactly one tile for each bridge`);
+ const byCell=new Map(tiles.map(tile=>[key(tile.c,tile.r),tile]));
+ for(const [c,r]of cells){
+  const tile=byCell.get(key(c,r));assert(tile,`${name}: bridge cell ${c},${r} exists`);
+  const center=point(c,r,hex,parity);
+  close(tile.center.x,center.x,`${name}: center X`);close(tile.center.y,center.y,`${name}: center Y`);
+  assert(tile.ports.length>=2,`${name}: endpoints span the tile instead of ending at its center`);
+  assert.equal(new Set(tile.ports.map(p=>`${p.x.toFixed(8)},${p.y.toFixed(8)}`)).size,tile.ports.length,`${name}: no duplicate ports`);
+  const neighbors=directions(c,hex,parity).map(([dc,dr])=>({c:c+dc,r:r+dr,...point(c+dc,r+dr,hex,parity)}));
+  for(const port of tile.ports){
+   assert(neighbors.some(p=>samePoint(port,{x:(p.x+center.x)/2,y:(p.y+center.y)/2})),`${name}: port lies at a shared edge midpoint`);
+   const tangent=inwardTangent(tile,port);
+   close(tangent.x*(center.y-port.y)-tangent.y*(center.x-port.x),0,`${name}: deck meets edge normally`);
+   assert(tangent.x*(center.x-port.x)+tangent.y*(center.y-port.y)>0,`${name}: tangent points into its own tile`);
+  }
+  const adjacent=neighbors.filter(p=>byCell.has(key(p.c,p.r)));
+  for(const neighbor of adjacent){
+   const ports=tile.ports.filter(p=>p.type==='BRIDGE'&&p.neighborC===neighbor.c&&p.neighborR===neighbor.r);
+   assert.equal(ports.length,1,`${name}: one connection to each adjacent bridge`);
+   const other=byCell.get(key(neighbor.c,neighbor.r));
+   const reciprocal=other.ports.find(p=>p.type==='BRIDGE'&&p.neighborC===c&&p.neighborR===r);
+   assert(reciprocal,`${name}: neighboring connection is reciprocal`);
+   assert(samePoint(ports[0],reciprocal),`${name}: adjacent decks share an exact endpoint`);
+   const a=inwardTangent(tile,ports[0]),b=inwardTangent(other,reciprocal);
+   close(a.x*b.y-a.y*b.x,0,`${name}: adjoining tangents align`);
+   assert(a.x*b.x+a.y*b.y<0,`${name}: adjoining deck tangents face opposite directions`);
+  }
+  assert.equal(tile.ports.filter(p=>p.type==='BRIDGE').length,adjacent.length,`${name}: no invented links across water`);
+  if(adjacent.length>=2)assert.equal(tile.ports.length,adjacent.length,`${name}: interior tiles have no stray dead ends`);
+  if(tile.ports.length===2)assert.equal(tile.paths.length,1,`${name}: a bend has one continuous curved path`);
+  else assert.equal(tile.paths.length,tile.ports.length,`${name}: a junction reaches every connected edge`);
+  // Quadratic interpolation must remain within the tile. A component-wide
+  // straight image would cut across water in L shapes or sparse junctions.
+  for(const path of tile.paths)for(let step=0;step<=20;step++){
+   const t=step/20,u=1-t;
+   const x=u*u*path.from.x+2*u*t*path.control.x+t*t*path.to.x-center.x;
+   const y=u*u*path.from.y+2*u*t*path.control.y+t*t*path.to.y-center.y;
+   const bound=hex?Math.sqrt(3)/2:1;
+   const distance=hex?Math.max(Math.abs(y),Math.abs(Math.sqrt(3)/2*x+.5*y),Math.abs(Math.sqrt(3)/2*x-.5*y)):Math.max(Math.abs(x),Math.abs(y));
+   assert(distance<=bound+epsilon,`${name}: deck remains within its bridge tile`);
   }
  }
+ return {tiles,byCell};
 }
-console.log('Bridge endpoints join on square, staggered hex, bends and shifted camera parity.');
-const straightMap=Array(81).fill('WATER');for(let c=1;c<8;c++)straightMap[4*9+c]='BRIDGE';
-const paths=ctx.terrainV2BridgePaths(9,9,true,straightMap);
-assert.equal(paths.length,1,'one continuous deck instead of overlapping segments');
-assert(paths[0].points.every(p=>Math.abs(p.y-paths[0].points[0].y)<1e-8),'horizontal crossing stays straight despite staggered centers');
-assert.equal(paths[0].points.length,2,'one start and end for the stretched image');
-const solitary=Array(81).fill('WATER');solitary[40]='BRIDGE';assert.equal(ctx.terrainV2BridgePaths(9,9,true,solitary).length,1,'single bridge tile spans its water hex');
-
-for(const count of [1,2,3,4,5,6])for(const parity of [0,1]){
- const map=Array(100).fill('WATER');for(let c=2;c<2+count;c++)map[40+c]='BRIDGE';
- const spans=ctx.terrainV2BridgePaths(10,10,true,map,parity);assert.equal(spans.length,1);
- const [a,b]=spans[0].points;assert(Math.abs(a.y-b.y)<1e-8,'odd and even horizontal runs stay level');
- assert(Math.abs(b.x-a.x-(count===1?2:1.5*(count-1)+1.5))<1e-7,'endpoints reach the outer hex edges');
+for(const hex of [false,true])for(const parity of [0,1]){
+ for(const count of [1,2,3,4,5,6]){
+  checkDecks(`horizontal ${count} hex=${hex} parity=${parity}`,Array.from({length:count},(_,i)=>[i+2,4]),hex,parity);
+  const vertical=checkDecks(`vertical ${count} hex=${hex} parity=${parity}`,Array.from({length:count},(_,i)=>[4,i+2]),hex,parity);
+  if(count>=3)for(const tile of vertical.tiles.slice(1,-1))for(const port of tile.ports)close(port.x,tile.center.x,'vertical bridge remains vertical');
+ }
+ checkDecks(`bend hex=${hex} parity=${parity}`,[[2,4],[3,4],[4,4],[4,5],[4,6]],hex,parity);
+ checkDecks(`T junction hex=${hex} parity=${parity}`,[[2,4],[3,4],[4,4],[5,4],[6,4],[4,5],[4,6]],hex,parity);
+ checkDecks(`separate crossings hex=${hex} parity=${parity}`,[[1,1],[1,2],[8,7],[9,7]],hex,parity);
+ checkDecks(`map edges hex=${hex} parity=${parity}`,[[0,0],[0,1],[1,0],[11,10],[11,11]],hex,parity);
+ const center=[4,4],ring=directions(4,hex,parity).map(([dc,dr])=>[4+dc,4+dr]);
+ const junction=checkDecks(`all-edge junction hex=${hex} parity=${parity}`,[center,...ring],hex,parity).byCell.get('4,4');
+ assert.equal(junction.ports.length,hex?6:4,'all branches connect through the central junction');
 }
+const bankCase=checkDecks('dry banks at crossing ends',[[4,4],[5,4]],false,0,[[3,4],[6,4]]);
+assert(bankCase.byCell.get('4,4').ports.some(p=>p.type==='GRASS'&&p.neighborC===3&&p.neighborR===4),'west endpoint lands on the dry bank');
+assert(bankCase.byCell.get('5,4').ports.some(p=>p.type==='GRASS'&&p.neighborC===6&&p.neighborR===4),'east endpoint lands on the dry bank');
+const isolated=checkDecks('isolated tile across a north-south stream',[[4,4]],false,0,[[3,4],[5,4]]).tiles[0];
+assert(isolated.ports.every(p=>Math.abs(p.y-isolated.center.y)<epsilon),'isolated bridge crosses the river toward its banks');
+console.log('Bridge decks connect horizontal, vertical, curved and junction crossings at shared edges on square and both offset-hex parities.');
 // Terrain backing resolution follows display density without unbounded allocations.
 for (const hex of [false,true]) {
   const near=ctx.terrainV2Resolution(12,10,hex,0,70);
@@ -87,13 +141,15 @@ for (const hex of [false,true]) {
   assert.equal(ctx.terrainV2Resolution(12,10,hex,0,150).radius,ctx.terrainV2Resolution(12,10,hex,0,160).radius,'nearby zoom values share a cache tier');
 }
 console.log('Terrain resolution scales with zoom and bounds large-map memory.');
-
-// The rendered board uses complete tiles, not cropped strips or stretched paths.
-vm.runInContext('TERRAIN_V2.images.BRIDGE=[{width:384,height:384}]',ctx);
-for(const hex of [false,true])for(const parity of [0,1]){
- const draws=[];let clips=0;
- const painter={save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},rect(){},clip(){clips++;},drawImage(...args){draws.push(args);}};
- ctx.drawTerrainV2BridgeDecks(painter,3,2,hex,['BRIDGE','BRIDGE','WATER','GRASS','BRIDGE','GRASS'],parity,70);
- assert.equal(draws.length,3);assert.equal(clips,3);
- assert(draws.every(d=>d.length===5&&d[0]===draws[0][0]&&d[3]===140&&d[4]===140),'each bridge uses the same full image at exactly one tile size');
-}
+// Rendering joins all tiles before painting parapets: no rail cuts across a
+// shared edge or junction, and the same masonry texture covers every path.
+let curves=0,clips=0;const strokes=[];
+vm.runInContext('TERRAIN_V2.images.BRIDGE=[null]',ctx);
+const painter={save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},rect(){},clip(){clips++;},quadraticCurveTo(){curves++;},stroke(){strokes.push(this.lineWidth);}};
+const renderMap=Array(25).fill('WATER');for(const id of [6,7,8,12,17])renderMap[id]='BRIDGE';
+const renderTiles=ctx.terrainV2BridgeTiles(5,5,true,renderMap);
+ctx.drawTerrainV2BridgeDecks(painter,5,5,true,renderMap,0,70);
+assert.equal(clips,1,'whole bridge network has one union clip');
+assert.equal(curves,renderTiles.reduce((n,t)=>n+t.paths.length,0),'render every connected path');
+assert.equal(strokes.length,4,'all parapets and decking render in network-wide passes');
+assert(strokes.every((w,i)=>i===0||w<strokes[i-1]),'deck fills inside both continuous parapets');
