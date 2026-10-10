@@ -115,7 +115,7 @@ function handleRelayMessage(msg) {
       return;
     case 'error':
       setRelayStatus(msg.reason || 'Relay error', '#ff6b6b');
-      console.warn('Warborn relay error:', msg.reason);
+      console.warn('Acadania relay error:', msg.reason);
       return;
     default:
       console.debug('Unknown relay message:', msg);

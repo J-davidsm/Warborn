@@ -143,18 +143,18 @@ body.watch-mode #panel { width: min(320px, 28vw); }
   justify-content: center;
 }
 
-#warbornTitle {
-  margin: 0 0 clamp(42px, 9vh, 96px);
-  font-family: "Cinzel Decorative", "Copperplate", "Palatino Linotype", "Georgia", serif;
-  font-size: clamp(64px, 11vw, 148px);
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 0.88;
-  color: #f7d36b;
-  text-shadow:
-    0 3px 0 #6a4214,
-    0 8px 18px rgba(0,0,0,0.78),
-    0 0 34px rgba(255, 196, 76, 0.36);
+#acadaniaTitle {
+  width: min(900px, 92vw);
+  margin: 0 0 clamp(24px, 5vh, 60px);
+  line-height: 0;
+}
+#acadaniaTitle img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 38vh;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 12px rgba(0,0,0,.8));
 }
 
 #menuPlayBtn,

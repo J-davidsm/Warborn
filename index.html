@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Warborn — Turn-Based Strategy</title>
-  <meta name="description" content="Play Warborn, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
+  <title>Acadania — Turn-Based Strategy</title>
+  <meta name="description" content="Play Acadania, a fantasy strategy game with campaigns, local two-player battles, and a map editor.">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="styles.css?v=multiplayer-generate-20261009">
-  <script src="js/boot/startup-assets.js?v=multiplayer-generate-20261009"></script>
+  <link rel="stylesheet" href="styles.css?v=acadania-20261009">
+  <script src="js/boot/startup-assets.js?v=acadania-20261009"></script>
   <script src="vendor/p5.min.js"></script>
 </head>
 <body class="assets-loading">
   <section id="startupLoading" role="dialog" aria-modal="true" aria-labelledby="startupTitle" tabindex="-1">
     <div class="startup-card">
-      <h1 id="startupTitle">WARBORN</h1>
+      <h1 id="startupTitle">ACADANIA</h1>
       <p>Preparing the battlefield</p>
       <progress id="startupProgress" max="1" value="0" aria-label="Game assets loaded"></progress>
       <p id="startupStatus" role="status">Loading artwork and audio…</p>
@@ -23,7 +23,7 @@
   <div id="mainMenu">
     <div id="mainMenuShade"></div>
     <div id="mainMenuContent">
-      <h1 id="warbornTitle">WARBORN</h1>
+      <h1 id="acadaniaTitle"><img src="assets/ui/acadania-title.png" alt="Acadania" width="2081" height="756" fetchpriority="high"></h1>
       <div id="mainMenuActions">
         <button id="menuSoloBtn" type="button">Play solo</button>
         <button id="menuCreditsBtn" type="button">Credits</button>
@@ -62,7 +62,7 @@
 
   <dialog id="creditsPage" aria-labelledby="creditsTitle">
     <div class="credits-content">
-      <p class="campaign-kicker">WARBORN</p>
+      <p class="campaign-kicker">ACADANIA</p>
       <h2 id="creditsTitle">Credits</h2>
       <section aria-labelledby="creditsCreator">
         <h3 id="creditsCreator">Created by</h3>
@@ -85,7 +85,7 @@
 
   <section id="onlineLobby" class="lobby-overlay" hidden aria-label="Multiplayer lobby">
     <div class="lobby-card">
-      <p class="lobby-kicker">WARBORN · ONLINE</p><h2>Gather your commanders</h2>
+      <p class="lobby-kicker">ACADANIA · ONLINE</p><h2>Gather your commanders</h2>
       <p>Meet players here, invite them, or join an open room. No code needed.</p>
       <label for="lobbyName">Your name</label><input id="lobbyName" maxlength="24" value="Commander" autocomplete="nickname">
       <section class="public-lobby" aria-label="Online players">
@@ -112,7 +112,7 @@
   <div id="onlineMatchBar" hidden><span id="onlineMatchStatus"></span><strong id="onlineTurnClock" aria-label="Turn time remaining">2:00</strong><button id="onlineReturnLobby">Return to lobby</button></div>
   <section id="campaignPage" aria-label="Campaigns">
     <div id="campaignPageShade"></div><div id="campaignPageContent">
-      <div id="campaignPageHeader"><div><div class="campaign-kicker">The Warborn Chronicles</div><h2>Three roads to the throne</h2></div><button id="campaignBackBtn">Back to menu</button></div>
+      <div id="campaignPageHeader"><div><div class="campaign-kicker">The Acadania Chronicles</div><h2>Three roads to the throne</h2></div><button id="campaignBackBtn">Back to menu</button></div>
       <p class="campaign-intro">21 distinct battles. Choose a campaign, then a mission. Every kingdom begins with zero resources.</p>
       <div id="campaignChoices" class="campaign-choices"></div>
       <div id="campaignMissionHeading"></div><div id="campaignMissions" class="campaign-missions"></div>
@@ -226,7 +226,7 @@
     <div id="panel">
       <div id="waitingBanner" style="display:none;background:#122; padding:8px;border-radius:6px;margin-bottom:8px;color:#9fd;">Waiting for other player to join...</div>
       <div id="connectionStatus" style="display:none;font-size:11px;padding:4px 8px;border-radius:4px;margin-bottom:6px;text-align:center;background:rgba(0,255,0,0.1);">Connected</div>
-      <h1>Warborn</h1>
+      <h1>Acadania</h1>
       
       <!-- Game Mode Selection -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
@@ -502,59 +502,59 @@
   <!-- Modals will be included here -->
   <!-- All the diplomacy, campaign editor and other modal content would continue here but keeping it brief for file size -->
 
-  <script src="js/core/settlement-spacing.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/core/state-and-grid.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/audio/soundManager.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/net/connection-state.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/net/websocket-client.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/economy-research.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/diplomacy-data.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/ui/popups-and-assets.js?v=dark-catapult-20261008"></script>
-  <script src="js/systems/territory.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/leaders.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/save-editor-teams.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/learning-ai.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/core/level-state.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/core/game-setup.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/core/intro-scenarios.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/campaign.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/data/campaign-catalog.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/ui/campaign-browser.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/settlements.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/diplomacy.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/trade.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/ui/editor-controls.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/rendering/action-effects.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/rendering/territory-overlay.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/rendering/unit-presentation.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/rendering/renderer.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/rendering/terrain-blend.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/move-undo.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/input/mouse-actions.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/mechanics.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/data/units-and-build.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/input/global-events.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/combat-turns.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/ai-commander.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/ai-logistics.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/ai-turn.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/watch-game.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/ui/endgame-and-ui.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/net/multiplayer-sync.js?v=multiplayer-generate-20261009"></script>
+  <script src="js/core/settlement-spacing.js?v=acadania-20261009"></script>
+  <script src="js/core/state-and-grid.js?v=acadania-20261009"></script>
+  <script src="js/audio/soundManager.js?v=acadania-20261009"></script>
+  <script src="js/net/connection-state.js?v=acadania-20261009"></script>
+  <script src="js/net/websocket-client.js?v=acadania-20261009"></script>
+  <script src="js/systems/economy-research.js?v=acadania-20261009"></script>
+  <script src="js/systems/diplomacy-data.js?v=acadania-20261009"></script>
+  <script src="js/ui/popups-and-assets.js?v=acadania-20261009"></script>
+  <script src="js/systems/territory.js?v=acadania-20261009"></script>
+  <script src="js/systems/leaders.js?v=acadania-20261009"></script>
+  <script src="js/systems/save-editor-teams.js?v=acadania-20261009"></script>
+  <script src="js/systems/learning-ai.js?v=acadania-20261009"></script>
+  <script src="js/core/level-state.js?v=acadania-20261009"></script>
+  <script src="js/core/game-setup.js?v=acadania-20261009"></script>
+  <script src="js/core/intro-scenarios.js?v=acadania-20261009"></script>
+  <script src="js/systems/campaign.js?v=acadania-20261009"></script>
+  <script src="js/data/campaign-catalog.js?v=acadania-20261009"></script>
+  <script src="js/ui/campaign-browser.js?v=acadania-20261009"></script>
+  <script src="js/systems/settlements.js?v=acadania-20261009"></script>
+  <script src="js/systems/diplomacy.js?v=acadania-20261009"></script>
+  <script src="js/systems/trade.js?v=acadania-20261009"></script>
+  <script src="js/ui/editor-controls.js?v=acadania-20261009"></script>
+  <script src="js/rendering/action-effects.js?v=acadania-20261009"></script>
+  <script src="js/rendering/territory-overlay.js?v=acadania-20261009"></script>
+  <script src="js/rendering/unit-presentation.js?v=acadania-20261009"></script>
+  <script src="js/rendering/renderer.js?v=acadania-20261009"></script>
+  <script src="js/rendering/terrain-blend.js?v=acadania-20261009"></script>
+  <script src="js/systems/move-undo.js?v=acadania-20261009"></script>
+  <script src="js/input/mouse-actions.js?v=acadania-20261009"></script>
+  <script src="js/systems/mechanics.js?v=acadania-20261009"></script>
+  <script src="js/data/units-and-build.js?v=acadania-20261009"></script>
+  <script src="js/input/global-events.js?v=acadania-20261009"></script>
+  <script src="js/systems/combat-turns.js?v=acadania-20261009"></script>
+  <script src="js/systems/ai-commander.js?v=acadania-20261009"></script>
+  <script src="js/systems/ai-logistics.js?v=acadania-20261009"></script>
+  <script src="js/systems/ai-turn.js?v=acadania-20261009"></script>
+  <script src="js/systems/watch-game.js?v=acadania-20261009"></script>
+  <script src="js/ui/endgame-and-ui.js?v=acadania-20261009"></script>
+  <script src="js/net/multiplayer-sync.js?v=acadania-20261009"></script>
   <script src="vendor/peerjs-1.5.5.min.js"></script>
-  <script src="js/net/fair-map.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/net/battle-generator.js?v=generate-20261009"></script>
-  <script src="js/ui/battle-setup.js?v=generate-20261009"></script>
-  <script src="js/net/online-lobby.js?v=generate-20261009"></script>
-  <script src="js/net/public-lobby.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/systems/endless.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/ui/battle-alerts.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/ui/battle-guide.js?v=multiplayer-generate-20261009"></script>
-<script src="js/ui/command-menu.js?v=multiplayer-generate-20261009"></script>
+  <script src="js/net/fair-map.js?v=acadania-20261009"></script>
+  <script src="js/net/battle-generator.js?v=acadania-20261009"></script>
+  <script src="js/ui/battle-setup.js?v=acadania-20261009"></script>
+  <script src="js/net/online-lobby.js?v=acadania-20261009"></script>
+  <script src="js/net/public-lobby.js?v=acadania-20261009"></script>
+  <script src="js/systems/endless.js?v=acadania-20261009"></script>
+  <script src="js/ui/battle-alerts.js?v=acadania-20261009"></script>
+  <script src="js/ui/battle-guide.js?v=acadania-20261009"></script>
+<script src="js/ui/command-menu.js?v=acadania-20261009"></script>
   <!-- Start p5 only after every game subsystem has registered its setup hooks. -->
-  <script src="js/data/example-scenarios.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/ui/editor-studio.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/ui/solo-menu.js?v=multiplayer-generate-20261009"></script>
-  <script src="js/boot/p5-setup.js?v=multiplayer-generate-20261009"></script>
+  <script src="js/data/example-scenarios.js?v=acadania-20261009"></script>
+  <script src="js/ui/editor-studio.js?v=acadania-20261009"></script>
+  <script src="js/ui/solo-menu.js?v=acadania-20261009"></script>
+  <script src="js/boot/p5-setup.js?v=acadania-20261009"></script>
 </body>
 </html>

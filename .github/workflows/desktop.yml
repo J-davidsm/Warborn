@@ -55,9 +55,9 @@ jobs:
           pattern: desktop-*
           path: release
           merge-multiple: true
-      - run: sha256sum Warborn-* > SHA256SUMS
+      - run: sha256sum Acadania-* > SHA256SUMS
         working-directory: release
-      - run: gh release create "$TAG" release/* --verify-tag --title "Warborn $TAG" --notes-file docs/desktop-release.md
+      - run: gh release create "$TAG" release/* --verify-tag --title "Acadania $TAG" --notes-file docs/desktop-release.md
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}

@@ -1,8 +1,8 @@
 {
   "name": "warborn",
-  "productName": "Warborn",
-  "version": "1.1.0",
-  "description": "Warborn fantasy turn-based strategy",
+  "productName": "Acadania",
+  "version": "1.2.0",
+  "description": "Acadania fantasy turn-based strategy",
   "author": {
     "name": "Joseph Davidsmeier",
     "email": "superkrakdebehemoth@gmail.com"
@@ -22,7 +22,7 @@
   },
   "build": {
     "appId": "com.warborn.game",
-    "productName": "Warborn",
+    "productName": "Acadania",
     "asar": true,
     "directories": {
       "output": "dist"
@@ -33,13 +33,13 @@
       "js/**/*",
       "vendor/**/*",
       "assets/**/*",
-      "desktop/main.cjs",
+      "desktop/*.cjs",
       "package.json",
       "!assets/**/* alias",
       "!assets/**/*.md",
       "!assets/**/*.txt"
     ],
-    "artifactName": "Warborn-${os}-${arch}.${ext}",
+    "artifactName": "Acadania-${os}-${arch}.${ext}",
     "mac": {
       "category": "public.app-category.strategy-games",
       "icon": "assets/app/warborn.icns",
@@ -66,7 +66,8 @@
       ],
       "icon": "assets/app/warborn-icon.png",
       "category": "Game",
-      "maintainer": "Joseph Davidsmeier <superkrakdebehemoth@gmail.com>"
+      "maintainer": "Joseph Davidsmeier <superkrakdebehemoth@gmail.com>",
+      "executableName": "acadania"
     }
   }
 }

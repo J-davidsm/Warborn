@@ -1,6 +1,6 @@
 const {spawnSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const packaged=process.argv.includes('--packaged');
-const paths=process.platform==='darwin'?['dist/mac-arm64/Warborn.app/Contents/MacOS/Warborn','dist/mac/Warborn.app/Contents/MacOS/Warborn']:process.platform==='win32'?['dist/win-unpacked/Warborn.exe']:['dist/linux-unpacked/warborn','dist/linux-arm64-unpacked/warborn'];
+const paths=process.platform==='darwin'?['dist/mac-arm64/Acadania.app/Contents/MacOS/Acadania','dist/mac/Acadania.app/Contents/MacOS/Acadania']:process.platform==='win32'?['dist/win-unpacked/Acadania.exe']:['dist/linux-unpacked/acadania','dist/linux-arm64-unpacked/acadania'];
 const binary=packaged?paths.find(p=>fs.existsSync(p)):require('electron');
 if(!binary)throw Error('Packaged executable not found.');
 const args=packaged?['--smoke-test']:['.','--smoke-test'];

@@ -2,10 +2,10 @@
    Downloads a release, verifies its SHA-256, then runs the OS installer. */
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),crypto=require('node:crypto'),{spawnSync}=require('node:child_process');
 function assetFor(platform,arch){
- if(!['x64','arm64'].includes(arch))throw Error('Warborn desktop supports 64-bit Intel/AMD and ARM computers only.');
- if(platform==='darwin')return `Warborn-mac-${arch}.zip`;
- if(platform==='linux')return `Warborn-linux-${arch==='x64'?'amd64':arch}.deb`;
- if(platform==='win32')return 'Warborn-win-x64.exe'; // Windows on ARM can run the x64 build.
+ if(!['x64','arm64'].includes(arch))throw Error('Acadania desktop supports 64-bit Intel/AMD and ARM computers only.');
+ if(platform==='darwin')return `Acadania-mac-${arch}.zip`;
+ if(platform==='linux')return `Acadania-linux-${arch==='x64'?'amd64':arch}.deb`;
+ if(platform==='win32')return 'Acadania-win-x64.exe'; // Windows on ARM can run the x64 build.
  throw Error('Supported systems: macOS, Windows and Ubuntu/Debian.');
 }
 function run(command,args){const r=spawnSync(command,args,{stdio:'inherit'});if(r.error)throw r.error;if(r.status!==0)throw Error(`${command} failed (${r.status}).`);}
@@ -13,7 +13,7 @@ async function main(){
  if(typeof fetch!=='function')throw Error('Install Node.js 22 LTS or newer first.');
  const name=assetFor(process.platform,process.arch);
  if(process.platform==='linux'&&!fs.existsSync('/etc/debian_version'))throw Error('This installer supports Ubuntu/Debian Linux. Other distributions can use the website or build from source.');
- const headers={'User-Agent':'Warborn-installer','Accept':'application/vnd.github+json'};
+ const headers={'User-Agent':'Acadania-installer','Accept':'application/vnd.github+json'};
  const response=await fetch('https://api.github.com/repos/J-davidsm/Warborn/releases/latest',{headers});
  if(!response.ok)throw Error(`Release lookup failed (${response.status}). See https://github.com/J-davidsm/Warborn/releases`);
  const release=await response.json();
@@ -26,26 +26,31 @@ async function main(){
  if(!/^[a-f0-9]{64}$/.test(expected||''))throw Error('Package checksum missing.');
  const bytes=await download(asset.browser_download_url);
  if(crypto.createHash('sha256').update(bytes).digest('hex')!==expected)throw Error('Checksum mismatch; refusing installation.');
- const dir=fs.mkdtempSync(path.join(os.tmpdir(),'warborn-install-')),file=path.join(dir,name);fs.writeFileSync(file,bytes);
- console.log('Checksum verified. Close Warborn before replacing an existing installation.');
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'acadania-install-')),file=path.join(dir,name);fs.writeFileSync(file,bytes);
+ console.log('Checksum verified. Close Acadania before replacing an existing installation.');
  if(process.platform==='win32')run(file,[]);
  else if(process.platform==='linux')run('sudo',['apt-get','install','-y',file]);
  else{
-  const existing='/Applications/Warborn.app';
-  const destination=fs.existsSync(existing)?existing:path.join(os.homedir(),'Applications','Warborn.app');
-  const running=spawnSync('pgrep',['-f',destination+'/Contents/MacOS/Warborn']);
-  if(running.status===0)throw Error('Quit Warborn and rerun this command.');
+  const locations=['/Applications',path.join(os.homedir(),'Applications')];
+  const parent=locations.find(folder=>fs.existsSync(path.join(folder,'Acadania.app'))||fs.existsSync(path.join(folder,'Warborn.app')))||locations[1];
+  const destination=path.join(parent,'Acadania.app'),legacy=path.join(parent,'Warborn.app');
+  for(const title of ['Acadania','Warborn']){
+   const running=spawnSync('pgrep',['-f',path.join(parent,title+'.app','Contents','MacOS',title)]);
+   if(running.status===0)throw Error('Quit the game and rerun this command.');
+  }
   const unpack=path.join(dir,'unpacked');run('ditto',['-x','-k',file,unpack]);
-  const source=path.join(unpack,'Warborn.app');
-  if(!fs.existsSync(path.join(source,'Contents','MacOS','Warborn')))throw Error('Invalid Mac package.');
+  const source=path.join(unpack,'Acadania.app');
+  if(!fs.existsSync(path.join(source,'Contents','MacOS','Acadania')))throw Error('Invalid Mac package.');
   fs.mkdirSync(path.dirname(destination),{recursive:true});
   // Copy to a sibling before replacing, so downloads never damage the old app.
   const staged=destination.replace(/\.app$/,'.installing.app');if(fs.existsSync(staged))throw Error(`Remove the incomplete staging folder first: ${staged}`);
   run('ditto',[source,staged]);run('codesign',['--verify','--deep','--strict',staged]);
   fs.rmSync(destination,{recursive:true,force:true});fs.renameSync(staged,destination);
+  // Remove the old application only after the renamed replacement is installed.
+  if(fs.existsSync(legacy))fs.rmSync(legacy,{recursive:true,force:true});
   console.log(`Installed ${destination}`);
  }
- fs.rmSync(dir,{recursive:true,force:true});console.log('Warborn installed. Saved games were not removed.');
+ fs.rmSync(dir,{recursive:true,force:true});console.log('Acadania installed. Saved games were not removed.');
 }
 module.exports={assetFor};
 if(require.main===module)main().catch(e=>{console.error(e.message);process.exitCode=1;});

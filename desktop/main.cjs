@@ -4,10 +4,12 @@ const path = require('path');
 const isDev = process.argv.includes('--dev');
 
 let mainWindow;
-app.setName('Warborn');
+app.setName('Acadania');
+// Reuse the original profile so renaming the app keeps all saved scenarios.
+app.setPath('userData', require('./profile.cjs').profilePath(app.getPath('appData')));
 // Startup checks must never read or alter a player's real saves.
 if (process.argv.includes('--smoke-test')) {
-  app.setPath('userData', require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'warborn-smoke-')));
+  app.setPath('userData', require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'acadania-smoke-')));
 }
 
 function createWindow() {
@@ -26,7 +28,7 @@ function createWindow() {
     icon: path.join(__dirname, '..', 'assets', 'app', 'warborn-icon.png'),
     show: false, // Don't show until ready-to-show
     titleBarStyle: 'default',
-    title: 'Warborn'
+    title: 'Acadania'
   });
 
   // Load the app
@@ -110,13 +112,13 @@ function createMenu() {
       label: 'Help',
       submenu: [
         {
-          label: 'About Warborn',
+          label: 'About Acadania',
           click: () => {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About Warborn',
-              message: `Warborn v${app.getVersion()}`,
+              title: 'About Acadania',
+              message: `Acadania v${app.getVersion()}`,
               detail: 'A turn-based strategy game built with p5.js and Electron.'
             });
           }

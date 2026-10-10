@@ -1,8 +1,8 @@
-# Warborn
+# Acadania
 
 A browser-based fantasy strategy game. No installation or server is needed to play.
 
-**[Play Warborn](https://j-davidsm.github.io/Warborn/)**
+**[Play Acadania](https://j-davidsm.github.io/Warborn/)**
 
 ## Desktop app: Windows, Ubuntu and Mac
 
@@ -139,7 +139,7 @@ Set `AICommander.debug = true` in the developer console to print each kingdom's 
 
 Includes six distinct images for each of nine terrain families: grass, woods, mountains, swamp, desert, water, fountain, bridge, and farm. Terrain blends across tile boundaries, adjacent tiles use different variants, and bridges orient across surrounding water. Images are optimized for web delivery at the renderer's working resolution.
 
-The browser source and bundled assets are derived from the Warborn desktop application. p5.js is bundled locally; its license notice remains in `vendor/p5.min.js`.
+The browser source and bundled assets are derived from the Acadania desktop application. p5.js is bundled locally; its license notice remains in `vendor/p5.min.js`.
 
 ### Timed doctrine study and Retaliation
 

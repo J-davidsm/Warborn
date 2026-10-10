@@ -208,7 +208,7 @@ function createBackupFile(backupData) {
     // Create a temporary download link
     const a = document.createElement('a');
     a.href = url;
-    a.download = `warborn_levels_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `acadania_levels_${new Date().toISOString().split('T')[0]}.json`;
     a.style.display = 'none';
     
     document.body.appendChild(a);
