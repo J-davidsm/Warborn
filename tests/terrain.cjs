@@ -4,8 +4,8 @@ const assert = require('assert/strict');
 const sources=[];
 const ctx=vm.createContext({console,Image:class {set src(v){sources.push(v)}},normalizeTerrainType:t=>t&&String(t).toUpperCase(),terrainHash:(c,r,s)=>((Math.imul(c+1,374761393)^Math.imul(r+1,668265263)^s)>>>0)});
 vm.runInContext(fs.readFileSync(require('path').join(__dirname, '../js/rendering/terrain-blend.js'),'utf8'),ctx);
-assert.equal(sources.length,49);assert.equal(new Set(sources).size,49);
-assert.deepEqual(sources.filter(s=>s.includes('bridge-')), ['assets/terrain/v3/bridge-stone.png']);
+assert.equal(sources.length,50);assert.equal(new Set(sources).size,50);
+assert.deepEqual(sources.filter(s=>s.includes('bridge-')), ['assets/terrain/v4/bridge-painted.png','assets/terrain/v4/bridge-junction.png']);
 assert.equal(ctx.terrainV2FadeWeight('GRASS',0),1);
 assert.equal(ctx.terrainV2FadeWeight('WOODS',1.62),0);
 assert(ctx.terrainV2FadeWeight('MOUNTAIN',1.2)>0.25,'nature biomes should crossfade broadly beyond their hex edge');
@@ -141,15 +141,29 @@ for (const hex of [false,true]) {
   assert.equal(ctx.terrainV2Resolution(12,10,hex,0,150).radius,ctx.terrainV2Resolution(12,10,hex,0,160).radius,'nearby zoom values share a cache tier');
 }
 console.log('Terrain resolution scales with zoom and bounds large-map memory.');
-// Rendering joins all tiles before painting parapets: no rail cuts across a
-// shared edge or junction, and the same masonry texture covers every path.
-let curves=0,clips=0;const strokes=[];
-vm.runInContext('TERRAIN_V2.images.BRIDGE=[null]',ctx);
-const painter={save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},rect(){},clip(){clips++;},quadraticCurveTo(){curves++;},stroke(){strokes.push(this.lineWidth);}};
+// Entire generated bridge images are warped along the curves. There are no
+// color strokes or paving-only patterns masquerading as a painted bridge.
+const art={width:1024,height:252},hub={width:512,height:512};ctx.bridgeArt=art;ctx.bridgeHub=hub;
+vm.runInContext('TERRAIN_V2.images.BRIDGE=[bridgeArt];TERRAIN_V2.images.BRIDGE_HUB=[bridgeHub];TERRAIN_V2.stamps.clear()',ctx);
+const images=[],matrices=[];let canvases=0;
+function painter(){return {save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},rect(){},clip(){},translate(){},arc(){},
+ transform(...v){assert(v.every(Number.isFinite));matrices.push(v);},
+ drawImage(...v){images.push(v);},stroke(){assert.fail('bridges must use generated pictures, not strokes');},fill(){assert.fail('bridges must use generated pictures, not shape fills');}};}
+ctx.document={createElement(){canvases++;return {width:0,height:0,getContext:painter};}};
 const renderMap=Array(25).fill('WATER');for(const id of [6,7,8,12,17])renderMap[id]='BRIDGE';
 const renderTiles=ctx.terrainV2BridgeTiles(5,5,true,renderMap);
-ctx.drawTerrainV2BridgeDecks(painter,5,5,true,renderMap,0,70);
-assert.equal(clips,1,'whole bridge network has one union clip');
-assert.equal(curves,renderTiles.reduce((n,t)=>n+t.paths.length,0),'render every connected path');
-assert.equal(strokes.length,4,'all parapets and decking render in network-wide passes');
-assert(strokes.every((w,i)=>i===0||w<strokes[i-1]),'deck fills inside both continuous parapets');
+ctx.drawTerrainV2BridgeDecks(painter(),5,5,true,renderMap,0,70);
+assert(images.some(v=>v[0]===art),'paint the generated bridge span');
+assert(images.filter(v=>v[0]===art).every(v=>v.length===3),'map the complete painting including both parapets');
+assert(images.some(v=>v[0]===hub),'paint the generated junction at branches');
+assert.equal(matrices.length,renderTiles.reduce((n,t)=>n+t.paths.length,0)*48,'two triangles per curve segment');
+const built=canvases;ctx.drawTerrainV2BridgeDecks(painter(),5,5,true,renderMap,0,70);
+assert.equal(canvases,built,'reuse baked bridge sprites instead of warping each frame');
+for(const tile of renderTiles)for(const path of tile.paths){
+ const frames=ctx.terrainV2BridgeFrames(path,70,70*.86);
+ close(frames[0].x,path.from.x*70,'painted span starts at its port');
+ close(frames.at(-1).y,path.to.y*70,'painted span ends at its port');
+ assert(frames.every((p,i)=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&(!i||p.textureX>frames[i-1].textureX)),'texture coordinates increase along the curve');
+ for(const frame of frames)close(Math.hypot(frame.top.x-frame.bottom.x,frame.top.y-frame.bottom.y),70*.86,'painted width stays constant through bends');
+}
+console.log('Generated full-span artwork, generated junctions, curved image mapping and sprite cache pass.');

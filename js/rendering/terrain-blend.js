@@ -1,9 +1,9 @@
 // Warborn terrain art v2. Six original paintings per surface, blended in map space.
 // Cached separately from units, selection and UI: no per-frame image processing.
-const TERRAIN_V2_BRIDGE_IMAGE = 'assets/terrain/v3/bridge-stone.png';
+const TERRAIN_V2_BRIDGE_IMAGE = 'assets/terrain/v4/bridge-painted.png';
+const TERRAIN_V2_BRIDGE_HUB_IMAGE = 'assets/terrain/v4/bridge-junction.png';
 const TERRAIN_V2_TYPES = ['GRASS', 'WOODS', 'MOUNTAIN', 'SWAMP', 'DESERT', 'WATER', 'FOUNTAIN', 'BRIDGE', 'FARM'];
-// New bridge paintings all run edge-to-edge from left to right.
-const TERRAIN_V2_BRIDGE_DECK_ANGLES = [0, 0, 0, 0, 0, 0];
+const TERRAIN_V2_ASSET_COUNT = (TERRAIN_V2_TYPES.length - 1) * 6 + 2;
 const TERRAIN_V2 = {
   images: {}, loaded: 0, failed: 0, revision: 0, layer: null, key: '',
   variants: null, variantsKey: '', stamps: new Map(), builds: 0
@@ -15,20 +15,33 @@ function terrainV2Type(value) {
 }
 
 function preloadTerrainV2() {
-  for (const type of TERRAIN_V2_TYPES) {
-    const count = type === 'BRIDGE' ? 1 : 6;
+  for (const type of [...TERRAIN_V2_TYPES, 'BRIDGE_HUB']) {
+    const isBridge = type.startsWith('BRIDGE');
+    const count = isBridge ? 1 : 6;
     TERRAIN_V2.images[type] = Array(count).fill(null);
     for (let variant = 0; variant < count; variant++) {
       const img = new Image();
       img.onload = () => {
-        // Retain a game-resolution surface, not 54 full-resolution bitmaps.
-        // Full-size source paintings remain in the terrain pack for editing.
-        const surface = terrainV2Canvas(384, 384);
-        const context = surface.getContext('2d');
-        context.imageSmoothingQuality = 'high';
-        context.drawImage(img, 0, 0, 384, 384);
-        TERRAIN_V2.images[type][variant] = surface;
-        if (type !== 'BRIDGE' && TERRAIN_V2.images[type].every(Boolean)) terrainV2MatchPalette(type);
+        // Keep the bridge's original proportions and generated alpha, including
+        // its complete parapets. Trim only empty transparent border rows.
+        const width=isBridge?1024:384,height=isBridge?Math.round(width*img.height/img.width):384;
+        let surface=terrainV2Canvas(width,height);
+        let context=surface.getContext('2d');context.imageSmoothingQuality='high';
+        context.drawImage(img,0,0,width,height);
+        if(type==='BRIDGE'){
+          const alpha=context.getImageData(0,0,width,height).data;let top=height,bottom=-1;
+          for(let y=0;y<height;y++){
+            let visible=0;for(let x=0;x<width;x++)if(alpha[(y*width+x)*4+3]>16)visible++;
+            if(visible>width*.02){top=Math.min(top,y);bottom=y;}
+          }
+          if(bottom>=top){
+            const cropped=terrainV2Canvas(width,bottom-top+1);
+            cropped.getContext('2d').drawImage(surface,0,top,width,bottom-top+1,0,0,width,bottom-top+1);
+            surface=cropped;
+          }
+        }
+        TERRAIN_V2.images[type][variant]=surface;
+        if(!isBridge&&TERRAIN_V2.images[type].every(Boolean))terrainV2MatchPalette(type);
         TERRAIN_V2.loaded++;
         TERRAIN_V2.revision++;
         TERRAIN_V2.stamps.clear();
@@ -38,8 +51,8 @@ function preloadTerrainV2() {
         TERRAIN_V2.revision++;
         console.warn('Terrain v2 image missing:', type, variant + 1);
       };
-      img.src = type === 'BRIDGE'
-        ? TERRAIN_V2_BRIDGE_IMAGE
+      img.src = isBridge
+        ? (type === 'BRIDGE' ? TERRAIN_V2_BRIDGE_IMAGE : TERRAIN_V2_BRIDGE_HUB_IMAGE)
         : `assets/terrain/v2/${type.toLowerCase()}-${variant + 1}.jpg${['WOODS','SWAMP'].includes(type) ? '?v=training1' : ''}`;
     }
   }
@@ -257,35 +270,98 @@ function terrainV2BridgeTiles(cols,rows,hex,values,parity=0) {
   return tiles;
 }
 
-// Reuse the existing stone painting as masonry rather than stretching a
-// complete bridge over a crossing. One material stays consistent at all bends.
-function terrainV2BridgeMasonry(ctx,art,radius) {
-  const texture=terrainV2Canvas(Math.max(1,Math.ceil(radius*1.6)),Math.max(1,Math.ceil(radius*.34)));
-  const t=texture.getContext('2d');t.imageSmoothingQuality='high';
-  t.drawImage(art,0,art.height*.39,art.width,art.height*.20,0,0,texture.width,texture.height);
-  return ctx.createPattern(texture,'repeat');
+// Sample a circular fillet through the shared edge ports. Rational quadratic
+// weights keep tight hex bends round instead of pinching the painted walls.
+function terrainV2BridgeFrames(path,radius,width,steps=24) {
+  const a=path.from,b=path.to,c=path.control;
+  const ax=a.x-c.x,ay=a.y-c.y,bx=b.x-c.x,by=b.y-c.y;
+  const cosine=(ax*bx+ay*by)/(Math.hypot(ax,ay)*Math.hypot(bx,by)||1);
+  const weight=Math.sqrt(Math.max(.01,(1-Math.max(-1,Math.min(1,cosine)))/2));
+  const frames=[];let length=0;
+  for(let i=0;i<=steps;i++){
+    const t=i/steps,u=1-t,d=u*u+2*weight*u*t+t*t;
+    const dd=2*((weight-1)*u+(1-weight)*t);
+    const nx=u*u*a.x+2*weight*u*t*c.x+t*t*b.x,ny=u*u*a.y+2*weight*u*t*c.y+t*t*b.y;
+    const dx=(2*(u*(weight*c.x-a.x)+t*(b.x-weight*c.x))*d-nx*dd)/(d*d);
+    const dy=(2*(u*(weight*c.y-a.y)+t*(b.y-weight*c.y))*d-ny*dd)/(d*d);
+    const x=nx/d*radius,y=ny/d*radius,n=Math.hypot(dx,dy)||1;
+    const ox=-dy/n*width/2,oy=dx/n*width/2;
+    if(i)length+=Math.hypot(x-frames[i-1].x,y-frames[i-1].y);
+    frames.push({x,y,top:{x:x+ox,y:y+oy},bottom:{x:x-ox,y:y-oy},length});
+  }
+  for(const frame of frames)frame.textureX=frame.length/(length||1);
+  return frames;
+}
+
+// Warp the FULL generated painting (walls, shadows and roadway) into small
+// image triangles. Clipping only positions the artwork; no visible bridge
+// geometry is filled or stroked. All this runs in the cached terrain build.
+function terrainV2BridgeTriangle(ctx,art,source,destination) {
+  const [s0,s1,s2]=source,[p0,p1,p2]=destination;
+  const det=(s1.x-s0.x)*(s2.y-s0.y)-(s2.x-s0.x)*(s1.y-s0.y);
+  if(Math.abs(det)<1e-8)return;
+  const a=((p1.x-p0.x)*(s2.y-s0.y)-(p2.x-p0.x)*(s1.y-s0.y))/det;
+  const c=((s1.x-s0.x)*(p2.x-p0.x)-(s2.x-s0.x)*(p1.x-p0.x))/det;
+  const b=((p1.y-p0.y)*(s2.y-s0.y)-(p2.y-p0.y)*(s1.y-s0.y))/det;
+  const d=((s1.x-s0.x)*(p2.y-p0.y)-(s2.x-s0.x)*(p1.y-p0.y))/det;
+  ctx.save();ctx.beginPath();
+  // Subpixel overlap prevents antialiasing hairlines between image triangles.
+  const mx=(p0.x+p1.x+p2.x)/3,my=(p0.y+p1.y+p2.y)/3;
+  destination.forEach((p,i)=>{const n=Math.hypot(p.x-mx,p.y-my)||1,x=p.x+(p.x-mx)/n*.35,y=p.y+(p.y-my)/n*.35;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+  ctx.closePath();ctx.clip();
+  ctx.transform(a,b,c,d,p0.x-a*s0.x-c*s0.y,p0.y-b*s0.x-d*s0.y);
+  ctx.drawImage(art,0,0);ctx.restore();
+}
+
+function terrainV2BridgePaintPath(ctx,art,path,radius) {
+  const frames=terrainV2BridgeFrames(path,radius,radius*.86);
+  // Overlap the endpoint pixels: image-edge antialiasing must not reveal
+  // water where two otherwise exact shared-edge ports meet.
+  for(const [index,next] of [[0,1],[frames.length-1,frames.length-2]]){
+    const frame=frames[index],neighbor=frames[next],dx=frame.x-neighbor.x,dy=frame.y-neighbor.y,n=Math.hypot(dx,dy)||1;
+    for(const point of [frame,frame.top,frame.bottom]){point.x+=dx/n;point.y+=dy/n;}
+  }
+  for(let i=1;i<frames.length;i++){
+    const l=frames[i-1],r=frames[i],x0=l.textureX*art.width,x1=r.textureX*art.width,h=art.height;
+    terrainV2BridgeTriangle(ctx,art,[{x:x0,y:0},{x:x1,y:0},{x:x1,y:h}],[l.top,r.top,r.bottom]);
+    terrainV2BridgeTriangle(ctx,art,[{x:x0,y:0},{x:x1,y:h},{x:x0,y:h}],[l.top,r.bottom,l.bottom]);
+  }
+}
+
+function terrainV2BridgeSprite(tile,radius,hex) {
+  const signature=tile.ports.map(p=>[p.x-tile.center.x,p.y-tile.center.y].map(v=>v.toFixed(4)).join(',')).join('|');
+  const key=`painted-bridge:${hex}:${radius.toFixed(4)}:${signature}`;
+  if(TERRAIN_V2.stamps.has(key))return TERRAIN_V2.stamps.get(key);
+  const size=Math.ceil(radius*2+4),sprite=terrainV2Canvas(size,size),ctx=sprite.getContext('2d');
+  const art=TERRAIN_V2.images.BRIDGE[0],hub=TERRAIN_V2.images.BRIDGE_HUB[0];
+  ctx.imageSmoothingQuality='high';ctx.translate(size/2,size/2);
+  ctx.beginPath();terrainV2CellPath(ctx,0,0,radius+.8,hex);ctx.clip();
+  const local=p=>({x:p.x-tile.center.x,y:p.y-tile.center.y});
+  for(const path of tile.paths){
+    let from=local(path.from),to=local(path.to);
+    if(from.x>to.x||(Math.abs(from.x-to.x)<1e-8&&from.y>to.y))[from,to]=[to,from];
+    terrainV2BridgePaintPath(ctx,art,{from,control:local(path.control),to},radius);
+  }
+  if(tile.ports.length>2){
+    // A generated open masonry pier joins branching roadways without walls
+    // obstructing the intersection. Keep the same stone style as the spans.
+    if(hub)ctx.drawImage(hub,-radius*.64,-radius*.64,radius*1.28,radius*1.28);
+    else{
+      // If only the optional hub failed to load, retain painted paving.
+      ctx.beginPath();ctx.arc(0,0,radius*.55,0,Math.PI*2);ctx.clip();
+      ctx.drawImage(art,art.width*.3,art.height*.3,art.width*.4,art.height*.35,-radius*.6,-radius*.6,radius*1.2,radius*1.2);
+    }
+  }
+  TERRAIN_V2.stamps.set(key,sprite);return sprite;
 }
 
 function drawTerrainV2BridgeDecks(ctx,cols,rows,hex,values,parity,radius) {
-  const tiles=terrainV2BridgeTiles(cols,rows,hex,values,parity);
-  if(!tiles.length)return;
-  const art=TERRAIN_V2.images.BRIDGE[0];
+  if(!TERRAIN_V2.images.BRIDGE[0])return;
   ctx.save();ctx.globalCompositeOperation='source-over';
-  // Restrict the connected artwork to bridge terrain; no invented crossings
-  // through nearby water, and bank-facing ends stop at the shoreline.
-  ctx.beginPath();for(const tile of tiles)terrainV2CellPath(ctx,tile.center.x*radius,tile.center.y*radius,radius+.25,hex);ctx.clip();
-  ctx.beginPath();
-  for(const tile of tiles)for(const path of tile.paths){
-    ctx.moveTo(path.from.x*radius,path.from.y*radius);
-    ctx.quadraticCurveTo(path.control.x*radius,path.control.y*radius,path.to.x*radius,path.to.y*radius);
+  for(const tile of terrainV2BridgeTiles(cols,rows,hex,values,parity)){
+    const sprite=terrainV2BridgeSprite(tile,radius,hex);
+    ctx.drawImage(sprite,tile.center.x*radius-sprite.width/2,tile.center.y*radius-sprite.height/2);
   }
-  ctx.lineCap='round';ctx.lineJoin='round';
-  // Stroke the entire network in passes: junctions stay open without parapets
-  // drawn across the middle, and neighboring sections share the same width.
-  ctx.strokeStyle='#353b39';ctx.lineWidth=radius*.82;ctx.stroke();
-  ctx.strokeStyle='#bbb9ab';ctx.lineWidth=radius*.75;ctx.stroke();
-  ctx.strokeStyle='#666b64';ctx.lineWidth=radius*.60;ctx.stroke();
-  ctx.strokeStyle=art?terrainV2BridgeMasonry(ctx,art,radius):'#95958a';ctx.lineWidth=radius*.56;ctx.stroke();
   ctx.restore();
 }
 
@@ -349,7 +425,7 @@ function buildTerrainV2Layer(cols, rows, hex, values, parity = 0, requestedRadiu
 function drawBlendedTerrainBoard() {
   if (!terrain || !Number.isFinite(COLS) || !Number.isFinite(ROWS) || COLS < 1 || ROWS < 1) return false;
   const parity = useHexGrid ? cameraX & 1 : 0;
-  const artRevision = TERRAIN_V2.loaded + TERRAIN_V2.failed === 49 ? TERRAIN_V2.revision : 0;
+  const artRevision = TERRAIN_V2.loaded + TERRAIN_V2.failed === TERRAIN_V2_ASSET_COUNT ? TERRAIN_V2.revision : 0;
   const key = `${COLS}:${ROWS}:${useHexGrid}:${parity}:${artRevision}:${terrain.join('|')}`;
   const worldRadius = useHexGrid ? HEX_SIZE : TILE / 2;
   const transform = drawingContext.getTransform();
