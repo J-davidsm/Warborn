@@ -10,7 +10,7 @@ const BattleGuide = (() => {
  const asset=n=>DEFAULT_IMAGE_MAP[n]||null;
  const icon=(n,label)=>asset(n)?`<span class="matchup"><img src="${asset(n)}" alt="${esc(n)}">${esc(label)}</span>`:`<span class="matchup">${esc(n)}: ${esc(label)}</span>`;
  function abilities(u){
-  const list={Soldier:'An inexpensive infantry soldier. No unique combat modifier.',Spearman:'Adjacent allied Spearmen reduce damage received by a defending Spearman by 25%. With Phalanx Warriors and two adjacent friendly Spearmen, this becomes 40%.',Archer:'Ranged attacks from two tiles away.',Swordsman:'Kills grant +40% damage next turn, increasing by 10% on consecutive kill-turns up to 100%. One missed kill-turn halves the bonus; two reset it.',Assassin:'A hit shatters a non-Assassin, non-fortress enemy’s morale, except Dragons. Other Assassins are immune to this morale effect. Against any fortress, it deals only 10% damage and affects fortress morale normally. Heals 5 HP on its turn. Deals double damage to targets in forests or marshes.',Knight:'Can make a bonus attack. Deals double damage to Dragons; attacks from forest deal 25% less damage.',Catapult:'May move OR attack each turn. Deals double damage to fortresses and ignores their armor and settlement defense. Takes double damage from Dragons.',Dragon:'Flies across terrain, including water. Morale stays at 150 and cannot be shattered. Resists most incoming attacks. Deals double damage to Catapults.',Cleric:'Heals friendly units within range instead of attacking. Keep this healer behind your front line.',Crown:'Cannot attack or be purchased. Adjacent friendly units gain 25% defense and 10% attack. Moves 2 on grassland, 1 elsewhere. Losing your Crown defeats your kingdom; an AI Crown’s death shatters its non-Dragon army.'};
+  const list={Soldier:'An inexpensive infantry soldier. No unique combat modifier.',Spearman:'Adjacent allied Spearmen reduce damage received by a defending Spearman by 25%. With Phalanx Warriors and two adjacent friendly Spearmen, this becomes 40%.',Archer:'Ranged attacks from two tiles away.',Swordsman:'Kills grant +40% damage next turn, increasing by 10% on consecutive kill-turns up to 100%. One missed kill-turn halves the bonus; two reset it.',Assassin:'A hit shatters a non-Assassin, non-fortress enemy’s morale, except Dragons. Other Assassins are immune to this morale effect. Against any fortress, it deals only 10% damage and affects fortress morale normally. Heals 5 HP on its turn. Deals double damage to targets in forests or marshes.',Knight:'After killing an enemy, can make one bonus attack that turn. Deals double damage to Dragons; attacks from forest deal 25% less damage.',Catapult:'May move OR attack each turn. Deals double damage to fortresses and ignores their armor and settlement defense. Takes double damage from Dragons.',Dragon:'Flies across terrain, including water. Morale stays at 150 and cannot be shattered. Resists most incoming attacks. Deals double damage to Catapults.',Cleric:'Heals friendly units within range instead of attacking. Keep this healer behind your front line.',Crown:'Cannot attack or be purchased. Adjacent friendly units gain 25% defense and 10% attack. Moves 2 on grassland, 1 elsewhere. Losing your Crown defeats your kingdom; an AI Crown’s death shatters its non-Dragon army.'};
   if(isFortressUnit(u)){const d=getFortressPropsByName(u.name);return `Immovable, even after promotion. ${hasTech(u.team,'garrison_training')?'Retaliates against attackers within its attack range.':'Research Retaliation to counterattack.'} Reduces incoming non-Catapult damage by ${Math.round((d?.damageReduction||0)*100)}%; heals ${d?.healPerTurn||0} HP per turn. Assassin attacks deal 10% damage and reduce fortress morale normally.`;}
   if(u.name==='Archer')return `Ranged attacks from ${u.atkRange} tiles away.`+(typeof hasTech==='function'&&hasTech(u.team,'longbows')?' Longbow shots at distance 3 deal 25% less damage.':'');
   if(u.name==='Swordsman')return list.Swordsman+(hasTech(u.team,'steel_arms')?' Iron Strength: wounds do not reduce attack damage.':'');
@@ -66,7 +66,7 @@ const BattleGuide = (() => {
    ['Friends and foes',`Our banner belongs to ${teamName(mine)}. ${allies.length?'Our allies are '+allies.map(teamName).join(', ')+'. We cannot attack them or take their towns.':'The other kingdoms here are our rivals. Check their banner before you strike.'}`,targetFor(u=>u.team!==mine)],
    ['Select a warrior','Click one of your units. Its movement and attack opportunities appear on the map. The bottom-right field report shows its strengths, weaknesses and special abilities.',targetFor(u=>u.team===mine)],
    ['Move with purpose','Choose a reachable tile to march there. We can pass through friendly troops, but cannot finish on an occupied tile or march through enemies. Watch the path—not just the destination.',targetFor(u=>u.team===mine)],
-   ['Strike at the right moment','Select a ready warrior, then an enemy in range. Most troops act once per turn; Knights can make a bonus attack. Injured troops deal less damage, so protect your veterans.',targetFor(u=>u.team!==mine&&!areFriendlyTeams(mine,u.team))],
+   ['Strike at the right moment','Select a ready warrior, then an enemy in range. Most troops act once per turn; Knights earn a bonus attack after a kill. Injured troops deal less damage, so protect your veterans.',targetFor(u=>u.team!==mine&&!areFriendlyTeams(mine,u.team))],
    ['Read your strength','These marks are your field ledger: 🚩 owner, 👣 movement, 🎯 range, ⚔️ damage, 💰 gold cost, ⚒️ material cost, ⭐ experience, ❤️ health and 🔥 morale. Hover a symbol for its meaning.',targetFor(u=>u.team===mine)],
    ['Morale wins battles','Morale is courage. At 30 or less, ordinary troops deal reduced damage; at 120 or more, they hit harder. Shattered troops cannot fight normally and may flee. Dragons keep maximum morale. An Assassin can shatter a foe with one hit.',targetFor(u=>u.team===mine)],
    ['Keep your veterans alive','Combat earns experience. Enough experience promotes a warrior, improving health and damage, and sometimes movement. Fortresses never gain movement. Pull wounded veterans back instead of sacrificing them.',targetFor(u=>u.team===mine)],
@@ -74,7 +74,7 @@ const BattleGuide = (() => {
    ['The royal Crown','If your army has a Crown, protect her. She cannot attack or be bought. Friends beside her gain 25% defense and 10% attack. Assassins deal double damage to her. Her loss can end your kingdom.',targetFor(u=>u.name==='Crown'&&u.team===mine)],
    ['A foothold and a treasury','Villages are small, towns are larger, and cities tower above them. Capture neutral or hostile settlements by occupying them. Allied settlements remain allied. Holdings pay gold; cities also pay materials.',tileFor((t,s)=>!!s)],
    ['Open an occupied settlement','Click your settlement to open recruitment, research and upgrades. If a unit is standing there, select the unit and click it again. Recruitment needs an empty tile, but you can still research or upgrade while it is occupied.',tileFor((t,s)=>s?.owner===mine)],
-   ['Research, recruit, improve','We begin with zero resources. Earn gold and materials from holdings for recruitment. Earn Research Points through kills, first captures and settlement upgrades to buy doctrines. The upgrade tab shows exactly how much extra gold and materials a stronger settlement earns each turn.',tileFor((t,s)=>s?.owner===mine)],
+   ['Research, recruit, improve','We begin with zero resources. Earn gold and materials from holdings for recruitment. Study one doctrine for free over several turns, or spend Research Points earned through kills, first captures and settlement upgrades to research instantly. The upgrade tab shows exactly how much extra gold and materials a stronger settlement earns each turn.',tileFor((t,s)=>s?.owner===mine)],
   ];
   for(const [t,label] of [['GRASS','Open ground'],['WOODS','Forest cover'],['SWAMP','Dangerous marsh'],['MOUNTAIN','The high ground'],['DESERT','Desert attrition'],['WATER','Crossing water'],['BRIDGE','Hold the crossing'],['FOUNTAIN','Healing springs'],['FARM','Farmland']]){
    const pos=tileFor(v=>v===t);if(pos)list.push([label,`Look at the marked ground. ${terrainNotes[t]} Choose your route with that in mind.`,pos]);
@@ -86,41 +86,72 @@ const BattleGuide = (() => {
   return list;
  }
  function showStep(){
-  const [title,text,pos]=steps[step];$('guideTitle').textContent=`Captain Garran · ${title}`;$('guideText').textContent=text;$('guideProgress').textContent=`${step+1} / ${steps.length}`;$('guidePrevious').disabled=step===0;$('guideNext').textContent=step===steps.length-1?'Take command':'Next →';
+  const [title,text,pos]=steps[step];$('guideTitle').textContent=`Captain Garran · ${title}`;$('guideText').textContent=text;$('guideProgress').textContent=`${step+1} / ${steps.length}`;$('guidePrevious').disabled=step===0;$('guideNext').textContent=step===steps.length-1?(currentVictoryCondition.training?'Start practice':'Take command'):'Next →';
   if(pos&&Number.isFinite(pos.col)&&Number.isFinite(pos.row)){const p=getTileCenterLocal(pos.col,pos.row),v=getBattleViewport(),o=getMapOrigin();targetPanX=panX=(v.left+v.right)/2-o.x-p.x*zoomLevel;targetPanY=panY=(v.top+v.bottom)/2-o.y-p.y*zoomLevel;clampPanToMap();}
  }
+ // Keep the introduction short; the practice card teaches actions on the live board.
  function trainingLessons(){
   const lesson=(title,text,col,row)=>[title,text,{col,row}];
   return [
-   lesson('Welcome to the training grounds','I’m Captain Garran. This is a practice battlefield built for learning. Follow the golden ring as I show you our troops and the land. Time stands still during this briefing. Then you can take command.',2,5),
-   lesson('Our objective','Our task is to capture this red outpost across the river. March a warrior onto it to win. Only two enemy troops stand against us, though the enemy can recruit as the turns pass.',9,4),
-   lesson('Select and march','This is your Soldier. After the briefing, click him, then a reachable empty tile to march. You can pass through friends, but not enemies. Click any object for its report in the bottom-right corner.',2,5),
-   lesson('Protect the Crown','This is our Crown. She cannot attack. Nearby friends gain 25% defense and 10% attack. Keep her safe: if she falls, we lose. She moves two tiles on grass, one on other terrain.',1,5),
-   lesson('Spears hold the line','This Spearman can guard the crossing while our support troops stay behind. Adjacent friendly Spearmen help each other defend. Check the field report for each unit’s special abilities.',3,5),
-   lesson('Arrows from a distance','Our Archer shoots from two tiles away. Select her, then an enemy in range. Use a front line to keep enemy swords away from her.',2,3),
-   lesson('A mounted reserve','This Knight is quick on open ground and can make a bonus attack. Do not charge beyond support. Forest weakens his attacks, and he cannot enter marsh.',3,3),
-   lesson('Heal the wounded','This Soldier begins wounded on purpose. After this briefing, select the Cleric beside him and click the wounded Soldier to heal. Pull injured veterans back to your healers.',3,6),
-   lesson('Your Cleric','Here is the healer. Clerics heal friendly troops instead of attacking. Keep them behind the fighting so those wounded soldiers can return to battle.',2,6),
-   lesson('Courage and experience','The field report shows health, morale and experience. Low morale weakens ordinary troops. Combat earns promotions: preserve experienced warriors. Dragons resist morale loss; Assassins can shatter most other troops.',3,5),
-   lesson('Open your town','This is our town, under the Soldier. Select him, then click him again to open the town menu. You can research and upgrade while it is occupied. Move him out before recruiting here.',2,5),
-   lesson('Income and recruitment','This smaller holding is a village. We begin with zero gold and materials. End Turn collects income from our holdings; spend it on recruitment and upgrades. Battlefield kills, first captures and upgrades earn separate Research Points for doctrines. Upgrade menus show the extra income you will earn.',2,7),
-   lesson('Take a new foothold','This village is neutral. Move one of our troops onto it to claim it and increase our income. We can capture enemy holdings too, but never an ally’s.',4,4),
-   lesson('Forest cover','This is forest. It offers 30% defense, but Knights attack less effectively from it. Assassins are dangerous against troops hiding here. Terrain changes the battle.',3,2),
-   lesson('Marsh slows the fight','These cattails mark marsh. Attacks made from marsh deal half damage. Knights and Catapults cannot enter. Use the grass route for your cavalry.',4,7),
-   lesson('Mountain defenses','The high ground protects defenders. Some troops move slowly through it. Inspect a tile before choosing your route.',8,1),
-   lesson('Water and bridges','Ordinary land troops cannot march over this water. Use a bridge, or buy the anchor upgrade for an eligible unit. Dragons can fly across.',6,3),
-   lesson('The crossing','Here is a bridge to the enemy bank. Cross carefully: bridges provide poor protection. Keep ranged troops behind your front line.',6,4),
-   lesson('Healing spring','This fountain restores 6 health each turn and offers some defense. It is a useful place for a wounded unit to rest.',3,6),
-   lesson('Avoid desert attrition','Desert hurts an occupying unit for 10 health at the end of its turn and offers poor defense. We can avoid it on the way to our objective.',9,8),
-   lesson('A fixed stronghold','Our Stockade is a fortress. It can defend and retaliate, but never move, even after promotion. Catapults break fortresses; Assassin strikes do only 10% damage to them.',1,7),
-   lesson('Your first orders','Now try it: heal the wounded Soldier, move your town’s guard toward the neutral village, and bring your Archer up behind him. End Turn when ready. Cross the bridge and capture the red outpost. The ? button can replay this briefing; Commands → Restart restores this practice map.',9,4)
+   lesson('Welcome — no experience needed','You command the blue army. The computer commands the red army. Each small figure is a unit: one piece you can select and give orders to. The six-sided spaces are called hexes. Read at your own pace: the battle is paused while these pages are open. Next continues; Back repeats a page.',2,5),
+   lesson('What you are trying to do','Win this practice battle by moving a blue fighting unit onto this red town, the Training Outpost. First defeat the enemy standing on it, then move into the empty town. You do not need to defeat every enemy. Keep your Crown alive or you lose.',9,4),
+   lesson('Turns — you have time to think','A turn is your chance to give orders. You can use several different units before ending it. The computer waits until you press End Turn. You do not need to click quickly. Once the computer finishes its moves, you get another turn and your units can act again.',2,5),
+   lesson('Select, then choose a destination','After this introduction, click your blue Soldier standing on this town. A ring shows which unit you selected, and highlighted empty hexes show where it can move. Click one highlighted hex to move there. To choose a different unit, click that blue unit instead. Drag empty map space to look around; use the mouse wheel or trackpad scroll to zoom.',2,5),
+   lesson('Movement is a budget','The foot symbol is movement: how far that unit can travel in one move. Grass costs 1 point per hex; entering mountains costs 2. You can move through friendly units but must finish on an empty hex. Most units get one move per turn, so moving a short distance still uses that move. Undo Move reverses your latest move before you take another action.',3,5),
+   lesson('How to attack','Select a blue fighting unit, then click an enemy within its attack range. Range 1 means a neighboring hex; our Archer has range 2. Hover over a valid enemy to see predicted damage before clicking. Most units can move and attack once each turn. Catapults must choose one or the other. A Knight earns a second attack only after a kill.',2,3),
+   lesson('Read health and readiness','The green bar is health: at zero the unit is defeated. In the information panel, 25/50 means 25 health remaining out of 50. Wounded units usually hit less hard. A dashed outline means a unit still has an action available. After attacking it loses that outline, even if it can still move. The panel explains the selected unit’s abilities.',3,6),
+   lesson('Heal a friendly unit','Our Cleric is a healer, not a fighter. Click the Cleric, then click the wounded blue Soldier next to the fountain. Healing restores health and uses the Cleric’s action. Keep the Cleric behind your fighters. We will practice this first, with a gold ring showing what to click.',2,6),
+   lesson('Protect your Crown','This Crown is your most important unit. It cannot attack. If the enemy defeats it, your kingdom loses. Keep it behind your army. Friendly units next to it receive extra protection and attack strength. You do not need to send it into danger to capture the outpost.',1,5),
+   lesson('Capture land and settlements','A settlement is a village, town or city. This village belongs to nobody yet. Move your Soldier onto it and it immediately turns blue. Captured settlements give you income at the end of your turn. Moving most units across hexes also claims territory, shown in your color. Clerics and Assassins cannot claim territory.',4,4),
+   lesson('Gold, materials and army upkeep','Gold and materials buy new units and settlement upgrades. You start with zero, so collect income with End Turn. Army upkeep compares the cost of your army with the territory supporting it. Stay within that limit: going over reduces morale each turn, and after three over-limit turns your Dragons can turn against everyone.',2,7),
+   lesson('Recruit more soldiers','To recruit means to buy another unit. Click an empty blue settlement to open its menu, choose Build Units, then Buy beside an affordable unit. If a friendly unit is on the settlement, click it twice to open the menu; move it away before buying. New units normally wait until your next turn before moving or attacking.',2,5),
+   lesson('Research without spending gold','Research unlocks units and army improvements. Open a blue settlement, then Research. Choose a doctrine whose requirements are met and press Study to research it for free over several turns. Research Points (RP), earned from battle and captures, let you finish a doctrine instantly instead. Changing your current study loses its progress. This practice army already has some basic unlocks.',2,5),
+   lesson('Cross the river safely','The river blocks ordinary land units. This bridge lets them cross, but gives poor protection. Bring several fighters together, with the Archer and Cleric behind them. Forest and mountains protect defenders; marsh slows troops; desert causes damage. Click any terrain hex to read its effects in the information panel.',6,4),
+   lesson('Your first small steps','Press Start practice below. A checklist will guide you through healing, capturing the nearby village, ending a turn, buying a Soldier and starting research. Then cross this bridge, defeat the town’s guard and occupy the Training Outpost. The ? button opens help at any time. Commands → Restart lets you try again.',6,4)
   ];
  }
- function dismiss(){if(training)finish();if($('battleHandbook'))$('battleHandbook').hidden=true;}
+ let practice=null;
+ function beginPractice(){
+  practice={done:new Set(),ids:new Set(units.map(u=>u.id)),turn:turnNumber,signature:'',index:0};
+  renderPractice();
+ }
+ // Record only successful game actions, rather than treating inspection or passive healing as completion.
+ function practiceAction(kind,team){
+  if(!practice||!currentVictoryCondition.training||team!=='PLAYER')return;
+  practice.done.add(kind);renderPractice();
+ }
+ function practiceTasks(){
+  return [
+   {id:'heal',title:'Heal the wounded Soldier',text:'Click the blue Cleric inside the gold ring, then click the wounded blue Soldier beside the fountain. You are healing a friend, not attacking.',pos:()=>targetFor(u=>u.team==='PLAYER'&&u.name==='Cleric'&&u.hp>0)},
+   {id:'capture',title:'Capture the neutral village',text:'Click your Soldier on the blue town, then click the empty village inside the gold ring. It becomes yours immediately. If you have already moved that Soldier, wait for your next turn.',pos:()=>({col:4,row:4})},
+   {id:'turn',title:'Collect your first income',text:'Press End Turn in the lower-left corner when you have finished giving orders. Wait while the red army acts. Your gold increases and your units become ready again on your next turn.'},
+   {id:'recruit',title:'Buy a new Soldier',text:'Click the blue town your Soldier left, choose Build Units, then Buy beside Soldier. The settlement hex must be empty. If it is occupied, move the friendly unit away first. If you need gold, collect another turn of income.',pos:()=>tileFor((t,s,i)=>s?.owner==='PLAYER'&&!getUnitAt(i%COLS,Math.floor(i/COLS)))},
+   {id:'research',title:'Start one doctrine',text:'Click a blue settlement (twice if a unit is on it), then Research. Choose an available doctrine. Hover over its card to reveal Study: this costs turns, not gold or RP. You can also spend enough RP to research it immediately.',pos:()=>tileFor((t,s)=>s?.owner==='PLAYER')},
+   {id:'win',title:'Capture the Training Outpost',text:'Bring your fighters across the bridge together. Select a fighter and click a red unit in range to attack. Defeat the guard on the marked town, then move a blue fighting unit onto the empty town to win. Keep your Crown safe; End Turn refreshes your army.',pos:()=>({col:9,row:4})}
+  ];
+ }
+ function renderPractice(){
+  const el=$('practiceCoach');if(!el)return;
+  if(!practice||!currentVictoryCondition.training||isEditorMode||!$('mainMenu')?.classList.contains('hidden')){el.hidden=true;return;}
+  if(settlements[4*COLS+4]?.owner==='PLAYER')practice.done.add('capture');
+  if(turnNumber>practice.turn&&currentTeam==='PLAYER')practice.done.add('turn');
+  if(units.some(u=>u.team==='PLAYER'&&!practice.ids.has(u.id)))practice.done.add('recruit');
+  const tasks=practiceTasks(),index=tasks.findIndex(t=>!practice.done.has(t.id));
+  practice.index=index<0?tasks.length-1:index;
+  const task=tasks[practice.index];
+  if(gameOver){el.hidden=true;return;}
+  el.hidden=training||!$('battleHandbook')?.hidden||!!$('spawnMenu')||!!$('customPopup')||document.body.classList.contains('commands-open');
+  const signature=task.id+':'+practice.done.size;
+  if(signature===practice.signature)return;practice.signature=signature;
+  $('practiceProgress').textContent='Practice '+(practice.index+1)+' of '+tasks.length;
+  $('practiceTitle').textContent=task.title;$('practiceText').textContent=task.text;
+  $('practiceSkip').textContent=task.id==='win'?'Hide tips':'Skip this step';
+ }
+ function dismiss(){practice=null;if($('practiceCoach'))$('practiceCoach').hidden=true;if(training)finish(false);if($('battleHandbook'))$('battleHandbook').hidden=true;}
  function start(){if(typeof CommandMenu!=='undefined')CommandMenu.close();closeSpawnMenu();inspected=null;$('objectInspector').hidden=true;layout();$('battleHandbook').hidden=true;steps=lessons();step=0;savedCamera={zoomLevel,targetZoom,panX,panY,targetPanX,targetPanY};training=true;$('battleTutorial').hidden=false;document.body.classList.add('training-active');showStep();$('guideNext').focus();}
- function finish(){training=false;$('battleTutorial').hidden=true;document.body.classList.remove('training-active');seen=true;try{localStorage.setItem(key,'done');}catch{}if(savedCamera){({zoomLevel,targetZoom,panX,panY,targetPanX,targetPanY}=savedCamera);savedCamera=null;clampPanToMap();}gameInputBlockedUntil=Date.now()+300;}
+ function finish(withPractice=true){training=false;$('battleTutorial').hidden=true;document.body.classList.remove('training-active');seen=true;try{localStorage.setItem(key,'done');}catch{}if(savedCamera){({zoomLevel,targetZoom,panX,panY,targetPanX,targetPanY}=savedCamera);savedCamera=null;clampPanToMap();}gameInputBlockedUntil=Date.now()+300;if(withPractice&&currentVictoryCondition.training&&!practice)beginPractice();}
  function drawHighlight(){
-  const p=training?steps[step]?.[2]:null;if(!p||!Number.isFinite(p.col)||!Number.isFinite(p.row))return;
+  const p=training?steps[step]?.[2]:practice&&!$('practiceCoach')?.hidden?practiceTasks()[practice.index]?.pos?.():null;if(!p||!Number.isFinite(p.col)||!Number.isFinite(p.row))return;
   const center=getTileCenterLocal(p.col,p.row);push();noFill();stroke(255,220,100);strokeWeight(4/zoomLevel);circle(center.x,center.y,(useHexGrid?HEX_SIZE*2.2:TILE*1.4));pop();
  }
  function handbook(){
@@ -148,13 +179,16 @@ const BattleGuide = (() => {
    notify(`${teamName(lastTeam)} ended their turn.${gain?' Income: +💰 '+gain.gold+' · +⚒️ '+gain.materials+'.':''} ${currentTeam===local()?'Your turn!':teamName(currentTeam)+' takes command.'}`);
   }
   lastTurn=inBattle?token:'';lastTeam=currentTeam;lastResources=JSON.parse(JSON.stringify(resources||{}));
-  if(inspected)renderInspection();
+  if(inspected)renderInspection();renderPractice();
  }
  document.addEventListener('DOMContentLoaded',()=>{
   const shell=document.createElement('div');shell.innerHTML=`<div id="turnRibbon"><img id="turnRibbonImage" src="assets/ui/turn-banner.webp" alt=""><strong id="turnRibbonName"></strong></div><aside id="objectInspector" hidden aria-label="Selected object details"></aside><section id="battleTutorial" hidden aria-label="Captain Garran's field training"><img class="guide-portrait" src="assets/ui/captain-garran.webp" alt="Captain Garran, a black-bearded warrior"><div class="guide-copy"><h2 id="guideTitle"></h2><p id="guideText" aria-live="polite"></p><nav><button id="guidePrevious">← Back</button><span id="guideProgress"></span><button id="guideNext">Next →</button><button id="guideSkip">Skip training</button></nav></div></section><section id="battleHandbook" hidden role="dialog" aria-modal="true" aria-labelledby="handbookTitle"><div class="handbook-card"><header><h2 id="handbookTitle">Captain Garran’s field manual</h2><button id="handbookClose">Close</button></header><button id="guideReplay">Replay guided training</button><div id="handbookBody"></div></div></section>`;document.body.append(shell);
+  const coach=document.createElement('aside');coach.id='practiceCoach';coach.hidden=true;coach.setAttribute('aria-label','Beginner practice checklist');coach.innerHTML='<span id="practiceProgress"></span><h3 id="practiceTitle"></h3><p id="practiceText" aria-live="polite"></p><button id="practiceSkip">Skip this step</button><button id="practiceClose">Hide tips</button>';document.body.append(coach);
+  $('practiceSkip').onclick=()=>{if(!practice)return;const task=practiceTasks()[practice.index];if(task.id==='win'){practice=null;coach.hidden=true;}else{practice.done.add(task.id);renderPractice();}};
+  $('practiceClose').onclick=()=>{practice=null;coach.hidden=true;};
   const toolbar=document.createElement('div');toolbar.id='battleToolbar';toolbar.innerHTML='<button id="battleMenuBtn">← Menu</button><button id="battleHelp" aria-label="Open tutorial and field manual">?</button>';$('panel').prepend(toolbar);if($('musicToggleBtn'))toolbar.append($('musicToggleBtn'));
   const notice=document.createElement('div');notice.id='battleNotice';notice.hidden=true;notice.setAttribute('role','status');toolbar.after(notice);if($('endlessBar'))notice.after($('endlessBar'));if($('mapDiplomacyButton'))$('panel').append($('mapDiplomacyButton'));
-  for(const id of ['battleTutorial','battleHandbook','objectInspector','battleToolbar'])for(const event of ['pointerdown','pointerup','mousedown','mouseup','click','touchstart','touchend','wheel'])$(id).addEventListener(event,e=>e.stopPropagation());
+  for(const id of ['battleTutorial','battleHandbook','objectInspector','battleToolbar','practiceCoach'])for(const event of ['pointerdown','pointerup','mousedown','mouseup','click','touchstart','touchend','wheel'])$(id).addEventListener(event,e=>e.stopPropagation());
   $('guideNext').onclick=()=>{if(step===steps.length-1)finish();else{step++;showStep();}};$('guidePrevious').onclick=()=>{if(step>0){step--;showStep();}};$('guideSkip').onclick=finish;$('guideReplay').onclick=start;
   $('battleHelp').onclick=handbook;$('handbookClose').onclick=()=>{$('battleHandbook').hidden=true;};
   $('battleMenuBtn').onclick=()=>{if(training)finish();$('battleHandbook').hidden=true;closeSpawnMenu();activeAITurn=null;clearTimeout(aiTurnTimeoutId);$('mainMenu').classList.remove('hidden');refresh();};
@@ -166,5 +200,5 @@ const BattleGuide = (() => {
  });
  function recordIncome(team,inc){incomeReceipt={team,turn:turnNumber,gold:inc.gold,materials:inc.materials};}
  function receiveIncome(value){if(value&&typeof value.team==='string'&&Number.isFinite(value.gold)&&Number.isFinite(value.materials)&&Number.isInteger(value.turn))incomeReceipt={team:value.team,turn:value.turn,gold:Math.max(0,value.gold),materials:Math.max(0,value.materials)};}
- return {notify,recordIncome,receiveIncome,get incomeReceipt(){return incomeReceipt;},start,dismiss,inspect,refresh,unitDetails,stats,abilities,matchups,lessons,drawHighlight,get blocking(){return training||!!$('battleHandbook')&&!$('battleHandbook').hidden;}};
+ return {practiceAction,notify,recordIncome,receiveIncome,get incomeReceipt(){return incomeReceipt;},start,dismiss,inspect,refresh,unitDetails,stats,abilities,matchups,lessons,drawHighlight,get blocking(){return training||!!$('battleHandbook')&&!$('battleHandbook').hidden;}};
 })();

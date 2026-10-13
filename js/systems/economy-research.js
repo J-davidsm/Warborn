@@ -30,6 +30,7 @@ function startDoctrineResearch(team,id) {
   if(!validResearchTeam(team)||!tech||hasTech(team,id)||!tech.requires.every(p=>hasTech(team,p))||!canMutateResearch()||(typeof currentTeam!=='undefined'&&currentTeam!==team))return false;
   if(activeResearch[team]?.id===id)return true;
   activeResearch[team]={id,progress:0,lastTurn:null};
+  if(typeof BattleGuide!=='undefined')BattleGuide.practiceAction?.('research',team);
   if(typeof markScenarioPlaying==='function')markScenarioPlaying();
   refreshResearchState();return true;
 }
@@ -267,7 +268,9 @@ function researchTech(team,id) {
   if(!canResearchTech(team,id)||!canMutateResearch())return false;
   if(typeof markScenarioPlaying==='function')markScenarioPlaying();
   researchPoints[team]=getResearchPoints(team)-RESEARCH_TREE[id].cost;
-  return completeDoctrine(team,id);
+  const completed=completeDoctrine(team,id);
+  if(completed&&typeof BattleGuide!=='undefined')BattleGuide.practiceAction?.('research',team);
+  return completed;
 }
 function completeDoctrine(team,id) {
   if(hasTech(team,id))return false;

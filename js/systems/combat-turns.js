@@ -237,6 +237,7 @@ function healUnit(healer, target) {
   // Boost morale for both healer and target
   healer.morale = Math.min(150, healer.morale + 10);
   target.morale = Math.min(150, target.morale + 50);
+  if(typeof BattleGuide!=='undefined')BattleGuide.practiceAction?.('heal',healer.team);
   return { didHeal: true, healAmount: actualHeal };
 }
 

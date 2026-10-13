@@ -1208,3 +1208,14 @@ body.assets-loading > :not(#startupLoading) {visibility:hidden;}
 #battleSetup canvas {display:block;max-width:100%;margin:12px auto;border:1px solid #867044;}
 #onlineTurnClock {font-variant-numeric:tabular-nums;white-space:nowrap;font-size:17px;color:#ffe1a1;}
 @media(max-width:560px){.battle-settings{grid-template-columns:1fr;}.lobby-mode-buttons{flex-direction:column;}}
+
+/* Live beginner checklist: readable beside the board, hidden over other menus. */
+#practiceCoach {position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:min(430px,calc(100vw - 32px));box-sizing:border-box;max-height:38vh;overflow:auto;z-index:2250;padding:16px 18px;background:#102332f5;border:1px solid #d4b878;border-radius:12px;box-shadow:0 8px 28px #0008;}
+#practiceCoach[hidden] {display:none;}
+#practiceProgress {color:#cbb987;font-size:12px;text-transform:uppercase;letter-spacing:.06em;}
+#practiceCoach h3 {margin:6px 0;color:#f2d188;font-size:17px;}
+#practiceCoach p {font-size:14px;line-height:1.55;margin:8px 0 12px;}
+#practiceCoach button {padding:7px 10px;margin-right:8px;background:#172c3d;color:#eee0bc;border:1px solid #9d8556;border-radius:5px;cursor:pointer;}
+@media(max-width:800px){#practiceCoach{left:auto;right:12px;transform:none;width:min(430px,calc(100vw - 24px));bottom:12px;max-height:32vh;}#practiceCoach p{font-size:12px;}}
+
+@media(max-width:600px){#practiceCoach{top:140px;bottom:auto;max-height:28vh;}}

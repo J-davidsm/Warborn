@@ -272,6 +272,7 @@ function wireVictoryEditor() {
 }
 
 function applyLevelData(data) {
+  if(typeof BattleGuide!=='undefined')BattleGuide.dismiss?.();
   resetScenarioPlayLock();
   if(typeof MoveUndo!=='undefined')MoveUndo.clear();
   if(typeof Endless!=='undefined')Endless.stop();
