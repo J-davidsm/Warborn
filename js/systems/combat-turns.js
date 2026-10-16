@@ -675,7 +675,8 @@ function claimSettlementAt(col, row, owner){
  * Called after every unit movement to ensure settlements are captured reliably
  */
 function checkSettlementCaptureAfterMove(unit, newCol, newRow) {
-  if(unit.rogue||unit.ruins||(typeof Territory!=='undefined'&&!Territory.eligible(unit)))return;
+  // Settlement ownership is separate from marching territory: support units can capture.
+  if(!unit||unit.hp<=0||unit.rogue||unit.ruins)return;
   console.log(`DEBUG: Checking settlement capture for ${unit.name} (${unit.team}) at (${newCol},${newRow})`);
   
   // Verify coordinates are valid
@@ -750,7 +751,7 @@ function captureSettlementsWithUnits(team) {
       
       // Check if there's a unit from this team at this position
       const unitAtPosition = getUnitAt(col, row);
-      if (unitAtPosition && unitAtPosition.team === team && unitAtPosition.hp > 0 && !unitAtPosition.rogue && !unitAtPosition.ruins && (typeof Territory==='undefined'||Territory.eligible(unitAtPosition))) {
+      if (unitAtPosition && unitAtPosition.team === team && unitAtPosition.hp > 0 && !unitAtPosition.rogue && !unitAtPosition.ruins) {
         // Only capture if settlement isn't already owned by this team
         if (settlement.owner !== team && !areFriendlyTeams(settlement.owner,team)) {
           const previousOwner = settlement.owner;

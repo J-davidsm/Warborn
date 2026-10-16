@@ -100,7 +100,7 @@ function aiCrownDeployment(u) {
       score+1/(1+aiDistance(a,e))-1/(1+aiDistance(b,e)),0))[0]||null;
 }
 function aiNearbyCapture(u) {
-  if(u.hasMoved||isFortressUnit(u)||u.name==='Crown'||u.name==='Cleric'||u.name==='Assassin'||aiProtectedUnit(u.team)===u)return null;
+  if(u.hasMoved||isFortressUnit(u)||u.name==='Crown'||aiProtectedUnit(u.team)===u)return null;
   const group=typeof AICommander!=='undefined'&&AICommander.group(u);
   if(group&&['GUARD','DEFEND','RESERVE'].includes(group.type)&&aiThreat(group.target,u.team)>0)return null;
   const cost=(p,from=u)=>typeof AICommander!=='undefined'?AICommander.pathCost(u,p,from):aiDistance(from,p);

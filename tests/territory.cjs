@@ -29,3 +29,27 @@ reset();ctx.units=[unit('Soldier',0,0)];T.march(ctx.units[0],[{col:1,row:0}]);T.
 console.log('Territory values, marching, passive radii, exclusions, capacity, overflow, save receipts, rogue combat, ruins, AI rebuilding and Endless scrolling pass.');
 vm.runInContext(fs.readFileSync('js/systems/move-undo.js','utf8'),ctx);ctx.closeSpawnMenu=()=>{};ctx.postGameState=()=>{};
 reset();ctx.currentTeam='AI';u=unit('Soldier',0,0);ctx.units=[u];const undo=run('MoveUndo');undo.begin(u);T.march(u,[{col:0,row:0},{col:1,row:0}]);u.col=1;u.hasMoved=true;undo.finish();assert(undo.undo());assert.equal(T.snapshot().claims[1],null,'undo rolls back marching claims');
+
+// Capturing a settlement must not grant support units marching claims.
+for(const name of ['Cleric','Assassin'])for(const team of ['PLAYER','AI'])for(const previous of [null,team==='PLAYER'?'AI':'PLAYER']){
+ reset();const support=unit(name,3,3,team);ctx.units=[support];
+ T.march(support,[{col:2,row:3},{col:3,row:3}]);
+ assert.equal(T.ownership()[3*12+3],null);
+ ctx.settlements[3*12+3]={type:'VILLAGE',owner:previous};
+ ctx.checkSettlementCaptureAfterMove(support,3,3);
+ assert.equal(ctx.settlements[3*12+3].owner,team,name+' captures immediately');
+ assert.equal(T.snapshot().claims[3*12+2],null,'route stays unclaimed');
+ assert.equal(T.snapshot().claims[3*12+3],null,'no standing claim');
+ assert.equal(T.ownership()[3*12+3],team,'captured settlement still supplies its normal territory');
+ ctx.settlements[3*12+3].owner=previous;
+ ctx.captureSettlementsWithUnits(team);
+ assert.equal(ctx.settlements[3*12+3].owner,team,'turn reconciliation also captures');
+ support.rogue=true;ctx.settlements[3*12+3].owner=previous;
+ ctx.checkSettlementCaptureAfterMove(support,3,3);ctx.captureSettlementsWithUnits(team);
+ assert.equal(ctx.settlements[3*12+3].owner,previous,'rogue cannot capture');
+}
+for(const name of ['Cleric','Assassin']){
+ reset();const support=unit(name,2,3);ctx.units=[support];ctx.settlements[3*12+3]={type:'HAMLET',owner:null};
+ assert(ctx.aiNearbyCapture(support),name+' AI considers nearby empty settlements');
+}
+console.log('Clerics and Assassins capture settlements without claiming terrain.');
