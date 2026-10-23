@@ -9,3 +9,6 @@
 - Native fullscreen transitions, audible playback, restricted third-party browser storage, and real two-network matches still need external sign-off in QA-checklist.md.
 
 No storefront submission is performed by these scripts. The GitHub Pages version remains the public fallback for embedded invite links.
+
+## CI blocker
+The Web release QA run for e9df2b3 did not start any jobs. GitHub reports: “The job was not started because your account is locked due to a billing issue.” Resolve the account billing issue, then rerun the Web release QA workflow. This is not a game-test failure or a passing browser result. Pages deployment is tracked separately.
