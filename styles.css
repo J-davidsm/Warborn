@@ -148,7 +148,8 @@ body.watch-mode #panel { width: min(320px, 28vw); }
    for assistive technology without covering the painted lettering. */
 #acadaniaTitle { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
 #mainMenuShade { background:linear-gradient(180deg,transparent 60%,#07101b66); pointer-events:none; }
-#mainMenuContent { position:absolute; bottom:clamp(24px,5vh,64px); padding-top:0; }
+/* Track the title in the cover-scaled 1672 × 941 menu painting. */
+#mainMenuContent { position:absolute; top:min(max(34vh, 19.14vw), calc(100vh - 180px)); bottom:auto; padding-top:0; }
 
 #menuPlayBtn,
 #menuOnlineBtn,
