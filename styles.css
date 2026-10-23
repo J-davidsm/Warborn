@@ -44,7 +44,7 @@ html, body {
 #undoMoveBtn {padding:10px 18px;min-height:42px;}
 
 #mainMenu {
-  background: url("assets/ui/menu-painted.webp") center center / cover no-repeat;
+  background: #101925 url("assets/ui/acadania-menu.jpg") center top / cover no-repeat;
 }
 
 #endScreen {
@@ -140,23 +140,15 @@ body.watch-mode #panel { width: min(320px, 28vw); }
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: min(320px, 88vw);
+  width: min(260px, 82vw);
   gap: 16px;
 }
 
-#acadaniaTitle {
-  width: min(900px, 92vw);
-  margin: 0 0 clamp(24px, 5vh, 60px);
-  line-height: 0;
-}
-#acadaniaTitle img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 38vh;
-  object-fit: contain;
-  filter: drop-shadow(0 8px 12px rgba(0,0,0,.8));
-}
+/* The supplied menu painting already contains the title. Keep a text heading
+   for assistive technology without covering the painted lettering. */
+#acadaniaTitle { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+#mainMenuShade { background:linear-gradient(180deg,transparent 60%,#07101b66); pointer-events:none; }
+#mainMenuContent { position:absolute; bottom:clamp(24px,5vh,64px); padding-top:0; }
 
 #menuPlayBtn,
 #menuOnlineBtn,
@@ -907,7 +899,7 @@ body button[aria-pressed="true"], body button.active, body button.selected {
   outline: 2px solid #ffe49a; outline-offset: -3px;
 }
 #mainMenuActions { gap: 8px; }
-#mainMenuActions button { min-height: 52px; padding: 13px 36px; font-family: Georgia, serif; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+#mainMenuActions button { min-height: 44px; padding: 9px 28px; font-family: Georgia, serif; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 
 /* Square painted unit actions, framed in restrained antique gold. */
 body #buildWidget, body #waterUpgradeWidget {

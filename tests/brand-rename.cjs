@@ -4,7 +4,8 @@ assert.equal(profilePath('/profiles',()=>true),path.join('/profiles','Warborn'),
 assert.equal(profilePath('/profiles',()=>false),path.join('/profiles','Acadania'),'fresh installs use the new name');
 const html=fs.readFileSync('index.html','utf8');
 assert(!/warborn/i.test(html),'no old name in the game page');
-assert.match(html,/acadania-title\.png/);assert(fs.existsSync('assets/ui/acadania-title.png'));
+assert.match(html,/<h1 id="acadaniaTitle">Acadania<\/h1>/);assert(fs.existsSync('assets/ui/acadania-menu.jpg'));
+assert.match(fs.readFileSync('styles.css','utf8'),/assets\/ui\/acadania-menu\.jpg/);
 const pkg=require('../package.json');assert.equal(pkg.productName,'Acadania');assert.equal(pkg.build.productName,'Acadania');assert.equal(pkg.build.linux.executableName,'acadania');
 assert.match(fs.readFileSync('js/systems/save-editor-teams.js','utf8'),/acadania_levels_/);
 console.log('Acadania branding, menu artwork, exports and legacy save-profile continuity verified.');

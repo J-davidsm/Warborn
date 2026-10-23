@@ -1,0 +1,16 @@
+{
+  "engine": "webkit",
+  "version": "27.2",
+  "slow": false,
+  "network": "local HTTP",
+  "startupMs": 1644,
+  "checks": {
+    "tutorial": true,
+    "saveLoad": true,
+    "research": true,
+    "audioToggle": true,
+    "portalInvite": true
+  },
+  "errors": [],
+  "missing": []
+}

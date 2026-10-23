@@ -1,0 +1,16 @@
+{
+  "engine": "webkit",
+  "version": "27.2",
+  "slow": true,
+  "network": "10 Mbps shared server bandwidth / 100 ms request latency, fresh browser context",
+  "startupMs": 42591,
+  "checks": {
+    "tutorial": true,
+    "saveLoad": true,
+    "research": true,
+    "audioToggle": true,
+    "portalInvite": true
+  },
+  "errors": [],
+  "missing": []
+}

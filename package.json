@@ -14,7 +14,8 @@
     "start": "electron .",
     "test": "node scripts/test.cjs",
     "test:desktop": "node scripts/smoke.cjs",
-    "dist": "electron-builder --publish never"
+    "dist": "electron-builder --publish never",
+    "build:web": "node scripts/build-web.cjs"
   },
   "devDependencies": {
     "electron": "44.7.0",
