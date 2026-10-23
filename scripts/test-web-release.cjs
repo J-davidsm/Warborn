@@ -7,7 +7,8 @@ const engine=process.argv[2]||'chromium',slow=process.argv.includes('--slow');
  const browser=await (chromiumEngine?chromium:({firefox,webkit})[engine]).launch({headless:true,...(chromiumEngine?{channel:engine}:{})});
  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],missing=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.url().includes('127.0.0.1:887')&&r.status()>=400)missing.push(r.url()+':'+r.status());});
- await page.route('http://127.0.0.1:8877/portal-test.html',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><style>html,body{margin:0;height:100%;background:#10151b}iframe{border:0;width:100%;height:100%}</style><iframe allow="autoplay; fullscreen; clipboard-write" src="http://127.0.0.1:'+(slow?'8879':'8878')+'/index.html"></iframe>'}));
+ if(chromiumEngine)await context.grantPermissions(['local-network-access']);
+ await page.route('http://127.0.0.1:8877/portal-test.html',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><style>html,body{margin:0;height:100%;background:#10151b}iframe{border:0;width:100%;height:100%}</style><iframe allow="autoplay; fullscreen; clipboard-write; local-network-access *; local-network *; loopback-network *" src="http://127.0.0.1:'+(slow?'8879':'8878')+'/index.html"></iframe>'}));
 
  const begin=Date.now();await page.goto('http://127.0.0.1:8877/portal-test.html',{waitUntil:'domcontentloaded',timeout:180000});
  console.log('Parent loaded',engine);

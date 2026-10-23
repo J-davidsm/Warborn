@@ -21,7 +21,7 @@ jobs:
       - run: npm install --prefix /tmp/browser-qa playwright@1.64.1 --no-audit --no-fund
       - run: /tmp/browser-qa/node_modules/.bin/playwright install --with-deps ${{ matrix.browser }}
       - run: |
-          python3 -m http.server 8878 --bind 127.0.0.1 --directory dist/web > /tmp/web-server.log 2>&1 &
+          python3 scripts/serve-web-test.py --port 8878 > /tmp/web-server.log 2>&1 &
           PLAYWRIGHT_MODULE=/tmp/browser-qa/node_modules/playwright node scripts/test-web-release.cjs ${{ matrix.browser }}
       - uses: actions/upload-artifact@v4
         if: always()

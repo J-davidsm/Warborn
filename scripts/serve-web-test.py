@@ -14,4 +14,6 @@ class Handler(SimpleHTTPRequestHandler):
             with lock:
                 outputfile.write(data);outputfile.flush();time.sleep(len(data)/1250000)
     def log_message(self,*args): pass
-ThreadingHTTPServer(('127.0.0.1',a.port),partial(Handler,directory='dist/web')).serve_forever()
+class Server(ThreadingHTTPServer):
+    request_queue_size=128
+Server(('127.0.0.1',a.port),partial(Handler,directory='dist/web')).serve_forever()
