@@ -1,0 +1,16 @@
+{
+  "engine": "chromium",
+  "version": "156.0.8078.4",
+  "slow": false,
+  "network": "local HTTP",
+  "startupMs": 3409,
+  "checks": {
+    "tutorial": true,
+    "saveLoad": true,
+    "research": true,
+    "audioToggle": true,
+    "portalInvite": true
+  },
+  "errors": [],
+  "missing": []
+}
