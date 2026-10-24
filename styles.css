@@ -47,6 +47,12 @@ html, body {
   background: #101925 url("assets/ui/acadania-menu.jpg") center top / cover no-repeat;
 }
 
+/* Solo choices use the original shield-and-castle painting. The root menu
+   retains the titled kingdom artwork when navigating back. */
+#mainMenu:has(> #mainMenuContent[hidden]) {
+  background-image: url("assets/ui/menu-painted.webp");
+}
+
 #endScreen {
   opacity: 0;
   pointer-events: none;

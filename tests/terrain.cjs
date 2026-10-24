@@ -93,7 +93,7 @@ function checkDecks(name,cells,hex,parity=0,banks=[]){
    assert(a.x*b.x+a.y*b.y<0,`${name}: adjoining deck tangents face opposite directions`);
   }
   assert.equal(tile.ports.filter(p=>p.type==='BRIDGE').length,adjacent.length,`${name}: no invented links across water`);
-  if(adjacent.length>=2)assert.equal(tile.ports.length,adjacent.length,`${name}: interior tiles have no stray dead ends`);
+  if(adjacent.length>=2)assert.equal(tile.ports.length,adjacent.length+(tile.ports.some(p=>p.type==='GRASS')?1:0),`${name}: interior tiles add only a dry-bank connection`);
   if(tile.ports.length===2)assert.equal(tile.paths.length,1,`${name}: a bend has one continuous curved path`);
   else assert.equal(tile.paths.length,tile.ports.length,`${name}: a junction reaches every connected edge`);
   // Quadratic interpolation must remain within the tile. A component-wide
@@ -167,3 +167,19 @@ for(const tile of renderTiles)for(const path of tile.paths){
  for(const frame of frames)close(Math.hypot(frame.top.x-frame.bottom.x,frame.top.y-frame.bottom.y),70*.86,'painted width stays constant through bends');
 }
 console.log('Generated full-span artwork, generated junctions, curved image mapping and sprite cache pass.');
+
+// Every local square/hex topology must reach a neighboring bank, regardless
+// of crossing direction or the number of existing bridge links.
+for(const hex of [false,true])for(const parity of [0,1]){
+ const dirs=directions(2,hex,parity);
+ for(let mask=0;mask<3**dirs.length;mask++){
+  const map=Array(25).fill('WATER');map[12]='BRIDGE';let code=mask,hasBank=false;
+  for(const [dc,dr] of dirs){const t=['WATER','BRIDGE','GRASS'][code%3];code=Math.floor(code/3);map[(2+dr)*5+2+dc]=t;hasBank ||= t==='GRASS';}
+  const tile=ctx.terrainV2BridgeTiles(5,5,hex,map,parity).find(t=>t.c===2&&t.r===2);
+  assert.equal(tile.ports.some(p=>p.type==='GRASS'),hasBank,'bridge reaches land whenever adjacent land exists');
+ }
+ const map=Array(25).fill('VOID');map[12]='BRIDGE';
+ assert(ctx.terrainV2BridgeTiles(5,5,hex,map,parity).find(t=>t.c===2&&t.r===2).ports.every(p=>p.type==='VOID'),'VOID is never treated as a dry bank');
+}
+checkDecks('side access on an interior span',[[3,4],[4,4],[5,4]],false,0,[[4,3]]);
+console.log('All square and both hex-parity shoreline configurations connect to available land; VOID stays excluded.');

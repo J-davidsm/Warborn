@@ -244,13 +244,14 @@ function terrainV2BridgeTiles(cols,rows,hex,values,parity=0) {
     const center=pos(c,r),dirs=!hex?[[1,0],[-1,0],[0,1],[0,-1]]:((c-parity)&1)?[[1,1],[1,0],[0,-1],[-1,0],[-1,1],[0,1]]:[[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[0,1]];
     const edges=dirs.map(([dc,dr])=>{
       const nc=c+dc,nr=r+dr,p=pos(nc,nr);
-      return {x:(center.x+p.x)/2,y:(center.y+p.y)/2,neighborC:nc,neighborR:nr,type:nc<0||nc>=cols||nr<0||nr>=rows?'VOID':terrainV2Type(values[nr*cols+nc])};
+      return {x:(center.x+p.x)/2,y:(center.y+p.y)/2,neighborC:nc,neighborR:nr,type:nc<0||nc>=cols||nr<0||nr>=rows||values[nr*cols+nc]==='VOID'?'VOID':terrainV2Type(values[nr*cols+nc])};
     });
     const ports=edges.filter(p=>p.type==='BRIDGE');
     const directionScore=(p,angle)=>((p.x-center.x)*Math.cos(angle)+(p.y-center.y)*Math.sin(angle))/Math.hypot(p.x-center.x,p.y-center.y);
+    const isBank=p=>!['BRIDGE','WATER','VOID'].includes(p.type);
     function exit(angle,preferBank){
       const candidates=edges.filter(p=>!ports.includes(p));
-      const banks=candidates.filter(p=>!['BRIDGE','WATER','VOID'].includes(p.type)&&directionScore(p,angle)>.25);
+      const banks=candidates.filter(isBank);
       const choices=preferBank&&banks.length?banks:candidates;
       const best=choices.reduce((a,b)=>!a||directionScore(b,angle)>directionScore(a,angle)+1e-8?b:a,null);
       if(best)ports.push(best);
@@ -260,9 +261,12 @@ function terrainV2BridgeTiles(cols,rows,hex,values,parity=0) {
     }else if(!ports.length){
       const angle=terrainV2BridgeAngle(c,r,cols,rows,hex,values,parity);
       exit(angle,true);
-      // Isolated tiles remain straight and span the full cell between edges.
-      exit(Math.atan2(center.y-ports[0].y,center.x-ports[0].x),false);
+      // Prefer a second dry bank, even when the crossing needs to curve.
+      exit(Math.atan2(center.y-ports[0].y,center.x-ports[0].x),true);
     }
+    // Interior spans and junctions also need an access ramp when land is
+    // alongside them. Preserve every bridge link and add one bank-facing arm.
+    if(!ports.some(isBank)&&edges.some(isBank))exit(0,true);
     const paths=ports.length===2?[{from:ports[0],control:center,to:ports[1]}]
       :ports.map(p=>({from:p,control:{x:(p.x+center.x)/2,y:(p.y+center.y)/2},to:center}));
     tiles.push({c,r,center,ports,paths});

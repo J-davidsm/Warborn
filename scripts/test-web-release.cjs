@@ -21,6 +21,10 @@ const engine=process.argv[2]||'chromium',slow=process.argv.includes('--slow');
  await page.screenshot({path:`release/screenshots/${engine}-menu.png`});
  const check=await frame.evaluate(()=>{
   const check=(x,m)=>{if(!x)throw Error(m)};
+  document.getElementById('menuSoloBtn').click();
+  check(getComputedStyle(document.getElementById('mainMenu')).backgroundImage.includes('menu-painted.webp'),'Solo menu restores castle-path art');
+  document.querySelector('#soloMenuPage [data-solo-back]').click();
+  check(getComputedStyle(document.getElementById('mainMenu')).backgroundImage.includes('acadania-menu.jpg'),'Back restores titled artwork');
   startIntroScenario(true);check(BattleGuide.blocking,'Tutorial opens');
   check(BattleGuide.lessons().length===15,'Tutorial lessons');document.getElementById('guideNext').click();
   check(document.getElementById('guideProgress').textContent==='2 / 15','Next lesson');
